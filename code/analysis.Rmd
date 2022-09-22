@@ -39,7 +39,7 @@ data(mtcars)
 
 ```{r}
 
-ggplot(mtcars, aes(mpg, wt, color = as.factor(gear))) +
+ggplot(mtcars, aes(disp, wt, color = as.factor(gear))) +
   geom_point()
 
 ```
