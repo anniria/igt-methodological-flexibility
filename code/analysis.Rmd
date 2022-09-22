@@ -52,5 +52,3 @@ mtcars %>%
   kable()
 
 ```
-
-
