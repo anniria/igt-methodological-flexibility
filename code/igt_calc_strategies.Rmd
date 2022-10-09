@@ -1,0 +1,137 @@
+# Preparations
+
+```{r}
+
+# set working directory
+setwd("../data/raw")
+
+# load r packages
+library(openxlsx)
+library(psych)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(DescTools)
+# read excel file
+igtdata <- read.xlsx("igt_flex_coding.xlsx")
+
+```
+
+
+# Number of calculation strategies per publication 
+
+```{r}
+
+## frequencies of numbers of calc strats per publication
+# show absolut frequencies
+igtdata$calc_n %>%
+  table()
+
+# create dataframe
+n_strats <- data.frame(table(igtdata$calc_n))
+names(n_strats) [1] <- "strats_publ"
+names(n_strats) [2] <- "frequency"
+# descriptive statistics 
+describe(igtdata$calc_n)
+
+## visualisation 
+ggplot(n_strats, aes(strats_publ, frequency, fill=strats_publ)) +
+  geom_col() + 
+  scale_fill_brewer(palette="Spectral") +
+  scale_x_discrete(limits=c(1:9)) +
+  labs(x="number of strategies per study", y="number of studies")
+
+```
+
+
+# Frequencies of different calculation strategies
+
+```{r}
+
+## bring data in a reasonable format
+# create new dataframe with calculation strategies
+attach(igtdata)
+calc_strats <- data.frame(calc_desc)
+detach(igtdata)
+# separate values in different columns
+calc_strats <- separate(calc_strats, calc_desc, 
+         c("calc1", "calc2", "calc3", "calc4", "calc5", "calc6", "calc7", "calc8", "calc9"),
+         sep = ";")
+# create long format
+calc_strats_long <- pivot_longer(calc_strats, c(1:9), 
+                                 names_to="name", values_to="strategy", 
+                                 values_drop_na=TRUE) 
+
+## show absolute frequencies for each strategy
+abs_freq_strat <- sort(table(calc_strats_long$strategy))
+# create dataframe with absolute frequencies
+abs_freq <- data.frame(abs_freq_strat)
+names(abs_freq) [1] <- "strat_name"
+names(abs_freq) [2] <- "frequency"
+# show absolute frequencies for all strategies
+abs_freq
+# descriptive statistics 
+describe(abs_freq$frequency)
+
+```
+
+
+# Dispersion of strategies 
+
+```{r}
+
+## show dispersion of strategies: information content
+# build object with relative frequencies
+rel_freq_strat <- prop.table(table(calc_strats_long$strategy))
+# calculate information content
+sum(rel_freq_strat*
+      log(rel_freq_strat)*
+  (-1/log(length(rel_freq_strat))))
+# information content / shannon self-information is ~0.735
+
+
+```
+
+
+# Frequencies of usage of unique strategies
+
+```{r}
+
+## show absolute frequencies for frequency of usage
+freq_usage <- data.frame(table(abs_freq$frequency))
+names(freq_usage) [1] <- "times_used"
+names(freq_usage) [2] <- "frequency"
+# descriptive statistics 
+describe(freq_usage$frequency)
+
+## visualisation
+ggplot(freq_usage, aes(frequency, times_used, fill=times_used)) + 
+  geom_col() +
+  scale_fill_brewer(palette="Spectral") +
+  scale_y_discrete(limits=c(1:55)) +
+  labs(x="number of strategies", y="number of times used")
+
+```
+
+
+
+# Estimation of unique strategies in the population
+
+```{r}
+
+# estimation as to how many publications need to be excluded
+# population is N=1487
+# had to exclude 39 of 139 publications, so...
+39/139*100
+# exclusion rate of 28.06%
+1487-1487*28.06/100
+# true population is estimated to be 1070 publications 
+# in 100 publications there were 51 unique strategies
+51/100*1070
+# estimated 545.7 unique strategies in the population 
+# confidence interval for this estimation is...
+BinomCI(545.7, 1070)
+1070*0.48
+1070*0.54
+
+```
