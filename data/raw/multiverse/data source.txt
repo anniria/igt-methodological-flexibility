@@ -1,0 +1,8 @@
+data taken from:
+Steingroever, H., Fridberg, D. J., Horstmann, A., Kjome, K. L., Kumari, V., Lane, S. D., … Wagenmakers, E.-J. (2015). Data from 617 Healthy Participants Performing the Iowa Gambling Task: A “Many Labs” Collaboration. Journal of Open Psychology Data, 3(1), e5. DOI: http://doi.org/10.5334/jopd.ak
+
+Article URL:
+https://openpsychologydata.metajnl.com/articles/10.5334/jopd.ak/
+
+Data URL:
+https://osf.io/8t7rm/
