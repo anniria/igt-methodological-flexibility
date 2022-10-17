@@ -155,7 +155,7 @@ data_choice <-
 
 ```
 
-# Combine
+## Combine
 
 ```{r}
 
@@ -165,35 +165,98 @@ data_combined <- full_join(data_winloss, data_choice, by = c("id", "trial"))
 
 # Score participants
 
-## (Dis)advantagous choices
+## (Dis)advantageous choices 
+
+TODO MAP THESE ONTO SCORING STRATEGIES, NOT SURE IF NEEDED
+
+### All trials
 
 ```{r}
 
-data_scored_advantage <- data_combined |>
+# data_scored_advantage <- data_combined |>
+#   group_by(id) |>
+#   summarize(mean_advantagous = mean(advantagous),
+#             mean_disadvantagous = mean(disadvantagous)) |>
+#   ungroup() |>
+#   mutate(diff = mean_advantagous - mean_disadvantagous)
+# 
+# data_scored_advantage |>
+#   select(-id) |>
+#   cor() |>
+#   round(2)
+# 
+# data_scored_advantage |>
+#   pivot_longer(cols = -id) |>
+#   ggplot(aes(value)) +
+#   geom_density() +
+#   facet_wrap(~name)
+
+```
+
+### Early and late trials 
+
+Not observed in literature, but plausible. 
+
+```{r}
+
+# TODO
+
+```
+
+### Difference between early and late trials
+
+Observed in literature, but simple early and late are not. 
+
+```{r}
+
+# TODO
+
+```
+
+## Wins/losses
+
+Ignores starting capital
+
+### All trials
+
+```{r}
+
+data_scored_winloss <- data_combined |>
   group_by(id) |>
-  summarize(mean_advantagous = mean(advantagous),
-            mean_disadvantagous = mean(disadvantagous)) |>
+  summarize(total_won = sum(win),
+            total_lost = sum(loss)) |>
   ungroup() |>
-  mutate(diff = mean_advantagous - mean_disadvantagous)
+  mutate(total_won_minus_lost = total_won + total_lost)
 
-data_scored_advantage |>
-  select(-id) |>
-  cor() |>
-  round(2)
+```
 
-data_scored_advantage |>
-  pivot_longer(cols = -id) |>
-  ggplot(aes(value)) +
-  geom_density() +
-  facet_wrap(~name)
+### Early and late trials 
+
+Not observed in literature, but plausible. To implement or not?
+
+```{r}
+
+# TODO
+
+```
+
+### Difference between early and late trials
+
+Not observed in literature, but plausible. To implement or not?
+
+```{r}
+
+# TODO
 
 ```
 
 ## Deck choice counts
 
+### All trials
+
 ```{r}
 
-data_scored_decks <- data_combined |>
+data_scored_deck_choices <- data_combined |>
   group_by(id) |>
   count(choice) |>
   pivot_wider(names_from = choice,
@@ -209,44 +272,28 @@ data_scored_decks <- data_combined |>
          D_minus_B = D-B,
          C_plus_D  = C+D,
          A_plus_B  = A+B,
-         C_plus_D_minus_A_plus_B = C_plus_D-A_plus_B)
+         C_plus_D_minus_A_plus_B = C_plus_D-A_plus_B,
+         C_plus_D_divided_by_A_plus_B = C_plus_D/A_plus_B)
 
-cors_decks <- data_scored_decks |>
-  select(-id, -C) |>
-  cor() |>
-  round(2)
-
-diag(cors_decks) <- NA
-
-data_cors_modal <- tibble(cors = as.data.frame(cors_decks)$C_plus_D_minus_A_plus_B) |>
-  drop_na()
-
-ggplot(data_cors_modal, aes(cors)) +
-  geom_histogram() +
-  xlab("Correlation between modal scoring method and other methods")
-
-
-cors_decks[lower.tri(cors_decks, diag = TRUE)] <- NA
-
-data_cors_all <- tibble(cors = cors_decks[upper.tri(cors_decks)])
-
-ggplot(data_cors_all, aes(cors)) +
-  geom_histogram() +
-  xlab("Correlation between all scores")
+data_combined |>
+  group_by(choice) |>
+  summarize(mean_win = mean(win),
+            mean_loss = mean(loss),
+            mean_balance = mean(balance))
 
 ```
 
-## early and late trials
+### Early and late trials
 
 ```{r}
 
-data_scored_decks_subset <- data_combined |>
+data_scored_deck_choices_subset_long <- data_combined |>
   group_by(id) |>
   mutate(total_trials = max(trial),
          trial_proportion = trial/total_trials) |>
   ungroup() |>
-  mutate(subset = case_when(trial_proportion <= 0.333 ~ "early",   # TODO cutoffs could be varied
-                            trial_proportion >= 0.666 ~ "late")) |>
+  mutate(subset = case_when(trial_proportion <= 0.4 ~ "early",   # TODO cutoffs could be varied
+                            trial_proportion >= 0.4 ~ "late")) |>
   drop_na(subset) |>
   group_by(id, subset) |>
   count(choice) |>
@@ -265,45 +312,19 @@ data_scored_decks_subset <- data_combined |>
          A_plus_B  = A+B,
          C_plus_D_minus_A_plus_B = C_plus_D-A_plus_B) 
 
-data_scored_decks_subset_wide <- data_scored_decks_subset |>
+data_scored_deck_choices_subset <- data_scored_deck_choices_subset_long |>
   pivot_wider(names_from = "subset",
               values_from = c(-id, -subset))
 
-data_scored_decks_combined <- 
-  full_join(data_scored_decks, 
-            data_scored_decks_subset_wide,
-            by = "id")
-
-cors_decks_combined <- data_scored_decks_combined |>
-  select(-id, -C, -C_early, -C_late) |>
-  cor() |>
-  round(2)
-
-diag(cors_decks_combined) <- NA
-
-data_cors_combined_modal <- tibble(cors = as.data.frame(cors_decks_combined)$C_plus_D_minus_A_plus_B) |>
-  drop_na()
-
-ggplot(data_cors_combined_modal, aes(cors)) +
-  geom_histogram() +
-  xlab("Correlation between modal scoring method and other methods")
-
-
-cors_decks_combined[lower.tri(cors_decks_combined, diag = TRUE)] <- NA
-
-data_cors_combined_all <- tibble(cors = cors_decks_combined[upper.tri(cors_decks_combined)])
-
-ggplot(data_cors_combined_all, aes(cors)) +
-  geom_histogram() +
-  xlab("Correlation between all scores")
-
 ```
 
-## diff/proportions between early and late
+### Difference between early and late trials
+
+Inherits the proportion values used to create the early and late subsets from the early/late chunk above. 
 
 ```{r}
 
-data_scored_decks_subset_diff <- data_scored_decks_subset |>
+data_scored_deck_choices_subset_diff <- data_scored_deck_choices_subset_long |>
   pivot_longer(names_to = "variable",
                values_to = "score",
                cols = c(-id, -subset)) |>
@@ -314,35 +335,147 @@ data_scored_decks_subset_diff <- data_scored_decks_subset |>
   pivot_wider(names_from = variable,
               values_from = diff,
               names_prefix = "diff_")
-  
-data_scored_decks_combined_2 <- 
-  full_join(data_scored_decks_combined, 
-            data_scored_decks_subset_diff,
-            by = "id")
 
-cors_decks_combined_2 <- data_scored_decks_combined_2 |>
+```
+
+## Deck switching
+
+### All trials
+
+```{r}
+
+# "trials participants switch decks"
+data_scored_deck_switching_any <- data_combined |>
+  group_by(id) |>
+  mutate(switch_any = choice == lag(choice)) |>
+  summarize(proportion_switch_any = mean(switch_any, na.rm = TRUE))
+
+# "deck switching after loss"
+# proportion of switching vs non switching after loss, excluding trial on which there were not losses. 
+# TODO This assumption of excluding non-loss trials needs checking.
+data_scored_deck_switching_after_loss <- data_combined |>
+  filter(loss_binary == TRUE) |>
+  group_by(id) |>
+  mutate(switch_after_loss = choice == lag(choice)) |>
+  summarize(proportion_switch_after_loss = mean(switch_after_loss, na.rm = TRUE))  
+
+# "card selections from deck A which immediately followed a loss on that deck"
+# proportion of switching away from deck A after a loss on deck A
+data_scored_deck_switching_a_after_loss_on_a <- data_combined |>
+  filter(lag(loss_binary) == TRUE & lag(choice == "A")) |>
+  group_by(id) |>
+  mutate(switch_from_a_after_loss_on_a = choice != "A") |>
+  summarize(proportion_switch_from_a_after_loss_on_a = mean(switch_from_a_after_loss_on_a, na.rm = TRUE))
+
+# "trials participants switch from disadvantageous to advantageous decks after loss (total)"
+# proportion of switching to deck C or D after a loss on A or B
+data_scored_deck_switching_to_cd_after_loss_on_ab <- data_combined |>
+  filter(lag(loss_binary) == TRUE & lag(choice %in% c("A", "B"))) |>
+  group_by(id) |>
+  mutate(switch_to_cd_after_loss_on_ab = choice %in% c("C", "D")) |>
+  summarize(proportion_switch_to_cd_after_loss_on_ab = mean(switch_to_cd_after_loss_on_ab, na.rm = TRUE))
+       
+# combine
+data_scored_deck_switching <- data_scored_deck_switching_any |>
+  full_join(data_scored_deck_switching_after_loss, by = "id") |>
+  full_join(data_scored_deck_switching_a_after_loss_on_a, by = "id") |>
+  full_join(data_scored_deck_switching_to_cd_after_loss_on_ab, by = "id")
+
+```
+
+### Early and late trials
+
+Not observed in literature, but plausible. To implement or not?
+
+```{r}
+
+# TODO
+
+```
+
+### Difference between early and late trials
+
+Not observed in literature, but plausible. To implement or not?
+
+```{r}
+
+# TODO
+
+```
+
+## Combine
+
+```{r}
+
+data_scored_combined <- data_scored_winloss |>
+  full_join(data_scored_deck_choices,             by = "id") |>
+  full_join(data_scored_deck_choices_subset,      by = "id") |>
+  full_join(data_scored_deck_choices_subset_diff, by = "id") |>
+  full_join(data_scored_deck_switching,           by = "id")
+
+```
+
+# Correlate scores
+
+```{r}
+
+# count scoring strategies
+n_scoring_strategies <- data_scored_combined |>
+  select(-id, -C, -C_early, -C_late, -diff_C) |>
+  colnames() |>
+  length()
+
+paste("Number of scoring strategies:", n_scoring_strategies)
+
+# Correlation table
+cors_decks_combined <- data_scored_combined |>
   select(-id, -C, -C_early, -C_late, -diff_C) |>
   cor() |>
   round(2)
 
-diag(cors_decks_combined_2) <- NA
+diag(cors_decks_combined) <- NA
 
-data_cors_combined_2_modal <- 
-  tibble(cors = as.data.frame(cors_decks_combined_2)$C_plus_D_minus_A_plus_B) |>
+# Correlation between modal scoring method and all others
+data_cors_combined_modal <- 
+  tibble(cors = as_tibble(cors_decks_combined)$C_plus_D_minus_A_plus_B) |>
   drop_na()
 
-ggplot(data_cors_combined_2_modal, aes(cors)) +
+## native 
+ggplot(data_cors_combined_modal, aes(cors)) +
   geom_histogram() +
-  xlab("Correlation between modal scoring method and other methods")
+  ggtitle("Correlation between modal scoring method and all other methods") +
+  xlab(expression(paste("Pearson's ",italic("r")))) +
+  xlim(-1,1) +
+  theme_bw()
 
-
-cors_decks_combined_2[lower.tri(cors_decks_combined_2, diag = TRUE)] <- NA
-
-data_cors_combined_2 <- tibble(cors = cors_decks_combined_2[upper.tri(cors_decks_combined_2)])
-
-ggplot(data_cors_combined_2, aes(cors)) +
+## absolute
+ggplot(data_cors_combined_modal, aes(abs(cors))) +
   geom_histogram() +
-  xlab("Correlation between scores")
+  ggtitle("Absolute correlation between modal scoring method and all other methods") +
+  xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
+  xlim(0,1) +
+  theme_bw()
+
+# Correlation between all scoring methods
+cors_decks_combined[lower.tri(cors_decks_combined, diag = TRUE)] <- NA
+
+data_cors_combined <- tibble(cors = cors_decks_combined[upper.tri(cors_decks_combined)])
+
+## native 
+ggplot(data_cors_combined, aes(cors)) +
+  geom_histogram() +
+  ggtitle("Correlation between all scoring methods") +
+  xlab(expression(paste("Pearson's ",italic("r")))) +
+  xlim(-1,1) +
+  theme_bw()
+
+## absolute
+ggplot(data_cors_combined, aes(cors)) +
+  geom_histogram() +
+  ggtitle("Absolute correlation between all scoring methods") +
+  xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
+  xlim(0,1) +
+  theme_bw()
 
 ```
 
@@ -350,54 +483,54 @@ ggplot(data_cors_combined_2, aes(cors)) +
 
 ```{r}
 
-library(EGAnet)
-
-dat <- data_scored_decks_combined |>
-  rename(A = A, 
-         B = C, 
-         C = C_plus_A, 
-         D = C_minus_A, 
-         E = C_plus_A_late, 
-         F = A_late, 
-         G = C_minus_A_late, 
-         H = C_late, 
-         
-         I = C_minus_A_early, 
-         J = A_early, 
-         K = C_early, 
-         L = C_plus_A_early, 
-         
-         M = D_minus_B_early, 
-         N = D_early, 
-         O = B_early, 
-         P = D_plus_B_early, 
-         Q = C_plus_D_early, 
-         R = A_plus_B_early, 
-         S = C_plus_D_minus_A_plus_B_early, 
-
-         T = B, 
-         U = D, 
-         V = D_plus_B, 
-         W = D_minus_B, 
-         X = C_plus_D, 
-         Y = A_plus_B, 
-         Z = C_plus_D_minus_A_plus_B, 
-         A1 = B_late, 
-         B1 = D_late, 
-         C1 = D_plus_B_late,
-         D1 = D_minus_B_late,
-         E1 = C_plus_D_late,
-         F1 = A_plus_B_late,
-         G1 = C_plus_D_minus_A_plus_B_late)
-
-fit <- EGA(data = dat, cor = "pearson")
-
-
-
-dat <- data_scored_decks_combined |>
-  select(-id, -contains("early"), -contains("late")) 
-
-fit <- EGA(data = dat, cor = "pearson")
+# library(EGAnet)
+# 
+# dat <- data_scored_deck_choices_combined |>
+#   rename(A = A, 
+#          B = C, 
+#          C = C_plus_A, 
+#          D = C_minus_A, 
+#          E = C_plus_A_late, 
+#          F = A_late, 
+#          G = C_minus_A_late, 
+#          H = C_late, 
+#          
+#          I = C_minus_A_early, 
+#          J = A_early, 
+#          K = C_early, 
+#          L = C_plus_A_early, 
+#          
+#          M = D_minus_B_early, 
+#          N = D_early, 
+#          O = B_early, 
+#          P = D_plus_B_early, 
+#          Q = C_plus_D_early, 
+#          R = A_plus_B_early, 
+#          S = C_plus_D_minus_A_plus_B_early, 
+# 
+#          T = B, 
+#          U = D, 
+#          V = D_plus_B, 
+#          W = D_minus_B, 
+#          X = C_plus_D, 
+#          Y = A_plus_B, 
+#          Z = C_plus_D_minus_A_plus_B, 
+#          A1 = B_late, 
+#          B1 = D_late, 
+#          C1 = D_plus_B_late,
+#          D1 = D_minus_B_late,
+#          E1 = C_plus_D_late,
+#          F1 = A_plus_B_late,
+#          G1 = C_plus_D_minus_A_plus_B_late)
+# 
+# fit <- EGA(data = dat, cor = "pearson")
+# 
+# 
+# 
+# dat <- data_scored_deck_choices_combined |>
+#   select(-id, -contains("early"), -contains("late")) 
+# 
+# fit <- EGA(data = dat, cor = "pearson")
 
 ```
 
