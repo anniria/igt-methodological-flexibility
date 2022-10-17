@@ -11,6 +11,11 @@ output:
     toc_float: yes
 ---
 
+# TODO
+
+- correct wins/losses scoring methods for number of trials in the task
+
+
 ```{r, include=FALSE}
 knitr::opts_chunk$set(message = FALSE,
                       warning = FALSE)
@@ -34,384 +39,7 @@ round_df <- function(df, n_digits = 3) {
 }
 
 # get data
-load("../../data/raw/multiverse/IGTdata.rdata")
-
-```
-
-# Score items
-
-## Win/loss
-
-```{r}
-
-data_wins <- 
-  bind_rows(
-    wi_100 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "win") |>
-      mutate(trial = as.numeric(str_remove(trial, "Wins_")),
-             id = paste("100trials", id, sep = "_")),
-    wi_95 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "win") |>
-      mutate(trial = as.numeric(str_remove(trial, "Wins_")),
-             id = paste("95trials", id, sep = "_")),
-    wi_150 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "win") |>
-      mutate(trial = as.numeric(str_remove(trial, "Wins_")),
-             id = paste("150trials", id, sep = "_"))
-  )
-
-data_losses <- 
-  bind_rows(
-    lo_100 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "loss") |>
-      mutate(trial = as.numeric(str_remove(trial, "Losses_")),
-             id = paste("100trials", id, sep = "_")),
-    lo_95 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "loss") |>
-      mutate(trial = as.numeric(str_remove(trial, "Losses_")),
-             id = paste("95trials", id, sep = "_")),
-    lo_150 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "loss") |>
-      mutate(trial = as.numeric(str_remove(trial, "Losses_")),
-             id = paste("150trials", id, sep = "_"))
-  )
-
-data_winloss <- 
-  full_join(data_wins, data_losses, by = c("id", "trial")) |>
-  # dichotomise - TODO check logic 
-  mutate(balance = win + loss, 
-         win_binary = ifelse(win > 50, 1, 0),  # TODO is > 50 right here?
-         loss_binary = ifelse(loss < 0, 1, 0),
-         advantagous = ifelse(balance > 0, 1, 0),
-         disadvantagous = ifelse(balance < 0, 1, 0))
-
-# check that no advantagous==1 & disadvantagous==1 exist
-data_winloss |>
-  count(advantagous, disadvantagous)
-
-```
-
-## Choices
-
-This assumes 1 = A, 2 = B etc. Check against the paper?
-
-```{r}
-
-data_choice <- 
-  bind_rows(
-    choice_100 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "choice") |>
-      mutate(trial = as.numeric(str_remove(trial, "Choice_")),
-             id = paste("100trials", id, sep = "_")),
-    choice_95 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "choice") |>
-      mutate(trial = as.numeric(str_remove(trial, "Choice_")),
-             id = paste("95trials", id, sep = "_")),
-    choice_150 |>
-      as.tibble() |>
-      rownames_to_column(var = "id") |>
-      pivot_longer(cols = -id,
-                   names_to = "trial",
-                   values_to = "choice") |>
-      mutate(trial = as.numeric(str_remove(trial, "Choice_")),
-             id = paste("150trials", id, sep = "_"))
-  ) |>
-  mutate(choice = as.factor(case_when(choice == 1 ~ "A",
-                                      choice == 2 ~ "B",
-                                      choice == 3 ~ "C",
-                                      choice == 4 ~ "D")))
-
-```
-
-## Combine
-
-```{r}
-
-data_combined <- full_join(data_winloss, data_choice, by = c("id", "trial"))
-
-```
-
-# Score participants
-
-## (Dis)advantageous choices 
-
-TODO MAP THESE ONTO SCORING STRATEGIES, NOT SURE IF NEEDED
-
-### All trials
-
-```{r}
-
-# data_scored_advantage <- data_combined |>
-#   group_by(id) |>
-#   summarize(mean_advantagous = mean(advantagous),
-#             mean_disadvantagous = mean(disadvantagous)) |>
-#   ungroup() |>
-#   mutate(diff = mean_advantagous - mean_disadvantagous)
-# 
-# data_scored_advantage |>
-#   select(-id) |>
-#   cor() |>
-#   round(2)
-# 
-# data_scored_advantage |>
-#   pivot_longer(cols = -id) |>
-#   ggplot(aes(value)) +
-#   geom_density() +
-#   facet_wrap(~name)
-
-```
-
-### Early and late trials 
-
-Not observed in literature, but plausible. 
-
-```{r}
-
-# TODO
-
-```
-
-### Difference between early and late trials
-
-Observed in literature, but simple early and late are not. 
-
-```{r}
-
-# TODO
-
-```
-
-## Wins/losses
-
-Ignores starting capital
-
-### All trials
-
-```{r}
-
-data_scored_winloss <- data_combined |>
-  group_by(id) |>
-  summarize(total_won = sum(win),
-            total_lost = sum(loss)) |>
-  ungroup() |>
-  mutate(total_won_minus_lost = total_won + total_lost)
-
-```
-
-### Early and late trials 
-
-Not observed in literature, but plausible. To implement or not?
-
-```{r}
-
-# TODO
-
-```
-
-### Difference between early and late trials
-
-Not observed in literature, but plausible. To implement or not?
-
-```{r}
-
-# TODO
-
-```
-
-## Deck choice counts
-
-### All trials
-
-```{r}
-
-data_scored_deck_choices <- data_combined |>
-  group_by(id) |>
-  count(choice) |>
-  pivot_wider(names_from = choice,
-              values_from = n) |>
-  ungroup() |>
-  mutate(A = ifelse(is.na(A), 0, A),
-         B = ifelse(is.na(B), 0, B),
-         C = ifelse(is.na(C), 0, C),
-         D = ifelse(is.na(D), 0, D)) |>
-  mutate(C_plus_A  = C+A,
-         C_minus_A = C-A,
-         D_plus_B  = D+B,
-         D_minus_B = D-B,
-         C_plus_D  = C+D,
-         A_plus_B  = A+B,
-         C_plus_D_minus_A_plus_B = C_plus_D-A_plus_B,
-         C_plus_D_divided_by_A_plus_B = C_plus_D/A_plus_B)
-
-data_combined |>
-  group_by(choice) |>
-  summarize(mean_win = mean(win),
-            mean_loss = mean(loss),
-            mean_balance = mean(balance))
-
-```
-
-### Early and late trials
-
-```{r}
-
-data_scored_deck_choices_subset_long <- data_combined |>
-  group_by(id) |>
-  mutate(total_trials = max(trial),
-         trial_proportion = trial/total_trials) |>
-  ungroup() |>
-  mutate(subset = case_when(trial_proportion <= 0.4 ~ "early",   # TODO cutoffs could be varied
-                            trial_proportion >= 0.4 ~ "late")) |>
-  drop_na(subset) |>
-  group_by(id, subset) |>
-  count(choice) |>
-  pivot_wider(names_from = choice,
-              values_from = n) |>
-  ungroup() |>
-  mutate(A = ifelse(is.na(A), 0, A),
-         B = ifelse(is.na(B), 0, B),
-         C = ifelse(is.na(C), 0, C),
-         D = ifelse(is.na(D), 0, D)) |>
-  mutate(C_plus_A  = C+A,
-         C_minus_A = C-A,
-         D_plus_B  = D+B,
-         D_minus_B = D-B,
-         C_plus_D  = C+D,
-         A_plus_B  = A+B,
-         C_plus_D_minus_A_plus_B = C_plus_D-A_plus_B) 
-
-data_scored_deck_choices_subset <- data_scored_deck_choices_subset_long |>
-  pivot_wider(names_from = "subset",
-              values_from = c(-id, -subset))
-
-```
-
-### Difference between early and late trials
-
-Inherits the proportion values used to create the early and late subsets from the early/late chunk above. 
-
-```{r}
-
-data_scored_deck_choices_subset_diff <- data_scored_deck_choices_subset_long |>
-  pivot_longer(names_to = "variable",
-               values_to = "score",
-               cols = c(-id, -subset)) |>
-  pivot_wider(names_from = subset, 
-              values_from = score) |>
-  mutate(diff = late - early) |>
-  select(-early, -late) |>
-  pivot_wider(names_from = variable,
-              values_from = diff,
-              names_prefix = "diff_")
-
-```
-
-## Deck switching
-
-### All trials
-
-```{r}
-
-# "trials participants switch decks"
-data_scored_deck_switching_any <- data_combined |>
-  group_by(id) |>
-  mutate(switch_any = choice == lag(choice)) |>
-  summarize(proportion_switch_any = mean(switch_any, na.rm = TRUE))
-
-# "deck switching after loss"
-# proportion of switching vs non switching after loss, excluding trial on which there were not losses. 
-# TODO This assumption of excluding non-loss trials needs checking.
-data_scored_deck_switching_after_loss <- data_combined |>
-  filter(loss_binary == TRUE) |>
-  group_by(id) |>
-  mutate(switch_after_loss = choice == lag(choice)) |>
-  summarize(proportion_switch_after_loss = mean(switch_after_loss, na.rm = TRUE))  
-
-# "card selections from deck A which immediately followed a loss on that deck"
-# proportion of switching away from deck A after a loss on deck A
-data_scored_deck_switching_a_after_loss_on_a <- data_combined |>
-  filter(lag(loss_binary) == TRUE & lag(choice == "A")) |>
-  group_by(id) |>
-  mutate(switch_from_a_after_loss_on_a = choice != "A") |>
-  summarize(proportion_switch_from_a_after_loss_on_a = mean(switch_from_a_after_loss_on_a, na.rm = TRUE))
-
-# "trials participants switch from disadvantageous to advantageous decks after loss (total)"
-# proportion of switching to deck C or D after a loss on A or B
-data_scored_deck_switching_to_cd_after_loss_on_ab <- data_combined |>
-  filter(lag(loss_binary) == TRUE & lag(choice %in% c("A", "B"))) |>
-  group_by(id) |>
-  mutate(switch_to_cd_after_loss_on_ab = choice %in% c("C", "D")) |>
-  summarize(proportion_switch_to_cd_after_loss_on_ab = mean(switch_to_cd_after_loss_on_ab, na.rm = TRUE))
-       
-# combine
-data_scored_deck_switching <- data_scored_deck_switching_any |>
-  full_join(data_scored_deck_switching_after_loss, by = "id") |>
-  full_join(data_scored_deck_switching_a_after_loss_on_a, by = "id") |>
-  full_join(data_scored_deck_switching_to_cd_after_loss_on_ab, by = "id")
-
-```
-
-### Early and late trials
-
-Not observed in literature, but plausible. To implement or not?
-
-```{r}
-
-# TODO
-
-```
-
-### Difference between early and late trials
-
-Not observed in literature, but plausible. To implement or not?
-
-```{r}
-
-# TODO
-
-```
-
-## Combine
-
-```{r}
-
-data_scored_combined <- data_scored_winloss |>
-  full_join(data_scored_deck_choices,             by = "id") |>
-  full_join(data_scored_deck_choices_subset,      by = "id") |>
-  full_join(data_scored_deck_choices_subset_diff, by = "id") |>
-  full_join(data_scored_deck_switching,           by = "id")
+data_processed_participant_level <- read_csv("../../data/processed/multiverse/data_processed_participant_level.csv")
 
 ```
 
@@ -420,7 +48,7 @@ data_scored_combined <- data_scored_winloss |>
 ```{r}
 
 # count scoring strategies
-n_scoring_strategies <- data_scored_combined |>
+n_scoring_strategies <- data_processed_participant_level |>
   select(-id, -C, -C_early, -C_late, -diff_C) |>
   colnames() |>
   length()
@@ -428,12 +56,18 @@ n_scoring_strategies <- data_scored_combined |>
 paste("Number of scoring strategies:", n_scoring_strategies)
 
 # Correlation table
-cors_decks_combined <- data_scored_combined |>
+cors_decks_combined <- data_processed_participant_level |>
   select(-id, -C, -C_early, -C_late, -diff_C) |>
   cor() |>
   round(2)
 
 diag(cors_decks_combined) <- NA
+
+```
+
+## Between modal scoring strategy and all others 
+
+```{r}
 
 # Correlation between modal scoring method and all others
 data_cors_combined_modal <- 
@@ -442,7 +76,7 @@ data_cors_combined_modal <-
 
 ## native 
 ggplot(data_cors_combined_modal, aes(cors)) +
-  geom_histogram() +
+  geom_histogram(binwidth = 0.1) +
   ggtitle("Correlation between modal scoring method and all other methods") +
   xlab(expression(paste("Pearson's ",italic("r")))) +
   xlim(-1,1) +
@@ -450,11 +84,17 @@ ggplot(data_cors_combined_modal, aes(cors)) +
 
 ## absolute
 ggplot(data_cors_combined_modal, aes(abs(cors))) +
-  geom_histogram() +
+  geom_histogram(binwidth = 0.1) +
   ggtitle("Absolute correlation between modal scoring method and all other methods") +
   xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
   xlim(0,1) +
   theme_bw()
+
+```
+
+## Between all scoring methods
+
+```{r}
 
 # Correlation between all scoring methods
 cors_decks_combined[lower.tri(cors_decks_combined, diag = TRUE)] <- NA
