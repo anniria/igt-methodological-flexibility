@@ -1,0 +1,460 @@
+---
+title: "IGT false positive rate simulation"
+author: "Ian Hussey"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+# TODO
+
+- Add another lapply layer and a nest() to add multiple runs of the simulation ß
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+```
+
+# Get data
+
+```{r}
+
+# dependencies
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+#library(sjPlot)
+#library(forcats)
+library(janitor)
+
+# function to round all numeric vars in a data frame
+round_df <- function(df, n_digits = 3) {
+  df %>% mutate_if(is.numeric, janitor::round_half_up, digits = n_digits)
+}
+
+# get data
+# data_processed_participant_level <- read_csv("../../data/processed/multiverse/data_processed_participant_level.csv")
+
+# data_processed_trial_level <- read_csv("../../data/processed/multiverse/data_processed_trial_level.csv")
+
+# data_processed_trial_level |>
+#   filter(str_detect(id, "100trials_")) |>
+#   count(choice, win)
+
+```
+
+# Simulate data
+
+```{r}
+
+# A_loss <- c(    0,    0, -150,    0, -300,    0, -200,    0, -250, -350, 
+#                 0, -350,    0, -250, -200,    0, -300, -150,    0,    0, 
+#                 0, -300,    0, -350,    0, -200, -250, -150,    0,    0, 
+#              -350, -200, -250,    0,    0,    0, -150, -300,    0,    0)
+# 
+# B_loss <- c(    0,    0,    0,    0,    0,    0,    0,    0,-1250,    0, 
+#                 0,    0,    0,-1250,    0,    0,    0,    0,    0,    0, 
+#             -1250,    0,    0,    0,    0,    0,    0,    0,    0,    0, 
+#                 0,-1250,    0,    0,    0,    0,    0,    0,    0,    0)
+# 
+# C_loss <- c(    0,    0,  -50,    0,  -50,    0,  -50,    0,  -50,  -50, 
+#                 0,  -25,  -75,    0,    0,    0,  -25,  -75,    0,  -50, 
+#                 0,    0,    0,  -50,  -25,  -50,    0,    0,  -75,  -50, 
+#                 0,    0,    0,  -25,  -25,    0,  -75,    0,  -50,  -75)
+# 
+# D_loss <- c(    0,    0,    0,    0,    0,    0,    0,    0,    0, -250, 
+#                 0,    0,    0,    0,    0,    0,    0,    0,    0, -250, 
+#                 0,    0,    0,    0,    0,    0,    0,    0, -250,    0, 
+#                 0,    0,    0,    0, -250,    0,    0,    0,    0,    0)
+
+# A_loss_x3 <- rep(A_loss, 3)
+# B_loss_x3 <- rep(B_loss, 3)
+# C_loss_x3 <- rep(C_loss, 3)
+# D_loss_x3 <- rep(D_loss, 3)
+
+# # pop code
+# A_pop <- A_loss_x3[1]
+# A_loss_x3 <- A_loss_x3[-1]
+# A_pop
+# A_loss_x3
+
+
+# data_simulated_trial_level <- 
+#   tibble(
+#     id =iterations_vector[[i]],
+#     trial = seq(1, 100),
+#     block = c(rep(1, 20), rep(2, 20), rep(3, 20), rep(4, 20), rep(5, 20)),
+#     choice = sample(c("A", "B", "C", "D"), 100, replace = TRUE)
+#   ) |>
+#   rowwise() |>
+#   # implement original version of the IGT task as in Bechara et al. 1994
+#   mutate(
+#     win = case_when(
+#       choice == "A" ~ 100,
+#       choice == "B" ~ 100,
+#       choice == "C" ~  50,
+#       choice == "D" ~  50
+#     ),
+#     loss = case_when(
+#       choice == "A" ~ sample(A_loss, size = 1),
+#       choice == "B" ~ sample(B_loss, size = 1),
+#       choice == "C" ~ sample(C_loss, size = 1),
+#       choice == "D" ~ sample(D_loss, size = 1),
+#     )
+#   ) |>
+#   ungroup() |>
+#   # dichotomise - TODO check logic
+#   mutate(balance        = win + loss,
+#          win_binary     = ifelse(win     > 50, 1, 0),  # TODO is > 50 right here?
+#          loss_binary    = ifelse(loss    <  0, 1, 0),
+#          advantagous    = ifelse(balance >  0, 1, 0),
+#          disadvantagous = ifelse(balance <  0, 1, 0))
+
+
+simulate_data <- function(n_participants){
+  
+  # implement original version of the IGT task as in Bechara et al. 1994
+  # with exception of randomly sampling the losses rather than delivering them in a fixed order
+  
+  # set up vectors for loops
+  participants_vector <- seq(1:n_participants)
+  
+  A_loss <- c(    0,    0, -150,    0, -300,    0, -200,    0, -250, -350, 
+                  0, -350,    0, -250, -200,    0, -300, -150,    0,    0, 
+                  0, -300,    0, -350,    0, -200, -250, -150,    0,    0, 
+               -350, -200, -250,    0,    0,    0, -150, -300,    0,    0)
+
+  B_loss <- c(    0,    0,    0,    0,    0,    0,    0,    0,-1250,    0, 
+                  0,    0,    0,-1250,    0,    0,    0,    0,    0,    0, 
+              -1250,    0,    0,    0,    0,    0,    0,    0,    0,    0, 
+                  0,-1250,    0,    0,    0,    0,    0,    0,    0,    0)
+  
+  C_loss <- c(    0,    0,  -50,    0,  -50,    0,  -50,    0,  -50,  -50, 
+                  0,  -25,  -75,    0,    0,    0,  -25,  -75,    0,  -50, 
+                  0,    0,    0,  -50,  -25,  -50,    0,    0,  -75,  -50, 
+                  0,    0,    0,  -25,  -25,    0,  -75,    0,  -50,  -75)
+  
+  D_loss <- c(    0,    0,    0,    0,    0,    0,    0,    0,    0, -250, 
+                  0,    0,    0,    0,    0,    0,    0,    0,    0, -250, 
+                  0,    0,    0,    0,    0,    0,    0,    0, -250,    0, 
+                  0,    0,    0,    0, -250,    0,    0,    0,    0,    0)
+  
+  simulated_data <- 
+    lapply(
+      seq_along(participants_vector), 
+      function(i){
+        tibble(id     = participants_vector[[i]],
+               trial  = seq(1, 100),
+               block  = c(rep(1, 20), rep(2, 20), rep(3, 20), rep(4, 20), rep(5, 20)),
+               choice = sample(c("A", "B", "C", "D"), 100, replace = TRUE)) |>
+          rowwise() |>
+          mutate(
+            win = case_when(
+              choice == "A" ~ 100,
+              choice == "B" ~ 100,
+              choice == "C" ~  50,
+              choice == "D" ~  50
+            ),
+            loss = case_when(
+              choice == "A" ~ sample(A_loss, size = 1),
+              choice == "B" ~ sample(B_loss, size = 1),
+              choice == "C" ~ sample(C_loss, size = 1),
+              choice == "D" ~ sample(D_loss, size = 1),
+            )
+          ) |>
+          ungroup() |>
+          # dichotomise - TODO check logic
+          mutate(balance        = win + loss,
+                 win_binary     = ifelse(win     > 50, 1, 0),  # TODO is > 50 right here?
+                 loss_binary    = ifelse(loss    <  0, 1, 0),
+                 advantagous    = ifelse(balance >  0, 1, 0),
+                 disadvantagous = ifelse(balance <  0, 1, 0))
+      } 
+    ) |>
+    dplyr::bind_rows() 
+  
+  return(simulated_data)
+}
+
+#data_processed_trial_level <- simulate_data(n_participants = 50)
+
+```
+
+# Score participants
+
+```{r}
+
+score_igt <- function(trial_level_data){
+  
+  ## (Dis)advantageous choices 
+  
+  ### All trials
+  
+  # TODO MAP THESE ONTO SCORING STRATEGIES, NOT SURE IF NEEDED
+  
+  # TODO need to correct these for number of trials
+  # data_scored_advantage <- trial_level_data |>
+  #   group_by(id) |>
+  #   summarize(mean_advantagous = mean(advantagous),
+  #             mean_disadvantagous = mean(disadvantagous)) |>
+  #   ungroup() |>
+  #   mutate(diff = mean_advantagous - mean_disadvantagous)
+  # 
+  # data_scored_advantage |>
+  #   select(-id) |>
+  #   cor() |>
+  #   round(2)
+  # 
+  # data_scored_advantage |>
+  #   pivot_longer(cols = -id) |>
+  #   ggplot(aes(value)) +
+  #   geom_density() +
+  #   facet_wrap(~name)
+  
+  ### Early and late trials 
+  
+  #Not observed in literature, but plausible. 
+  
+  # TODO
+  
+  
+  
+  ### Difference between early and late trials
+  
+  #Observed in literature, but simple early and late are not. 
+  
+  # TODO
+  
+  ## Wins/losses
+  
+  #Ignores starting capital
+  
+  ### All trials
+  
+  # TODO need to correct these for number of trials
+  data_scored_winloss <- trial_level_data |>
+    group_by(id) |>
+    summarize(total_won = sum(win),
+              total_lost = sum(loss)) |>
+    ungroup() |>
+    mutate(total_won_minus_lost = total_won + total_lost)
+  
+  ### Early and late trials 
+  
+  #Not observed in literature, but plausible. To implement or not?
+  
+  # TODO
+  
+  ### Difference between early and late trials
+  
+  #Not observed in literature, but plausible. To implement or not?
+  
+  # TODO
+  
+  ## Deck choice counts
+  
+  ### All trials
+  
+  data_scored_deck_choices <- trial_level_data |>
+    group_by(id) |>
+    count(choice) |>
+    pivot_wider(names_from = choice,
+                values_from = n) |>
+    ungroup() |>
+    # replacing NA with 0
+    mutate(A = ifelse(is.na(A), 0, A),
+           B = ifelse(is.na(B), 0, B),
+           C = ifelse(is.na(C), 0, C),
+           D = ifelse(is.na(D), 0, D)) |>
+    # convert counts to proportions to control for number of trials
+    mutate(total = A+B+C+D,
+           A = A/total,
+           B = B/total,
+           C = C/total,
+           D = D/total) |>
+    select(-total) |>
+    mutate(C_plus_A  = C+A,
+           C_minus_A = C-A,
+           D_plus_B  = D+B,
+           D_minus_B = D-B,
+           C_plus_D  = C+D,
+           A_plus_B  = A+B,
+           C_plus_D_minus_A_plus_B = C_plus_D-A_plus_B,
+           C_plus_D_divided_by_A_plus_B = C_plus_D/A_plus_B)
+  
+  
+  ### Early and late trials
+  
+  data_scored_deck_choices_subset_long <- trial_level_data |>
+    group_by(id) |>
+    mutate(total_trials = max(trial),
+           trial_proportion = trial/total_trials) |>
+    ungroup() |>
+    mutate(subset = case_when(trial_proportion <= 0.4 ~ "early",   # TODO cutoffs could be varied
+                              trial_proportion >= 0.4 ~ "late")) |>
+    drop_na(subset) |>
+    group_by(id, subset) |>
+    count(choice) |>
+    pivot_wider(names_from = choice,
+                values_from = n) |>
+    ungroup() |>
+    # replacing NA with 0
+    mutate(A = ifelse(is.na(A), 0, A),
+           B = ifelse(is.na(B), 0, B),
+           C = ifelse(is.na(C), 0, C),
+           D = ifelse(is.na(D), 0, D)) |>
+    # convert counts to proportions to control for number of trials
+    mutate(total = A+B+C+D,
+           A = A/total,
+           B = B/total,
+           C = C/total,
+           D = D/total) |>
+    select(-total) |>
+    mutate(C_plus_A  = C+A,
+           C_minus_A = C-A,
+           D_plus_B  = D+B,
+           D_minus_B = D-B,
+           C_plus_D  = C+D,
+           A_plus_B  = A+B,
+           C_plus_D_minus_A_plus_B = C_plus_D-A_plus_B) 
+  
+  data_scored_deck_choices_subset <- data_scored_deck_choices_subset_long |>
+    pivot_wider(names_from = "subset",
+                values_from = c(-id, -subset))
+  
+  
+  ### Difference between early and late trials
+  
+  #Inherits the proportion values used to create the early and late subsets from the early/late chunk above. 
+  
+  data_scored_deck_choices_subset_diff <- data_scored_deck_choices_subset_long |>
+    pivot_longer(names_to = "variable",
+                 values_to = "score",
+                 cols = c(-id, -subset)) |>
+    pivot_wider(names_from = subset, 
+                values_from = score) |>
+    mutate(diff = late - early) |>
+    select(-early, -late) |>
+    pivot_wider(names_from = variable,
+                values_from = diff,
+                names_prefix = "diff_")
+  
+  ## Deck switching
+  
+  ### All trials
+  
+  # "trials participants switch decks"
+  data_scored_deck_switching_any <- trial_level_data |>
+    group_by(id) |>
+    mutate(switch_any = choice == lag(choice)) |>
+    summarize(proportion_switch_any = mean(switch_any, na.rm = TRUE))
+  
+  # "deck switching after loss"
+  # proportion of switching vs non switching after loss, excluding trial on which there were not losses. 
+  # TODO This assumption of excluding non-loss trials needs checking.
+  data_scored_deck_switching_after_loss <- trial_level_data |>
+    filter(loss_binary == TRUE) |>
+    group_by(id) |>
+    mutate(switch_after_loss = choice == lag(choice)) |>
+    summarize(proportion_switch_after_loss = mean(switch_after_loss, na.rm = TRUE))  
+  
+  # "card selections from deck A which immediately followed a loss on that deck"
+  # proportion of switching away from deck A after a loss on deck A
+  data_scored_deck_switching_a_after_loss_on_a <- trial_level_data |>
+    filter(lag(loss_binary) == TRUE & lag(choice == "A")) |>
+    group_by(id) |>
+    mutate(switch_from_a_after_loss_on_a = choice != "A") |>
+    summarize(proportion_switch_from_a_after_loss_on_a = mean(switch_from_a_after_loss_on_a, na.rm = TRUE))
+  
+  # "trials participants switch from disadvantageous to advantageous decks after loss (total)"
+  # proportion of switching to deck C or D after a loss on A or B
+  data_scored_deck_switching_to_cd_after_loss_on_ab <- trial_level_data |>
+    filter(lag(loss_binary) == TRUE & lag(choice %in% c("A", "B"))) |>
+    group_by(id) |>
+    mutate(switch_to_cd_after_loss_on_ab = choice %in% c("C", "D")) |>
+    summarize(proportion_switch_to_cd_after_loss_on_ab = mean(switch_to_cd_after_loss_on_ab, na.rm = TRUE))
+  
+  # combine
+  data_scored_deck_switching <- data_scored_deck_switching_any |>
+    full_join(data_scored_deck_switching_after_loss, by = "id") |>
+    full_join(data_scored_deck_switching_a_after_loss_on_a, by = "id") |>
+    full_join(data_scored_deck_switching_to_cd_after_loss_on_ab, by = "id")
+  
+  ### Early and late trials
+  
+  #Not observed in literature, but plausible. To implement or not?
+  
+  # TODO
+  
+  ### Difference between early and late trials
+  
+  #Not observed in literature, but plausible. To implement or not?
+  
+  # TODO
+  
+  ## Combine
+  
+  data_processed_participant_level <- data_scored_winloss |>
+    full_join(data_scored_deck_choices,             by = "id") |>
+    full_join(data_scored_deck_choices_subset,      by = "id") |>
+    full_join(data_scored_deck_choices_subset_diff, by = "id") |>
+    full_join(data_scored_deck_switching,           by = "id") |>
+    # simulate criterion variable
+    mutate(criterion = rnorm(n = n())) 
+  
+  return(data_processed_participant_level)
+}
+
+#data_processed_participant_level <- score_igt(data_processed_trial_level)
+
+```
+
+# Analyses
+
+## Correlate scores
+
+```{r}
+
+results <- 
+  # generate data
+  simulate_data(n_participants = 50) |>
+  # score data
+  score_igt() |>
+  # analyze data
+  pivot_longer(cols      = c(-id, -criterion),
+               names_to  = "scoring_method",
+               values_to = "score") |>
+  group_by(scoring_method) %>%
+  do(broom::tidy(cor.test(x = .$criterion, y = .$score, method = "pearson"))) |>
+  ungroup()
+
+ggplot(results, aes(estimate)) +
+  geom_histogram(binwidth = 0.05) +
+  ggtitle("Correlation between criterion and all IGT scores") +
+  xlab(expression(paste("Pearson's ",italic("r")))) +
+  xlim(-1,1) +
+  theme_bw()
+
+results |>
+  summarize(false_positive_rate = janitor::round_half_up(mean(p.value < .05), 3),
+            max_absolute_correlation = janitor::round_half_up(max(abs(estimate)), 2)) |>
+  gather() |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+```
+
+
+
+
+
+
+
+
+
+
