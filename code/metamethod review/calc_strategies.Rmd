@@ -2,9 +2,6 @@
 
 ```{r}
 
-# set working directory
-setwd("../data/raw")
-
 # load r packages
 library(openxlsx)
 library(psych)
@@ -13,7 +10,7 @@ library(dplyr)
 library(ggplot2)
 library(DescTools)
 # read excel file
-igtdata <- read.xlsx("igt_flex_coding.xlsx")
+igtdata <- read.xlsx("../../data/raw/metamethod review/igt_flex_coding.xlsx")
 
 ```
 
