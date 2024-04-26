@@ -6,7 +6,7 @@ A study on methodological flexibility in the use of the Iowa Gambling Task.
 
 ## Authors
 
-Annika Külpmann, Ian Hussey, Malte Elson.
+Annika Külpmann, Jan-Paul Ries, Ian Hussey, Malte Elson.
 
 
 
