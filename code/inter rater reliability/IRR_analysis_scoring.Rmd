@@ -1,0 +1,180 @@
+---
+title: "Inter Rater Reliability Scoring"
+author: "Annika Kuelpmann"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+---
+
+```{r setup}
+#| include: false
+
+# load knitr 
+library(knitr)
+
+# set knitr chunk options 
+opts_chunk$set(echo = TRUE,
+                message = FALSE,
+                warning = FALSE)
+```
+
+## Load Packages
+
+```{r packages}
+#| echo: false
+
+# load packages
+library(readxl)
+library(conflicted)
+library(tidyverse)
+library(irr)
+library(lpSolve)
+
+# set preferred options 
+conflicts_prefer(dplyr::filter)
+```
+
+## Data Preparation
+
+```{r data prep}
+#| echo: false
+
+# read data files
+data_r1 <- read_xlsx("../../data/raw/metamethod review/codebook - rater 1/r1_scoring_aligned.xlsx")
+data_r2 <- read_xlsx("../../data/raw/metamethod review/codebook - rater 2/r2_scoring_aligned.xlsx")
+
+# align data types
+data_r1 <- data_r1 %>%
+  mutate(score_count = as.numeric(score_count)) %>%
+  mutate(score_id_new = as.character(score_id_new)) 
+data_r2 <- data_r2 %>%
+  mutate(score_count = as.numeric(score_count)) %>%
+  mutate(score_id_new = as.character(score_id_new)) 
+```
+
+## Inter Rater Reliability: Number of Scores per Article
+
+```{r irr}
+
+# compute number of scores per article
+# for data_r1
+numbers_r1 <- data_r1 %>%
+  group_by(article_id) %>%
+  summarize(score_count_r1 = max(score_count)) 
+# for data_r2
+numbers_r2 <- data_r2 %>% 
+  group_by(article_id) %>%
+  summarize(score_count_r2 = max(score_count))
+
+# join tables of data_r1 and data_r2
+numbers <- full_join(numbers_r1, numbers_r2,
+                     by = "article_id") 
+
+# Krippendorff's alpha for number of scores per article
+# create wide format
+numbers_wide <- numbers %>%
+  gather(key = "Variable", value = "Value", -article_id) %>%
+  spread(key = "article_id", value = "Value") %>%
+  select(-Variable)
+# compute Krippendorff's alpha 
+kripp_numbers <- numbers_wide %>%
+  as.matrix
+kripp.alpha(kripp_numbers, "ratio")
+```
+
+## Inter Rater Reliability: Occurrence of Each Distinct Score in the Whole Sample
+
+```{r irr}
+
+# add variable for frequency of each score ID
+# for data_r1
+score_freq_r1 <- data_r1 %>%
+  group_by(score_id_new) %>%
+  mutate(frequency_r1 = n()) %>%
+  distinct(score_id_new, .keep_all = TRUE) %>%
+  select(score_id_new, frequency_r1)
+# for data_r2
+score_freq_r2 <- data_r2 %>% 
+  group_by(score_id_new) %>%
+  mutate(frequency_r2 = n()) %>% 
+  distinct(score_id, .keep_all = TRUE) %>%
+  select(score_id_new, frequency_r2)
+  
+# join tables
+score_freq <- full_join(score_freq_r1, score_freq_r2,
+                        by = "score_id_new") %>%
+distinct(score_id_new, .keep_all = TRUE) 
+
+# Krippendorff's alpha for occurrence of each score in the whole sample
+# create wide format
+score_freq_wide <- score_freq %>%
+  gather(key = "Variable", value = "Value", -score_id_new) %>%
+  spread(key = "score_id_new", value = "Value") %>%
+  select(-Variable)
+# compute Krippendorff's alpha 
+kripp_score_freq <- score_freq_wide %>%
+  as.matrix
+kripp.alpha(kripp_score_freq, "ratio")
+```
+
+## Inter Rater Reliability: Same Scores per Article
+
+```{r irr}
+
+# create data frame with relevant variables
+# for data_r1
+scores_r1 <- data_r1 %>%
+ select(article_id, score_id_new, score_count) %>%
+ group_by(article_id) %>%
+ rename(score_id_r1 = score_id_new) %>%
+ mutate(score_count = n()) %>%
+ rename(score_count_r1 = score_count) %>%
+ distinct(article_id, score_id_r1, score_count_r1)
+# for data_r2
+scores_r2 <- data_r2 %>%
+  select(article_id, score_id_new, score_count) %>%
+  group_by(article_id) %>%
+  rename(score_id_r2 = score_id_new) %>%
+  mutate(score_count = n()) %>%
+  rename(score_count_r2 = score_count) %>%
+  distinct(article_id, score_id_r2, score_count_r2)
+
+# join tables
+scores <- full_join(scores_r1, scores_r2, 
+                           by = "article_id",
+                          relationship ="many-to-many")
+
+
+# select only articles with same number of scores per article for both raters 
+scores_filtered <- scores %>%
+  group_by(article_id) %>%
+  filter(score_count_r1 == score_count_r2)
+
+# filter and sort scores to only have one row per score  
+scores_filtered <- scores_filtered %>%
+  pivot_longer(cols = c(score_id_r1, score_id_r2), 
+               names_to = "score_type", values_to = "score_value") %>%
+  group_by(article_id, score_value, score_type) %>%
+  summarize(
+    value_count = n(),
+    .groups = 'drop'
+  ) %>%
+  pivot_wider(names_from = score_type, values_from = value_count) %>%
+  mutate(
+    score_id_r1 = ifelse(!is.na(score_id_r1) & score_id_r1 > 0, score_value, NA),
+    score_id_r2 = ifelse(!is.na(score_id_r2) & score_id_r2 > 0, score_value, NA)
+  ) %>%
+  select(article_id, score_id_r1, score_id_r2)
+
+# set NA values to text to prevent kappa function from deleting rows with NA values 
+scores_filtered <- scores_filtered  %>%
+   mutate(score_id_r1 = ifelse(is.na(score_id_r1), "NA", score_id_r1)) %>%
+   mutate(score_id_r2 = ifelse(is.na(score_id_r2), "NA", score_id_r2))
+
+# compute Cohen's kappa for choice of same scores within each article 
+# for the subset of articles in which both raters found the same number of scores
+kappa_scores <- scores_filtered %>%
+  select(score_id_r1, score_id_r2) %>%
+  as.matrix
+kappa2(kappa_scores)
+```
