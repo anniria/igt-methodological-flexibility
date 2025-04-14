@@ -28,6 +28,10 @@ library(tidyverse)
 library(readxl)
 library(conflicted)
 library(psych)
+library(viridis)
+library(viridisLite)
+library(scales)
+library(forcats)
 library(kableExtra)
 
 # declare preferences regarding conflicts 
@@ -143,6 +147,22 @@ scores_per_task_summary |>
 
 ```
 
+```{r number2plot}
+
+plot1 <- ggplot(scores_per_task_summary, 
+                aes(x = number_of_scores, y = number_of_tasks)) +
+  geom_bar(stat = "identity", fill = "#26828E") +
+  labs(
+    title = "Number of Reported Scores per Task",
+    x = "Number of Scores",
+    y = "Number of Tasks"
+  ) +
+  theme_minimal() 
+
+print(plot1)
+
+```
+
 ### Summary of Number of Scores per Task
 
 ```{r number3}
@@ -237,6 +257,24 @@ scores_reusage |>
   kable() |>
   kable_classic(full_width = FALSE)
 
+
+```
+
+
+```{r distinct3plot}
+
+plot2 <- ggplot(scores_reusage, 
+                aes(x = number_of_scores, y = times_reused, fill = number_of_scores)) +
+  geom_col(stat = "identity", fill = "#31688E") +
+  theme_minimal() +
+  labs(    
+    title = "Number of Scores by Frequency in the Sample",
+    x = "Number of Scores",
+    y = "Frequency of a Score in the Sample"
+    ) +
+  theme(legend.position = "none") 
+
+print(plot2)
 
 ```
 
@@ -379,6 +417,49 @@ number_tasks_with_only_top_10 <- nrow(tasks_with_only_top_10)
 number_tasks_with_only_top_10 |>
   kable() |>
   kable_classic(full_width = FALSE)
+
+```
+
+```{r common3plot}
+
+# cumulative proportion 
+scores_cumulative <- data %>%
+  count(monotonic_score_id) %>%  
+  arrange(desc(n)) %>%  
+  mutate(
+    cumulative_count = cumsum(n),  
+    cumulative_proportion = cumulative_count / sum(n)  
+  )
+
+# Calculate the number of scores at each quantile
+quantile_counts <- round(quantile(seq_len(nrow(scores_cumulative)), c(0.25, 0.50, 0.75, 1.00)))
+
+# Calculate positions for quantiles
+quantile_positions <- quantile(seq_len(nrow(scores_cumulative)), c(0.25, 0.50, 0.75, 1.00))
+# define labels 
+quantile_labels <- paste0(
+  c("25%", "50%", "75%", "100%"), 
+  " (n = ", quantile_counts, ")"
+)
+
+# plot 
+plot3 <- ggplot(scores_cumulative, 
+                aes(x = seq_len(nrow(scores_cumulative)), y = cumulative_proportion)) +
+  geom_point(color = "#482878") +
+  geom_vline(xintercept = quantile_positions, linetype = "dashed", color = "black") +  
+  labs(
+    x = "Percentage and Number of Scores",
+    y = "Cumulative Proportion",
+    title = "Cumulative Distribution of Scores"
+  ) +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent) +  # Convert y-axis labels to percentages
+  scale_x_continuous(
+    breaks = quantile_positions,
+    labels = quantile_labels
+  )
+
+print(plot3)
 
 ```
 
@@ -642,6 +723,28 @@ uniques_per_task <- overview_variable(unique_counts, "uniques") %>%
 uniques_per_task |>
   kable() |>
   kable_classic(full_width = FALSE)
+
+```
+
+```{r unique3plot}
+unique_counts <- unique_counts %>%
+  mutate(task_id = as.factor(task_id)) %>%
+  arrange(desc(uniques)) %>%
+  mutate(rank = row_number())
+
+plot4 <- ggplot(unique_counts, aes(x = factor(rank), y = uniques)) +
+  geom_bar(stat = "identity", fill = "#35B779") +
+  theme_minimal() +
+  labs(
+    title = "Number of Unique Scores per Task (Ranked)",
+    x = "Rank of Task (by Unique Scores)",
+    y = "Number of Unique Scores"
+  ) +
+  theme(
+    axis.text.x = element_blank()) +
+  coord_cartesian(xlim = c(0, nrow(unique_counts) + 5))
+
+print(plot4)
 
 ```
 
