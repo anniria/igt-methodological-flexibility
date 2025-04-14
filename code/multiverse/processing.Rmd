@@ -361,7 +361,7 @@ data_scored_deck_choices_temp <- data_processed_trial_level |>
          C_plus_D_minus_A_plus_B_binomial_significance,
          C_plus_D_minus_A_plus_B_zero_cutoff,
          C_plus_D_minus_A_plus_B_absolute_10_cutoff,
-         C_plus_D_minus_A_plus_B_t_score,
+         # C_plus_D_minus_A_plus_B_t_score, # linear transformation of C_plus_D_minus_A_plus_B, redundant
          C_plus_D_minus_A_plus_B_t_score_39_cutoff,
          C_plus_D_minus_A_plus_B_t_score_50_cutoff,
          C_plus_D_log_transform, 
@@ -586,7 +586,13 @@ data_scored_deck_choices_blocks_20_long <- data_processed_trial_level |>
 data_scored_deck_choices_blocks_20 <- data_scored_deck_choices_blocks_20_long |>
   pivot_wider(names_from = "subset",
               values_from = c(-id, -subset),
-              names_prefix = "block20_")
+              names_prefix = "block20_") |>
+  # drop variables that linear transformation of their C_plus_D_minus_A_plus_B equivalent, redundant
+  select(-C_plus_D_minus_A_plus_B_t_score_block20_1,
+         -C_plus_D_minus_A_plus_B_t_score_block20_2,
+         -C_plus_D_minus_A_plus_B_t_score_block20_3,
+         -C_plus_D_minus_A_plus_B_t_score_block20_4,
+         -C_plus_D_minus_A_plus_B_t_score_block20_5)
 
 ```
 
@@ -782,8 +788,10 @@ data_scored_deck_choices_subsets_1 <-
          C_plus_D_minus_A_plus_B_last_17_minus_first_17 = 
            C_plus_D_minus_A_plus_B_84_to_100 - 
            C_plus_D_minus_A_plus_B_1_to_17) |>
+   # redundant with columns calculated elsewhere
   select(-C_plus_D_minus_A_plus_B_1_to_33,
          -C_plus_D_minus_A_plus_B_1_to_17,
+         -C_plus_D_minus_A_plus_B_76_to_100,
          -C_plus_D_minus_A_plus_B_84_to_100)
 
 ```

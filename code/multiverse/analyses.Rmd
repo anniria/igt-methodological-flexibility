@@ -28,66 +28,65 @@ library(knitr)
 library(kableExtra)
 library(janitor)
 library(patchwork)
+library(corrr)
 
 # get data
-data_processed_participant_level <- read_csv("../../data/processed/multiverse/data_processed_participant_level.csv")
+data_processed_participant_level <- read_csv("../../data/processed/multiverse/data_processed_participant_level.csv") |>
+  # remove id
+  select(-id) 
 
 ```
 
-Number of scoring methods implemented = `r ncol(data_processed_participant_level)-1`.
+Number of unique scoring methods implemented = `r ncol(data_processed_participant_level)`.
 
 # Correlate scores
 
 ```{r}
 
-# count scoring strategies
-n_scoring_strategies <- data_processed_participant_level |>
-  select(-id) |>
-  colnames() |>
-  length()
-
-# Correlation table
-cors_decks_combined <- data_processed_participant_level |>
-  select(-id) |>
-  cor(use = "pairwise.complete.obs") |>
-  round(2)
-
-diag(cors_decks_combined) <- NA
+cors <- data_processed_participant_level |>
+  # remove scores with no variance
+  select(-A_60_cutoff) |>
+  correlate() |> 
+  stretch() |> 
+  filter(y != x) |> # remove diagonal
+  arrange(desc(r))
 
 ```
 
-## Between modal scoring strategy and all others 
+## Between all scoring methods
+
+Note that no correlations are exactly 1 or -1 as these would represent linear transformations of variables that are not meaningfully different. Numerous cases of this were removed when writing the data processing, as we discovered some scoring strategies were in fact linear transformations of one another. That is, scores that correlate 1.0 do exist in the literature, but we have removed them here on the basis of being redundant with other labels for the same (linear transformed) scoring strategy.
 
 ```{r}
 
-# Correlation between modal scoring method and all others
-data_cors_combined_modal <- 
-  tibble(cors = as_tibble(cors_decks_combined)$C_plus_D_minus_A_plus_B) |>
-  drop_na()
-
-data_cors_combined_modal |>
+cors |>
+  filter(x < y) |> # keeps only upper triangle by comparing characters alphabetically for comparison
   summarize(n_correlations = n(),
-            min = min(cors),
-            max = max(cors),
-            median = median(cors),
-            mad = mad(cors)) |>
-  mutate_if(is.numeric, round_half_up, digits = 2) |>
+            min_r = min(r),
+            max_r = max(r),
+            median_r = median(r),
+            mad_r = mad(r),
+            min_abs_r = min(abs(r)),
+            max_abs_r = max(abs(r)),
+            median_abs_r = median(abs(r)),
+            mad_abs_r = mad(abs(r))) |>
+  mutate_if(is.numeric, round_half_up, digits = 3) |>
   kable() |>
   kable_classic(full_width = FALSE)
 
 ## native 
-p_native_modal <- ggplot(data_cors_combined_modal, aes(cors)) +
+p_native_all <- ggplot(cors |> filter(x < y), aes(r)) +
   geom_histogram(binwidth = .1, boundary = 0) +
   scale_x_continuous(breaks = breaks_pretty(n = 10)) +
   scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
-  ggtitle("Modal scoring strategy vs. all others") +
+  ggtitle("Correlations among all scoring strategies") +
   #xlab(expression(paste("Pearson's ",italic("r")))) +
   xlab("Correlation") +
   coord_cartesian(xlim = c(-1,1)) +
   theme_bw()
 
 ## absolute
-p_absolute_modal <- ggplot(data_cors_combined_modal, aes(abs(cors))) +
+p_absolute_all <- ggplot(cors |> filter(x < y), aes(abs(r))) +
   geom_histogram(binwidth = .1, boundary = 0) +
   scale_x_continuous(breaks = breaks_pretty(n = 10)) +
   scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
@@ -97,43 +96,43 @@ p_absolute_modal <- ggplot(data_cors_combined_modal, aes(abs(cors))) +
   coord_cartesian(xlim = c(0,1)) +
   theme_bw()
 
-p_native_modal
-p_absolute_modal
+p_native_all
+p_absolute_all
 
 ```
 
-## Between all scoring methods
+## Between modal scoring strategy and all others 
 
 ```{r}
 
-# Correlation between all scoring methods
-cors_decks_combined[lower.tri(cors_decks_combined, diag = TRUE)] <- NA
-
-data_cors_combined <- tibble(cors = cors_decks_combined[upper.tri(cors_decks_combined)])
-
-data_cors_combined |>
+cors |>
+  filter(x == "C_plus_D_minus_A_plus_B") |> # keeps only upper triangle by comparing characters alphabetically for comparison
   summarize(n_correlations = n(),
-            min = min(cors, na.rm = TRUE),
-            max = max(cors, na.rm = TRUE),
-            median = median(cors, na.rm = TRUE),
-            mad = mad(cors, na.rm = TRUE)) |>
-  mutate_if(is.numeric, round_half_up, digits = 2) |>
+            min_r = min(r),
+            max_r = max(r),
+            median_r = median(r),
+            mad_r = mad(r),
+            min_abs_r = min(abs(r)),
+            max_abs_r = max(abs(r)),
+            median_abs_r = median(abs(r)),
+            mad_abs_r = mad(abs(r))) |>
+  mutate_if(is.numeric, round_half_up, digits = 3) |>
   kable() |>
   kable_classic(full_width = FALSE)
 
 ## native 
-p_native_all <- ggplot(data_cors_combined, aes(cors)) +
+p_native_modal <- ggplot(cors |> filter(x == "C_plus_D_minus_A_plus_B"), aes(r)) +
   geom_histogram(binwidth = .1, boundary = 0) +
   scale_x_continuous(breaks = breaks_pretty(n = 10)) +
   scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
-  ggtitle("All scoring strategies") +
+  ggtitle("Correlations with modal scoring strategy") +
   #xlab(expression(paste("Pearson's ",italic("r")))) +
   xlab("Correlation") +
   coord_cartesian(xlim = c(-1,1)) +
   theme_bw()
 
 ## absolute
-p_absolute_all <- ggplot(data_cors_combined, aes(abs(cors))) +
+p_absolute_modal <- ggplot(cors |> filter(x == "C_plus_D_minus_A_plus_B"), aes(abs(r))) +
   geom_histogram(binwidth = .1, boundary = 0) +
   scale_x_continuous(breaks = breaks_pretty(n = 10)) +
   scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
@@ -143,8 +142,8 @@ p_absolute_all <- ggplot(data_cors_combined, aes(abs(cors))) +
   coord_cartesian(xlim = c(0,1)) +
   theme_bw()
 
-p_native_all
-p_absolute_all
+p_native_modal
+p_absolute_modal
 
 ```
 

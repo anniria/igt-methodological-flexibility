@@ -11,7 +11,7 @@
 
 <meta name="author" content="Ian Hussey" />
 
-<meta name="date" content="2025-04-14" />
+<meta name="date" content="2025-04-15" />
 
 <title>IGT multiverse</title>
 
@@ -1665,7 +1665,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">IGT multiverse</h1>
 <h3 class="subtitle">Data processing</h3>
 <h4 class="author">Ian Hussey</h4>
-<h4 class="date">14 April 2025</h4>
+<h4 class="date">15 April 2025</h4>
 
 </div>
 
@@ -2049,7 +2049,7 @@ compromise, we calculate the modal deck and then dichotomise this as 0
 <span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a>         C_plus_D_minus_A_plus_B_binomial_significance,</span>
 <span id="cb10-46"><a href="#cb10-46" tabindex="-1"></a>         C_plus_D_minus_A_plus_B_zero_cutoff,</span>
 <span id="cb10-47"><a href="#cb10-47" tabindex="-1"></a>         C_plus_D_minus_A_plus_B_absolute_10_cutoff,</span>
-<span id="cb10-48"><a href="#cb10-48" tabindex="-1"></a>         C_plus_D_minus_A_plus_B_t_score,</span>
+<span id="cb10-48"><a href="#cb10-48" tabindex="-1"></a>         <span class="co"># C_plus_D_minus_A_plus_B_t_score, # linear transformation of C_plus_D_minus_A_plus_B, redundant</span></span>
 <span id="cb10-49"><a href="#cb10-49" tabindex="-1"></a>         C_plus_D_minus_A_plus_B_t_score_39_cutoff,</span>
 <span id="cb10-50"><a href="#cb10-50" tabindex="-1"></a>         C_plus_D_minus_A_plus_B_t_score_50_cutoff,</span>
 <span id="cb10-51"><a href="#cb10-51" tabindex="-1"></a>         C_plus_D_log_transform, </span>
@@ -2267,7 +2267,13 @@ t-score = 39</li>
 <span id="cb14-38"><a href="#cb14-38" tabindex="-1"></a>data_scored_deck_choices_blocks_20 <span class="ot">&lt;-</span> data_scored_deck_choices_blocks_20_long <span class="sc">|&gt;</span></span>
 <span id="cb14-39"><a href="#cb14-39" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> <span class="st">&quot;subset&quot;</span>,</span>
 <span id="cb14-40"><a href="#cb14-40" tabindex="-1"></a>              <span class="at">values_from =</span> <span class="fu">c</span>(<span class="sc">-</span>id, <span class="sc">-</span>subset),</span>
-<span id="cb14-41"><a href="#cb14-41" tabindex="-1"></a>              <span class="at">names_prefix =</span> <span class="st">&quot;block20_&quot;</span>)</span></code></pre></div>
+<span id="cb14-41"><a href="#cb14-41" tabindex="-1"></a>              <span class="at">names_prefix =</span> <span class="st">&quot;block20_&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-42"><a href="#cb14-42" tabindex="-1"></a>  <span class="co"># drop variables that linear transformation of their C_plus_D_minus_A_plus_B equivalent, redundant</span></span>
+<span id="cb14-43"><a href="#cb14-43" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>C_plus_D_minus_A_plus_B_t_score_block20_1,</span>
+<span id="cb14-44"><a href="#cb14-44" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_t_score_block20_2,</span>
+<span id="cb14-45"><a href="#cb14-45" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_t_score_block20_3,</span>
+<span id="cb14-46"><a href="#cb14-46" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_t_score_block20_4,</span>
+<span id="cb14-47"><a href="#cb14-47" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_t_score_block20_5)</span></code></pre></div>
 </div>
 <div id="blocks-of-25-trials" class="section level4">
 <h4>blocks of 25 trials</h4>
@@ -2451,9 +2457,11 @@ t-score = 39</li>
 <span id="cb18-56"><a href="#cb18-56" tabindex="-1"></a>         <span class="at">C_plus_D_minus_A_plus_B_last_17_minus_first_17 =</span> </span>
 <span id="cb18-57"><a href="#cb18-57" tabindex="-1"></a>           C_plus_D_minus_A_plus_B_84_to_100 <span class="sc">-</span> </span>
 <span id="cb18-58"><a href="#cb18-58" tabindex="-1"></a>           C_plus_D_minus_A_plus_B_1_to_17) <span class="sc">|&gt;</span></span>
-<span id="cb18-59"><a href="#cb18-59" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>C_plus_D_minus_A_plus_B_1_to_33,</span>
-<span id="cb18-60"><a href="#cb18-60" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_1_to_17,</span>
-<span id="cb18-61"><a href="#cb18-61" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_84_to_100)</span></code></pre></div>
+<span id="cb18-59"><a href="#cb18-59" tabindex="-1"></a>   <span class="co"># redundant with columns calculated elsewhere</span></span>
+<span id="cb18-60"><a href="#cb18-60" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>C_plus_D_minus_A_plus_B_1_to_33,</span>
+<span id="cb18-61"><a href="#cb18-61" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_1_to_17,</span>
+<span id="cb18-62"><a href="#cb18-62" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_76_to_100,</span>
+<span id="cb18-63"><a href="#cb18-63" tabindex="-1"></a>         <span class="sc">-</span>C_plus_D_minus_A_plus_B_84_to_100)</span></code></pre></div>
 </div>
 <div id="cd-ab-subsets-dichotomised" class="section level4">
 <h4>[(C+D)-(A+B)] subsets dichotomised</h4>
