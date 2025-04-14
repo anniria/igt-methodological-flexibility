@@ -49,7 +49,7 @@ data_processed_participant_level <- read_csv("../../data/processed/multiverse/da
 
 # count scoring strategies
 n_scoring_strategies <- data_processed_participant_level |>
-  select(-id, -C, -C_early, -C_late, -diff_C) |>
+  select(-id) |>
   colnames() |>
   length()
 
@@ -57,38 +57,12 @@ paste("Number of scoring strategies:", n_scoring_strategies)
 
 # Correlation table
 cors_decks_combined <- data_processed_participant_level |>
-  select(-id, -C, -C_early, -C_late, -diff_C) |>
+  select(-id) |>
+  relocate(C_plus_D_minus_A_plus_B, .after = "proportion_switch_to_cd_after_loss_on_ab") |>
   cor() |>
   round(2)
 
 diag(cors_decks_combined) <- NA
-
-```
-
-## Between modal scoring strategy and all others 
-
-```{r}
-
-# Correlation between modal scoring method and all others
-data_cors_combined_modal <- 
-  tibble(cors = as_tibble(cors_decks_combined)$C_plus_D_minus_A_plus_B) |>
-  drop_na()
-
-## native 
-ggplot(data_cors_combined_modal, aes(cors)) +
-  geom_histogram(binwidth = 0.1) +
-  ggtitle("Correlation between modal scoring method and all other methods") +
-  xlab(expression(paste("Pearson's ",italic("r")))) +
-  xlim(-1,1) +
-  theme_bw()
-
-## absolute
-ggplot(data_cors_combined_modal, aes(abs(cors))) +
-  geom_histogram(binwidth = 0.1) +
-  ggtitle("Absolute correlation between modal scoring method and all other methods") +
-  xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
-  xlim(0,1) +
-  theme_bw()
 
 ```
 
@@ -103,18 +77,116 @@ data_cors_combined <- tibble(cors = cors_decks_combined[upper.tri(cors_decks_com
 
 ## native 
 ggplot(data_cors_combined, aes(cors)) +
-  geom_histogram() +
+  geom_histogram(binwidth = .1, boundary = 0) +
   ggtitle("Correlation between all scoring methods") +
   xlab(expression(paste("Pearson's ",italic("r")))) +
-  xlim(-1,1) +
+  coord_cartesian(xlim = c(-1,1)) +
   theme_bw()
 
 ## absolute
 ggplot(data_cors_combined, aes(cors)) +
-  geom_histogram() +
+  geom_histogram(binwidth = .1, boundary = 0) +
   ggtitle("Absolute correlation between all scoring methods") +
   xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
-  xlim(0,1) +
+  coord_cartesian(xlim = c(0,1)) +
+  theme_bw()
+
+```
+
+## Between modal scoring strategy and all others 
+
+```{r}
+
+# Correlation between modal scoring method and all others
+data_cors_combined_modal <- 
+  tibble(cors = as_tibble(cors_decks_combined)$C_plus_D_minus_A_plus_B) |>
+  drop_na()
+
+## native 
+ggplot(data_cors_combined_modal, aes(cors)) +
+  geom_histogram(binwidth = .1, boundary = 0) +
+  ggtitle("Correlation between modal scoring method and all other methods") +
+  xlab(expression(paste("Pearson's ",italic("r")))) +
+  coord_cartesian(xlim = c(-1,1)) +
+  theme_bw()
+
+## absolute
+ggplot(data_cors_combined_modal, aes(abs(cors))) +
+  geom_histogram(binwidth = .1, boundary = 0) +
+  ggtitle("Absolute correlation between modal scoring method and all other methods") +
+  xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
+  coord_cartesian(xlim = c(0,1)) +
+  theme_bw()
+
+```
+
+## Between top 13 most common scoring methods
+
+```{r}
+
+cors_decks_subset <- data_processed_participant_level |>
+  select(C_plus_D_minus_A_plus_B_1, C_plus_D_minus_A_plus_B_2, C_plus_D_minus_A_plus_B_3, C_plus_D_minus_A_plus_B_4, C_plus_D_minus_A_plus_B_5,
+         C_plus_D_minus_A_plus_B_block_5_minus_block_1, # not directly a scoring strategy but the use of the most common strategies in the analyses which look at learning/change
+         C_plus_D,
+         A_plus_B,
+         A,
+         B,
+         C,
+         D,
+         C_plus_D_minus_A_plus_B) |>
+  cor() |>
+  round(2)
+
+diag(cors_decks_subset) <- NA
+
+cors_decks_subset
+
+# Correlation between all scoring methods
+cors_decks_subset[lower.tri(cors_decks_subset, diag = TRUE)] <- NA
+
+data_cors_subset <- tibble(cors = cors_decks_subset[upper.tri(cors_decks_subset)])
+
+## native 
+ggplot(data_cors_subset, aes(cors)) +
+  geom_histogram(binwidth = .1, boundary = 0) +
+  ggtitle("Correlation between 13 most common scoring methods") +
+  xlab(expression(paste("Pearson's ",italic("r")))) +
+  coord_cartesian(xlim = c(-1,1)) +
+  theme_bw()
+
+## absolute
+ggplot(data_cors_subset, aes(cors)) +
+  geom_histogram(binwidth = .1, boundary = 0) +
+  ggtitle("Absolute correlation between 13 most common scoring methods") +
+  xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
+  coord_cartesian(xlim = c(0,1)) +
+  theme_bw()
+
+```
+
+## Between modal scoring strategy and most common ones 
+
+```{r}
+
+# Correlation between modal scoring method and all others
+data_cors_subset_modal <- 
+  tibble(cors = as_tibble(cors_decks_subset)$C_plus_D_minus_A_plus_B) |>
+  drop_na()
+
+## native 
+ggplot(data_cors_subset_modal, aes(cors)) +
+  geom_histogram(binwidth = .1, boundary = 0) +
+  ggtitle("Correlation between modal scoring method and the next 12 most common methods") +
+  xlab(expression(paste("Pearson's ",italic("r")))) +
+  coord_cartesian(xlim = c(-1,1)) +
+  theme_bw()
+
+## absolute
+ggplot(data_cors_subset_modal, aes(abs(cors))) +
+  geom_histogram(binwidth = .1, boundary = 0) +
+  ggtitle("Absolute correlation between modal scoring method and the next 12 most common methods") +
+  xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
+  coord_cartesian(xlim = c(0,1)) +
   theme_bw()
 
 ```
@@ -171,6 +243,90 @@ ggplot(data_cors_combined, aes(cors)) +
 #   select(-id, -contains("early"), -contains("late")) 
 # 
 # fit <- EGA(data = dat, cor = "pearson")
+
+```
+
+# simulated criterion
+
+## Max correlation between uncorrelated data at a given N
+
+```{r}
+
+# n <- 10
+# max(replicate(n = 1000, abs(cor(rnorm(n), rnorm(n)))))
+
+ns = seq(from = 10, to = 1010, by = 50)
+res <- round(sapply(ns, function(n){max(replicate(n = 10000, abs(cor(rnorm(n), rnorm(n)))))}), 2)
+names(res) <- paste0("N=", ns)
+res
+
+# not working correctly i think:
+# df <- data.frame(ns = seq(from = 10, to = 300, by = 10)) |>
+#   rowwise() |>
+#   mutate(max_cor = map_dbl(ns, function(n) {
+#     max(replicate(n = 1000, abs(cor(rnorm(n), rnorm(n)))))
+#   }))
+
+```
+
+Population r = 0.0 (random data)
+
+Using subset of 40 random participants.
+
+```{r}
+
+set.seed(42)
+
+data_simulated_criterion <- data_processed_participant_level |>
+  mutate(criterion = rnorm(n = nrow(data_processed_participant_level), mean = 0, sd = 1)) |>
+  sample_n(size = 40)
+
+```
+
+## Between top 13 most common scoring methods and simulated criterion
+
+```{r}
+
+cors_decks_subset_simulated_criterion <- data_simulated_criterion |>
+  select(C_plus_D_minus_A_plus_B_1, C_plus_D_minus_A_plus_B_2, C_plus_D_minus_A_plus_B_3, C_plus_D_minus_A_plus_B_4, C_plus_D_minus_A_plus_B_5,
+         C_plus_D_minus_A_plus_B_block_5_minus_block_1, # not directly a scoring strategy but the use of the most common strategies in the analyses which look at learning/change
+         C_plus_D,
+         A_plus_B,
+         A,
+         B,
+         C,
+         D,
+         C_plus_D_minus_A_plus_B,
+         criterion) |>
+  cor() |>
+  round(2)
+
+cors_decks_subset_simulated_criterion[lower.tri(cors_decks_subset_simulated_criterion, diag = TRUE)] <- NA
+
+diag(cors_decks_subset_simulated_criterion) <- NA
+
+cors_decks_subset_simulated_criterion
+
+# Correlation between modal scoring method and all others
+data_cors_subset_simulated_criterion <- 
+  tibble(cors = as_tibble(cors_decks_subset_simulated_criterion)$criterion) |>
+  drop_na()
+
+# ## native 
+# ggplot(data_cors_subset_simulated_criterion, aes(cors)) +
+#   geom_histogram(binwidth = .1, boundary = 0) +
+#   ggtitle("Correlation between simulated criterion method and the 13 most common scoring methods") +
+#   xlab(expression(paste("Pearson's ",italic("r")))) +
+#   coord_cartesian(xlim = c(-1,1)) +
+#   theme_bw()
+
+## absolute
+ggplot(data_cors_subset_simulated_criterion, aes(abs(cors))) +
+  geom_histogram(binwidth = .1, boundary = 0) +
+  ggtitle("Absolute correlation between modal scoring method and the 13 most common scoring methods") +
+  xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
+  coord_cartesian(xlim = c(0,1)) +
+  theme_bw()
 
 ```
 
