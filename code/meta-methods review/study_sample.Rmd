@@ -1,8 +1,15 @@
 ---
 title: "IGT Study Sample"
 author: "Annika Kuelpmann"
-date: "`r Sys.Date()`"
-output: github_document
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
 ---
 
 
@@ -22,6 +29,8 @@ library(tidyverse)
 library(readxl)
 library(conflicted)
 library(psych)
+library(knitr)
+library(kableExtra)
 
 # declare preferences regarding conflicts 
 conflicts_prefer(dplyr::filter)
@@ -86,7 +95,10 @@ data_non_clin <- data %>%
 
 # get an overview over publications years
 publ_years <- overview_variable(data, "year")
-print(publ_years)
+
+publ_years |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 # range of publication years
 range_publ_years <- publ_years %>%
@@ -94,7 +106,10 @@ range_publ_years <- publ_years %>%
     min_year = min(as.numeric(year), na.rm = TRUE),
     max_year = max(as.numeric(year), na.rm = TRUE)
   )
-print(range_publ_years)
+
+range_publ_years |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -125,7 +140,10 @@ count_clin <- nrow(data_clin)
 
 # get an overview over publications years
 publ_years_clin <- overview_variable(data_clin, "year")
-print(publ_years_clin)
+
+publ_years_clin |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 # range of publication years
 range_publ_years_clin <- publ_years_clin %>%
@@ -133,7 +151,10 @@ range_publ_years_clin <- publ_years_clin %>%
     min_year = min(as.numeric(year), na.rm = TRUE),
     max_year = max(as.numeric(year), na.rm = TRUE)
   )
-print(range_publ_years_clin)
+
+range_publ_years_clin |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -161,7 +182,10 @@ describe(sample_sizes_clin)
 # get an overview over sample sizes
 patient_groups <- overview_variable(data_clin, "info") %>%
   arrange(info)
-print(patient_groups)
+
+patient_groups |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -176,7 +200,10 @@ count_non_clin <- nrow(data_non_clin)
 
 # get an overview over publications years
 publ_years_non_clin <- overview_variable(data_non_clin, "year")
-print(publ_years_non_clin)
+
+publ_years_non_clin |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 # range of publication years
 range_publ_years_non_clin <- publ_years_non_clin %>%
@@ -184,7 +211,10 @@ range_publ_years_non_clin <- publ_years_non_clin %>%
     min_year = min(as.numeric(year), na.rm = TRUE),
     max_year = max(as.numeric(year), na.rm = TRUE)
   )
-print(range_publ_years_non_clin)
+
+range_publ_years_non_clin |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
