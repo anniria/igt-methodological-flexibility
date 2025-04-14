@@ -2,7 +2,14 @@
 title: "IGT Scoring Methods"
 author: "Annika Kuelpmann"
 date: "`r Sys.Date()`"
-output: github_document
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
 ---
 
 ```{r setup}
@@ -21,6 +28,7 @@ library(tidyverse)
 library(readxl)
 library(conflicted)
 library(psych)
+library(kableExtra)
 
 # declare preferences regarding conflicts 
 conflicts_prefer(dplyr::filter)
@@ -100,15 +108,18 @@ scores_overview <- scores_overview %>%
 
 ### Total Number of Scores
 
-In our sample of 107 tasks, this is the total number of scores we identified:
+In our sample of 106 tasks, this is the total number of scores we identified:
 
-```{r}
-#| echo: false
+```{r number1}
 
 # count the total number of scores across the whole sample
 # Count the number of rows in the data
 total_of_scores <- nrow(data)
-print(total_of_scores)
+
+total_of_scores |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
@@ -116,8 +127,7 @@ print(total_of_scores)
 
 We analyzed how many scores were used per task; "number_of_scores" represents the number of scores within a given task, "number_of_tasks" reflects the total number of tasks that had that specific number of scores.
 
-```{r}
-#| echo: false
+```{r number2}
 
 # count the number of scores per task 
 scores_per_task <- overview_variable(data, "task_id") 
@@ -127,24 +137,28 @@ scores_per_task_summary <- freq_summary(scores_per_task) %>%
   rename(number_of_scores = frequency, number_of_tasks = count)
 
 # print the tibble
-print(scores_per_task_summary)
+scores_per_task_summary |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 ### Summary of Number of Scores per Task
 
-```{r}
-#| echo: false
+```{r number3}
 
 # summary of number of scores per task 
-describe(scores_per_task$frequency)
+summ_per_task <- describe(scores_per_task$frequency)
+
+summ_per_task |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 The total number and the percentage of tasks with a score range of 1 to 8 are as follows: 
 
-```{r}
-#| echo: false
+```{r number4}
 
 # proportion of tasks with 1-8 scores
 # get the number of tasks with number of scores 8 or less
@@ -152,10 +166,16 @@ scores_per_task_minor <- scores_per_task_summary %>%
   filter(number_of_scores <= 8) %>%
   summarise(sum_tasks = sum(number_of_tasks, na.rm = TRUE)) %>%
   pull(sum_tasks)
-print(scores_per_task_minor)
+
+scores_per_task_minor  |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 percent_scores_per_task_minor <- scores_per_task_minor / 107 * 100
-print(percent_scores_per_task_minor)
+
+percent_scores_per_task_minor |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -163,8 +183,7 @@ print(percent_scores_per_task_minor)
 
 This section aims to present a descriptive overview of the distinct scores identified in the sample.
 
-```{r}
-#| include: false
+```{r distinct1}
 
 # An overview over the scores that we identified in our sample
 scores_overview <- scores_overview %>%
@@ -183,16 +202,23 @@ scores_collapsed <- scores_overview %>%
 
 This reflects the total number of distinct scores identified in our sample, both prior to and following the collapsing of scores that were initially identified as distinct but were also linear transformations of one another. All of the following analyses are done with the collapsed scores.
 
-```{r}
-#| echo: false
+```{r distinct2}
 
 # count the number of scores we identified in our sample 
 count_scores <- nrow(scores_overview)
-print(count_scores)
+
+count_scores |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # count the number of scores after collapsing monotonic scores into one score
 count_scores_collapsed <- nrow(scores_collapsed)
-print(count_scores_collapsed)
+
+count_scores_collapsed |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
@@ -200,22 +226,23 @@ print(count_scores_collapsed)
 
 This illustrates the frequency with which scores were reused within the sample. The variable "times_reused" reflects the number of instances in which a score was reused within the sample, while "number_of_scores" provides the total number of scores that were reused at that frequency.
 
-```{r}
-#| echo: false
+```{r dinstinct3}
 
 # Count how many scores are reused and how often they are reused
 scores_reusage <- overview_variable(data, "monotonic_score_id") %>%
   freq_summary() %>%
   rename(times_reused = frequency, number_of_scores = count)
 
-print(scores_reusage)
+scores_reusage |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
 In order to simplify the overview, we have categorized the reuse of scores according to the following criteria: A unique score is defined as a score that has never been reused within the sample. A common score is one that has been reused more than ten times. Finally, a rare score corresponds to a score that has been reused up to nine times. 
 
-```{r}
-#| echo: false
+```{r dinstinct4}
 
 # Add score_freq_category variable to data 
 data <- data %>%
@@ -225,8 +252,12 @@ data <- data %>%
     monotonic_score_id_freq >= 10 ~ "common"
   ))
 
-scores_frequencies <- overview_variable(data, "score_freq_category") 
-print(scores_frequencies)
+scores_frequencies <- overview_variable(data, "score_freq_category")
+
+scores_frequencies |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
@@ -234,8 +265,7 @@ print(scores_frequencies)
 
 The following section presents a quantification of the scores, categorized according to the types identified in the sample. "frequency" reflects the number of distinct scores that have been categorized within that particular group.
 
-```{r}
-#| echo: false
+```{r types1}
 
 # proportion of scores per type in sample 
 score_types_total <- data %>%
@@ -245,14 +275,17 @@ score_types_total <- data %>%
 
 # proportion of distinct scores per type 
 score_types <- overview_variable(scores_collapsed, "category") 
-print(score_types)
+
+score_types |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
 A closer look at the tasks that used model parameters: 
 
-```{r}
-#| echo: false
+```{r types2}
 
 # Count the occurrences of model parameters across tasks 
 model_parameters <- data %>%
@@ -264,7 +297,10 @@ model_parameters <- data %>%
 igt_models <- model_parameters %>%
    select(task_id, scoring_approach) %>%
    distinct(task_id, .keep_all = TRUE)
-print(igt_models)
+
+igt_models |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -273,8 +309,7 @@ print(igt_models)
 
 This is an analysis of the most frequently used scores in our sample. The 10 most prevalent scores were the net score across all trials (1001), the net scores across five blocks of 20 trials (1002, 1003, 1004, 1005, 1006), and the deck selections across all trials for each of the four decks A to D (1011, 1020, 1029, 1038). These scores were reused more than ten times across the whole sample and thus are matching the "common" category introduced above. 
 
-```{r}
-#| echo: false
+```{r common1}
 
 # find the most frequently used scores
 # Count the occurrences of each score_id
@@ -283,14 +318,16 @@ score_counts <- overview_variable(data, "monotonic_score_id")
 # identify the 10 most common scores
 top_10_scores <- score_counts %>%
   top_n(10, wt = frequency) 
-print(top_10_scores)
+
+top_10_scores |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 The proportion of these 10 common scores within our sample is as follows:
 
-```{r}
-#| echo: false
+```{r common2}
 
 ### find out how large the proportion of the most frequent scores is 
 # filter the data frame to keep only the rows with the top 10 scores
@@ -306,14 +343,17 @@ top_10_score_counts <- filtered_data_top_10 %>%
 
 # Calculate the proportion of the top 10 scores
 proportion_top_10 <- (top_10_score_counts$count / total_of_scores) * 100
-print(proportion_top_10)
+
+proportion_top_10 |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
 This is the number of tasks that would use at least one of the 10 common scores, as well as the number of tasks that would use only common scores:
 
-```{r}
-#| echo: false
+```{r common3}
 
 # find out how many tasks use at least one of them
 # Count the number of unique task_ids associated with these top 10 scores
@@ -321,7 +361,12 @@ tasks_with_top_10 <- filtered_data_top_10 %>%
   select(task_id) %>%
   distinct() 
 
-nrow(tasks_with_top_10)
+number_tasks_with_top_10 <- nrow(tasks_with_top_10)
+
+number_tasks_with_top_10 |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # Count the number of unique task_ids associated with only top 10 scores (reporting no other scores)
 tasks_with_only_top_10 <- data %>%
@@ -329,7 +374,11 @@ tasks_with_only_top_10 <- data %>%
   filter(all(monotonic_score_id %in% top_10_scores)) %>%
   distinct(task_id)
 
-nrow(tasks_with_only_top_10)
+number_tasks_with_only_top_10 <- nrow(tasks_with_only_top_10)
+
+number_tasks_with_only_top_10 |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -337,8 +386,7 @@ nrow(tasks_with_only_top_10)
 
 Here we present the number of tasks that employ the net score across all trials, irrespective of the number of other scores provided. Additionally, we present the number of tasks that solely provide the net score without including other scores.
 
-```{r}
-#| echo: false
+```{r net score}
 
 ### Identify how often the standard measures net score and learning index are used
 # Filter tasks containing net score across all trials (score_id 1001)
@@ -350,7 +398,11 @@ tasks_with_net_score <- data %>%
 num_tasks_with_net_score <- tasks_with_net_score %>%
   distinct(task_id) %>%
   nrow()
-print(num_tasks_with_net_score)
+
+num_tasks_with_net_score |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # view the tasks which report more than one monotonic variant of the net score across all trials
 # Filter for task_id values that appear more than once
@@ -362,7 +414,7 @@ tasks_with_net_score_duplicates <- tasks_with_net_score %>%
 # count the number those tasks 
 number_tasks_with_net_score_duplicates <- tasks_with_net_score_duplicates %>%
   distinct(task_id) %>%  
-  nrow
+  nrow()
 
 # Identify tasks with net score reported only
 tasks_with_net_score_only <- data %>%
@@ -374,7 +426,10 @@ tasks_with_net_score_only <- data %>%
 num_tasks_with_net_score_only <- tasks_with_net_score_only %>%
   distinct(task_id) %>%
   nrow()
-print(num_tasks_with_net_score_only)
+
+num_tasks_with_net_score_only |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -382,8 +437,7 @@ print(num_tasks_with_net_score_only)
 
 Here we present the number of tasks that employed net scores across five blocks of 20 trials in conjunction with one another, thereby providing the conventional learning index.Secondly, the number of tasks providing only this learning index without utilising other scores is presented.
 
-```{r}
-#| echo: false
+```{r learning index}
 
 # Filter tasks containing learning index across 5 blocks of 20 trials (score_id 1002 to 1006)
 # Define the vector of monotonic_score_id values
@@ -398,7 +452,11 @@ tasks_with_learning_index <- data %>%
 
 # Count the number of articles containing scores learning index 
 num_tasks_with_learning_index <- nrow(tasks_with_learning_index)
-print(num_tasks_with_learning_index)
+
+num_tasks_with_learning_index |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # Identify tasks with learning index reported only
 tasks_with_learning_index_only <- data %>%
@@ -410,14 +468,16 @@ tasks_with_learning_index_only <- data %>%
 num_tasks_with_learning_index_only <- tasks_with_learning_index_only %>%
   distinct(task_id) %>%
   nrow()
-print(num_tasks_with_learning_index_only)
+
+num_tasks_with_learning_index_only |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 Here we present the number of tasks that employ both the net score across all trials, and the learning index, irrespective of other scores. Secondly, we present the number of tasks that provide only the net score and learning index.
 
-```{r}
-#| echo: false
+```{r both1}
 
 # Find tasks that contain both net score and learning index
 # Define the vector of monotonic_score_id values for that case
@@ -431,7 +491,10 @@ tasks_with_both <- data %>%
   select(task_id) 
 
 num_tasks_with_both <- nrow(tasks_with_both)
-print(num_tasks_with_both)
+
+num_tasks_with_both  |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 # Identify tasks with net score and learning index reported only
 tasks_with_both_only <- data %>%
@@ -444,14 +507,16 @@ tasks_with_both_only <- data %>%
 num_tasks_with_both_only <- tasks_with_both_only %>%
   distinct(task_id) %>%
   nrow()
-print(num_tasks_with_both_only)
+
+num_tasks_with_both_only  |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 Here we present the number of tasks that used either the learning index or the net score across all trials, or both.
 
-```{r}
-#| echo: false
+```{r both2}
 
 # Find tasks that contain either net score or learning index
 tasks_with_either <- tasks_with_net_score %>%
@@ -460,7 +525,10 @@ tasks_with_either <- tasks_with_net_score %>%
 
 # Count the number of tasks containing either net score or learning index
 num_tasks_with_either <- nrow(tasks_with_either)
-print(num_tasks_with_either)
+
+num_tasks_with_either  |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -468,8 +536,7 @@ print(num_tasks_with_either)
 
 Here we present the number of tasks that employed the single deck selections for decks A, B, C, and D across all trials in conjunction with one another. Secondly, the number of tasks providing only these four scores without utilizing other scores is presented.
 
-```{r}
-#| echo: false
+```{r both3}
 
 # Filter tasks containing the deck selections for each of the four decks across all trials 
 # Define the vector of monotonic_score_id values
@@ -484,7 +551,10 @@ tasks_with_ABCD <- data %>%
 
 # Count the number of articles containing scores learning index 
 num_tasks_with_ABCD <- nrow(tasks_with_ABCD)
-print(num_tasks_with_ABCD)
+
+num_tasks_with_ABCD  |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 # Identify tasks with learning index reported only
 tasks_with_ABCD_only <- data %>%
@@ -496,7 +566,10 @@ tasks_with_ABCD_only <- data %>%
 num_tasks_with_ABCD_only <- tasks_with_ABCD_only %>%
   distinct(task_id) %>%
   nrow()
-print(num_tasks_with_ABCD_only)
+
+num_tasks_with_ABCD_only  |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -504,20 +577,21 @@ print(num_tasks_with_ABCD_only)
 
 Here we provide a descriptive analysis of the number of unique scores, defined as those that were present only once in the sample.
 
-```{r}
-#| echo: false
+```{r unique1}
 
 # count how many scores are unique in the sample
 number_of_unique_scores <- scores_reusage %>%
   filter(times_reused == 1)
-print(number_of_unique_scores)
+
+number_of_unique_scores  |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 This is the proportion of unique scores within our sample:
 
-```{r}
-#| echo: false
+```{r unique2}
 
 ### find out how large the proportion of the unique scores is 
 # filter the data frame to keep only the rows with unique scores
@@ -534,14 +608,16 @@ unique_score_counts <- filtered_data_unique_scores %>%
 
 # Calculate the proportion of the unique scores
 proportion_unique_scores <- (unique_score_counts$count / total_of_scores) * 100
-print(proportion_unique_scores)
+
+proportion_unique_scores |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 The following table presents the number of unique scores per task: "unique_scores" indicates the number of scores that are exclusive to a given task, while "frequency" reflects the number of tasks in which that number of unique scores has been obtained.
 
-```{r}
-#| echo: false
+```{r unique3}
 
 # count the tasks and articles that have unique scores 
 # create data frame
@@ -562,13 +638,16 @@ unique_counts <- unique_counts %>%
 # summarize the frequencies of unique scores within tasks 
 uniques_per_task <- overview_variable(unique_counts, "uniques") %>%
   rename(unique_scores = uniques)
-print(uniques_per_task)
+
+uniques_per_task |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 The following table demonstrates the degree of overlap between tasks that have been assigned unique, rare, or common scores.
 
-```{r}
+```{r unique4}
 #| echo: false
 
 # Create condition counts for each task_id
@@ -586,29 +665,33 @@ condition_counts <- data %>%
             .groups = 'drop') 
 
 # View the resulting condition_counts dataframe
-print(condition_counts)
+condition_counts |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
-### Indeterminable Scores
+## Indeterminable Scores
 
 An indeterminable score is a score with elements that are not clearly defined or that has not been adequately described. We have classified indeterminable scores as a unique, given that it was not possible to determine whether an indeterminable score was distinct or not. The total number of indeterminable scores identified in our sample is as follows: 
 
-```{r}
-#| echo: false
+```{r indeterminable1}
 
 indeterminable_scores <- scores_overview %>%
   filter(category == "indeterminable")
 
 number_of_indeterminable_scores <- nrow(indeterminable_scores)
-print(number_of_indeterminable_scores)
+
+number_of_indeterminable_scores |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
 Here we present the number of indeterminate scores per task. "indeterminable_scores" represents the number of scores identified as indeterminable within a given task, "frequency" reflects the number of tasks with that specific number of indeterminable scores.
 
-```{r}
-#| echo: false
+```{r indeterminable2}
 
 # count how many articles have with indeterminable scores
 # create data frame
@@ -630,6 +713,9 @@ indeterminable_counts <- indeterminable_counts %>%
 
 # summarize number of indeterminable scores 
 indeterminable_counts_summary <- overview_variable(indeterminable_counts, "indeterminable_scores")
-print(indeterminable_counts_summary)
+
+indeterminable_counts_summary |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
