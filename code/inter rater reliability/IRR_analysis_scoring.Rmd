@@ -14,7 +14,7 @@ output:
 
 # TODO
 
-- add code for "for 63 out of 100 coded studies"
+- add code for "for 63 out of 100 coded studies" 
 - Annika feels this code chunk is dodgy as it only employs studies where she and JP agree on the number of scores, which inflates the IRR. chatgpt suggests Krippendorph's alpha for nominal data, where the number of items to be rated is also subject to IRR.
 
 ```{r setup}
@@ -40,9 +40,11 @@ library(conflicted)
 library(tidyverse)
 library(irr)
 library(lpSolve)
+library(kableExtra)
 
 # set preferred options 
 conflicts_prefer(dplyr::filter)
+
 ```
 
 # Data Preparation
@@ -98,73 +100,129 @@ kripp.alpha(kripp_numbers, "ratio")
 The above results produce the results reported in the manuscript for the "Interrater reliability" heading. i.e., 
 "1) We calculated Krippendorff's α to assess the interrater reliability of the score count per article (α = .90, high reliability)."
 
-# Inter Rater Reliability: Same Scores per Article
+# Inter Rater Reliability: Distinct Scores per Article
 
 ```{r irr3}
 
-# create data frame with relevant variables
-# for data_r1
-scores_r1 <- data_r1 %>%
-  select(article_id, score_id_new, score_count) %>%
-  group_by(article_id) %>%
-  rename(score_id_r1 = score_id_new) %>%
-  mutate(score_count = n()) %>%
-  rename(score_count_r1 = score_count) %>%
-  distinct(article_id, score_id_r1, score_count_r1)
-# for data_r2
-scores_r2 <- data_r2 %>%
-  select(article_id, score_id_new, score_count) %>%
-  group_by(article_id) %>%
-  rename(score_id_r2 = score_id_new) %>%
-  mutate(score_count = n()) %>%
-  rename(score_count_r2 = score_count) %>%
-  distinct(article_id, score_id_r2, score_count_r2)
+# a function to pair the scores 
+pair_scores <- function(scores1, scores2) {
+  common <- intersect(scores1, scores2)
+  s1_only <- setdiff(scores1, common)
+  s2_only <- setdiff(scores2, common)
+  # pair common scores 
+  paired_common <- tibble(r1 = common, r2 = common)
+  # fill missings with NA 
+  len_diff <- abs(length(s1_only) - length(s2_only))
+  if (length(s1_only) < length(s2_only)) {
+    s1_only <- c(s1_only, rep(NA, len_diff))
+  } else {
+    s2_only <- c(s2_only, rep(NA, len_diff))
+  }
+  paired_remaining <- tibble(r1 = s1_only, r2 = s2_only)
+  bind_rows(paired_common, paired_remaining)
+}
 
-# join tables
-scores <- full_join(scores_r1, scores_r2, 
-                    by = "article_id",
-                    relationship ="many-to-many")
+# create data frames with selected variables
+df_r1 <- data_r1 %>% 
+  select(article_id, score_value = score_id_new) %>% 
+  distinct()
+df_r2 <- data_r2 %>% 
+  select(article_id, score_value = score_id_new) %>% 
+  distinct()
 
+# object with unique article_id values
+all_ids <- unique(data_r1$article_id)
 
-# select only articles with same number of scores per article for both raters 
-scores_filtered <- scores %>%
-  group_by(article_id) %>%
-  filter(score_count_r1 == score_count_r2)
+# get a list with paired scores 
+paired_scores_list <- map(all_ids, function(id) {
+  s1 <- df_r1 %>% filter(article_id == id) %>% pull(score_value)
+  s2 <- df_r2 %>% filter(article_id == id) %>% pull(score_value)
+  pair_scores(s1, s2) %>% mutate(article_id = id)
+})
 
-# filter and sort scores to only have one row per score  
-scores_filtered <- scores_filtered %>%
-  pivot_longer(cols = c(score_id_r1, score_id_r2), 
-               names_to = "score_type", values_to = "score_value") %>%
-  group_by(article_id, score_value, score_type) %>%
-  summarize(
-    value_count = n(),
-    .groups = 'drop'
-  ) %>%
-  pivot_wider(names_from = score_type, values_from = value_count) %>%
+# create data frame with paired scores 
+# In order not to overestimate the IRR by eliminating NA values, these are named as a score
+paired_scores <- bind_rows(paired_scores_list) %>%
   mutate(
-    score_id_r1 = ifelse(!is.na(score_id_r1) & score_id_r1 > 0, score_value, NA),
-    score_id_r2 = ifelse(!is.na(score_id_r2) & score_id_r2 > 0, score_value, NA)
-  ) %>%
-  select(article_id, score_id_r1, score_id_r2)
+    r1 = ifelse(is.na(r1), "NA-score", r1),
+    r2 = ifelse(is.na(r2), "NA-score", r2)
+  )
 
-# set NA values to text to prevent kappa function from deleting rows with NA values 
-scores_filtered <- scores_filtered  %>%
-  mutate(score_id_r1 = ifelse(is.na(score_id_r1), "NA", score_id_r1)) %>%
-  mutate(score_id_r2 = ifelse(is.na(score_id_r2), "NA", score_id_r2))
+# create matrix for Krippendorff's Alpha 
+ratings_matrix <- paired_scores %>% 
+  select(r1, r2) %>% 
+  as.matrix() %>% 
+  t() 
 
-# compute Cohen's kappa for choice of same scores within each article 
-# for the subset of articles in which both raters found the same number of scores
-kappa_scores <- scores_filtered %>%
-  select(score_id_r1, score_id_r2) %>%
-  as.matrix
-kappa2(kappa_scores)
+# compute alpha 
+kripp.alpha(ratings_matrix, method = "nominal")
+
+
+
+# # old code, I guess this can be removed?
+# # create data frame with relevant variables
+# # for data_r1
+# scores_r1 <- data_r1 %>%
+#   select(article_id, score_id_new, score_count) %>%
+#   group_by(article_id) %>%
+#   rename(score_id_r1 = score_id_new) %>%
+#   mutate(score_count = n()) %>%
+#   rename(score_count_r1 = score_count) %>%
+#   distinct(article_id, score_id_r1, score_count_r1)
+# # for data_r2
+# scores_r2 <- data_r2 %>%
+#   select(article_id, score_id_new, score_count) %>%
+#   group_by(article_id) %>%
+#   rename(score_id_r2 = score_id_new) %>%
+#   mutate(score_count = n()) %>%
+#   rename(score_count_r2 = score_count) %>%
+#   distinct(article_id, score_id_r2, score_count_r2)
+# 
+# # join tables
+# scores <- full_join(scores_r1, scores_r2,
+#                     by = "article_id",
+#                     relationship ="many-to-many")
+# 
+# 
+# # select only articles with same number of scores per article for both raters
+# scores_filtered <- scores %>%
+#   group_by(article_id) %>%
+#   filter(score_count_r1 == score_count_r2)
+# 
+# # filter and sort scores to only have one row per score
+# scores_filtered <- scores_filtered %>%
+#   pivot_longer(cols = c(score_id_r1, score_id_r2),
+#                names_to = "score_type", values_to = "score_value") %>%
+#   group_by(article_id, score_value, score_type) %>%
+#   summarize(
+#     value_count = n(),
+#     .groups = 'drop'
+#   ) %>%
+#   pivot_wider(names_from = score_type, values_from = value_count) %>%
+#   mutate(
+#     score_id_r1 = ifelse(!is.na(score_id_r1) & score_id_r1 > 0, score_value, NA),
+#     score_id_r2 = ifelse(!is.na(score_id_r2) & score_id_r2 > 0, score_value, NA)
+#   ) %>%
+#   select(article_id, score_id_r1, score_id_r2)
+# 
+# # set NA values to text to prevent kappa function from deleting rows with NA values
+# scores_filtered <- scores_filtered  %>%
+#   mutate(score_id_r1 = ifelse(is.na(score_id_r1), "NA", score_id_r1)) %>%
+#   mutate(score_id_r2 = ifelse(is.na(score_id_r2), "NA", score_id_r2))
+# 
+# # compute Cohen's kappa for choice of same scores within each article
+# # for the subset of articles in which both raters found the same number of scores
+# kappa_scores <- scores_filtered %>%
+#   select(score_id_r1, score_id_r2) %>%
+#   as.matrix
+# kappa2(kappa_scores)
 ```
 
 ## Text in manuscript
 
 The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
 
-"2) For 63 out of 100 coded studies, there was a perfect match in the count of scores between the raters. For these studies, Cohen's κ for the assigned unique score IDs was .93, indicating high reliability. That is, for studies in which the two raters found the exact same number of scores, there was high agreement on which scores specifically were used."
+"2) xxx"
 
 # Inter Rater Reliability: Occurrence of Each Distinct Score in the Whole Sample
 
