@@ -1,18 +1,56 @@
+---
+title: "Inter Rater Reliability for Procedural Variations"
+author: "Jan-Paul Ries"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
 
-# Preparations ------------------------------------------------------------
+```{r setup}
+#| include: false
 
-# load packages 
+# load knitr 
+library(knitr)
+
+# set knitr chunk options 
+opts_chunk$set(echo = TRUE,
+                message = FALSE,
+                warning = FALSE)
+```
+
+## Load Packages
+
+```{r}
 
 library(readxl)
 library(dplyr)
 library(irr)
+library(knitr)
+library(kableExtra)
+library(janitor)
 
-# read data 
+```
+
+# Read data 
+
+```{r}
 
 df_r1 <- readxl::read_xlsx("../../data/raw/metamethod review/codebook - rater 1/r1_procedure_aligned.xlsx")
 df_r2 <- readxl::read_xlsx("../../data/raw/metamethod review/codebook - rater 2/r2_procedure_aligned.xlsx")
 
-# combine files with correct column order
+```
+
+# Wrangle
+
+Combine files with correct column order
+
+```{r}
 
 df_combined <- bind_cols(
   df_r1$article_id, df_r2$article_id,
@@ -48,8 +86,11 @@ df_combined <- bind_cols(
   df_r1$rater_ID, df_r2$rater_ID
 )
 
+```
 
-# Calculate Cohen's Kappa -------------------------------------------------
+# Calculate Cohen's Kappa
+
+```{r}
 
 # Create an empty data frame to store Kappa values
 kappa_results <- data.frame(Column1 = numeric(),
@@ -86,4 +127,34 @@ kappa_results <- kappa_results %>%
          col_name != "order_number",
          col_name != "notes_procedure",
          col_name != "rater_ID")
+
+
+```
+
+# Tables
+
+```{r}
+
+kappa_results |>
+  mutate_if(is.numeric, round_half_up, digits = 2) |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+kappa_results |>
+  summarize(mean_kappa = mean(kappa),
+            sd_kappa = sd(kappa),
+            min_kappa = min(kappa),
+            max_kappa = max(kappa)) |>
+  mutate_if(is.numeric, round_half_up, digits = 2) |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+```
+
+# Text in manuscript
+
+The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
+
+"We computed the interrater reliability for all variables in the procedure codebook, yielding a mean Cohen’s κ = .70 (SD = .10), with a range from .44 to .90."
+
 
