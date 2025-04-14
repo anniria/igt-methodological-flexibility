@@ -87,11 +87,9 @@ data_non_clin <- data %>%
 
 ```
 
-
 ## Whole Sample
 ### Years of Publication
-```{r}
-#| echo: false
+```{r total1}
 
 # get an overview over publications years
 publ_years <- overview_variable(data, "year")
@@ -114,8 +112,7 @@ range_publ_years |>
 ```
 
 ### Sample Sizes
-```{r}
-#| echo: false
+```{r total2}
 
 # select sample_size and prepare for analysis 
 sample_sizes <- data %>%
@@ -125,15 +122,17 @@ sample_sizes <- data %>%
   as.integer()
 
 # summary of sample sizes across all studies
-describe(sample_sizes)
+table_sample_sizes <- describe(sample_sizes)
+
+table_sample_sizes |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
-
 ## Clinical Studies 
 ### Years of Publication
-```{r}
-#| echo: false
+```{r clin1}
 
 # number of clinical publications
 count_clin <- nrow(data_clin)
@@ -159,8 +158,7 @@ range_publ_years_clin |>
 ```
 
 ### Sample Sizes
-```{r}
-#| echo: false
+```{r clin2}
 
 # select sample_size and prepare for analysis 
 sample_sizes_clin <- data_clin %>%
@@ -170,14 +168,17 @@ sample_sizes_clin <- data_clin %>%
   as.integer()
 
 # summary of sample sizes across all studies
-describe(sample_sizes_clin)
+table_clinss <- describe(sample_sizes_clin)
+
+table_clinss |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
 
 ### Clinical Samples
-```{r}
-#| echo: false
+```{r clin3}
 
 # get an overview over sample sizes
 patient_groups <- overview_variable(data_clin, "info") %>%
@@ -192,8 +193,7 @@ patient_groups |>
 
 ## Non-clinical Studies 
 ### Years of Publication
-```{r}
-#| echo: false
+```{r nonclin1}
 
 # number of clinical publications
 count_non_clin <- nrow(data_non_clin)
@@ -218,9 +218,21 @@ range_publ_years_non_clin |>
 
 ```
 
+### Non-Clinical Samples
+```{r nonclin2}
+
+# get an overview over sample sizes
+other_groups <- overview_variable(data_non_clin, "info") %>%
+  arrange(info)
+
+other_groups |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+```
+
 ### Sample Sizes
-```{r}
-#| echo: false
+```{r nonclin3}
 
 # select sample_size and prepare for analysis 
 sample_sizes_non_clin <- data_non_clin %>%
@@ -230,7 +242,11 @@ sample_sizes_non_clin <- data_non_clin %>%
   as.integer()
 
 # summary of sample sizes across all studies
-describe(sample_sizes_non_clin)
+table_nonclinss <- describe(sample_sizes_non_clin) 
+
+table_nonclinss|>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 

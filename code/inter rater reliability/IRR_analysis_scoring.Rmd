@@ -12,11 +12,6 @@ output:
     toc_float: yes
 ---
 
-# TODO
-
-- add code for "for 63 out of 100 coded studies" 
-- Annika feels this code chunk is dodgy as it only employs studies where she and JP agree on the number of scores, which inflates the IRR. chatgpt suggests Krippendorph's alpha for nominal data, where the number of items to be rated is also subject to IRR.
-
 ```{r setup}
 #| include: false
 
@@ -151,71 +146,11 @@ paired_scores <- bind_rows(paired_scores_list) %>%
 # create matrix for Krippendorff's Alpha 
 ratings_matrix <- paired_scores %>% 
   select(r1, r2) %>% 
-  as.matrix() %>% 
-  t() 
+  as.matrix() 
 
-# compute alpha 
-kripp.alpha(ratings_matrix, method = "nominal")
+# compute kappa 
+kappa2(ratings_matrix)
 
-
-
-# # old code, I guess this can be removed?
-# # create data frame with relevant variables
-# # for data_r1
-# scores_r1 <- data_r1 %>%
-#   select(article_id, score_id_new, score_count) %>%
-#   group_by(article_id) %>%
-#   rename(score_id_r1 = score_id_new) %>%
-#   mutate(score_count = n()) %>%
-#   rename(score_count_r1 = score_count) %>%
-#   distinct(article_id, score_id_r1, score_count_r1)
-# # for data_r2
-# scores_r2 <- data_r2 %>%
-#   select(article_id, score_id_new, score_count) %>%
-#   group_by(article_id) %>%
-#   rename(score_id_r2 = score_id_new) %>%
-#   mutate(score_count = n()) %>%
-#   rename(score_count_r2 = score_count) %>%
-#   distinct(article_id, score_id_r2, score_count_r2)
-# 
-# # join tables
-# scores <- full_join(scores_r1, scores_r2,
-#                     by = "article_id",
-#                     relationship ="many-to-many")
-# 
-# 
-# # select only articles with same number of scores per article for both raters
-# scores_filtered <- scores %>%
-#   group_by(article_id) %>%
-#   filter(score_count_r1 == score_count_r2)
-# 
-# # filter and sort scores to only have one row per score
-# scores_filtered <- scores_filtered %>%
-#   pivot_longer(cols = c(score_id_r1, score_id_r2),
-#                names_to = "score_type", values_to = "score_value") %>%
-#   group_by(article_id, score_value, score_type) %>%
-#   summarize(
-#     value_count = n(),
-#     .groups = 'drop'
-#   ) %>%
-#   pivot_wider(names_from = score_type, values_from = value_count) %>%
-#   mutate(
-#     score_id_r1 = ifelse(!is.na(score_id_r1) & score_id_r1 > 0, score_value, NA),
-#     score_id_r2 = ifelse(!is.na(score_id_r2) & score_id_r2 > 0, score_value, NA)
-#   ) %>%
-#   select(article_id, score_id_r1, score_id_r2)
-# 
-# # set NA values to text to prevent kappa function from deleting rows with NA values
-# scores_filtered <- scores_filtered  %>%
-#   mutate(score_id_r1 = ifelse(is.na(score_id_r1), "NA", score_id_r1)) %>%
-#   mutate(score_id_r2 = ifelse(is.na(score_id_r2), "NA", score_id_r2))
-# 
-# # compute Cohen's kappa for choice of same scores within each article
-# # for the subset of articles in which both raters found the same number of scores
-# kappa_scores <- scores_filtered %>%
-#   select(score_id_r1, score_id_r2) %>%
-#   as.matrix
-# kappa2(kappa_scores)
 ```
 
 ## Text in manuscript
@@ -257,6 +192,7 @@ score_freq_wide <- score_freq %>%
 kripp_score_freq <- score_freq_wide %>%
   as.matrix
 kripp.alpha(kripp_score_freq, "ratio")
+
 ```
 
 ## Text in manuscript

@@ -1620,6 +1620,111 @@ ul.task-list{list-style: none;}
 
 
 
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; } 
+code span.an { color: #008000; } 
+code span.at { } 
+code span.bu { } 
+code span.cf { color: #0000ff; } 
+code span.ch { color: #008080; } 
+code span.cn { } 
+code span.co { color: #008000; } 
+code span.cv { color: #008000; } 
+code span.do { color: #008000; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.im { } 
+code span.in { color: #008000; } 
+code span.kw { color: #0000ff; } 
+code span.op { } 
+code span.ot { color: #ff4000; } 
+code span.pp { color: #ff4000; } 
+code span.sc { color: #008080; } 
+code span.ss { color: #008080; } 
+code span.st { color: #008080; } 
+code span.va { } 
+code span.vs { color: #008080; } 
+code span.wa { color: #008000; font-weight: bold; } 
+.sourceCode .row {
+width: 100%;
+}
+.sourceCode {
+overflow-x: auto;
+}
+.code-folding-btn {
+margin-right: -30px;
+}
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
 
 
 <style type="text/css">
@@ -1810,7 +1915,13 @@ border-radius: 0px;
 <h2>Whole Sample</h2>
 <div id="years-of-publication" class="section level3">
 <h3>Years of Publication</h3>
-<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># get an overview over publications years</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>publ_years <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;year&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>publ_years <span class="sc">|&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -2036,7 +2147,17 @@ percentage
 </tr>
 </tbody>
 </table>
-<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># range of publication years</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>range_publ_years <span class="ot">&lt;-</span> publ_years <span class="sc">%&gt;%</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>    <span class="at">min_year =</span> <span class="fu">min</span>(<span class="fu">as.numeric</span>(year), <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>    <span class="at">max_year =</span> <span class="fu">max</span>(<span class="fu">as.numeric</span>(year), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  )</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>range_publ_years <span class="sc">|&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:right;">
@@ -2061,17 +2182,128 @@ max_year
 </div>
 <div id="sample-sizes" class="section level3">
 <h3>Sample Sizes</h3>
-<pre><code>##    vars  n   mean     sd median trimmed   mad min  max range skew kurtosis
-## X1    1 99 140.98 522.77     65   76.16 47.44  10 5227  5217  9.3     87.5
-##       se
-## X1 52.54</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># select sample_size and prepare for analysis </span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>sample_sizes <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="fu">select</span>(sample_size) <span class="sc">%&gt;%</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="fu">filter</span>(sample_size <span class="sc">!=</span> <span class="st">&quot;indeterminable&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="fu">unlist</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="fu">as.integer</span>()</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co"># summary of sample sizes across all studies</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>table_sample_sizes <span class="ot">&lt;-</span> <span class="fu">describe</span>(sample_sizes)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>table_sample_sizes <span class="sc">|&gt;</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+vars
+</th>
+<th style="text-align:right;">
+n
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+median
+</th>
+<th style="text-align:right;">
+trimmed
+</th>
+<th style="text-align:right;">
+mad
+</th>
+<th style="text-align:right;">
+min
+</th>
+<th style="text-align:right;">
+max
+</th>
+<th style="text-align:right;">
+range
+</th>
+<th style="text-align:right;">
+skew
+</th>
+<th style="text-align:right;">
+kurtosis
+</th>
+<th style="text-align:right;">
+se
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+X1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+99
+</td>
+<td style="text-align:right;">
+140.9798
+</td>
+<td style="text-align:right;">
+522.767
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+76.16049
+</td>
+<td style="text-align:right;">
+47.4432
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+5227
+</td>
+<td style="text-align:right;">
+5217
+</td>
+<td style="text-align:right;">
+9.303823
+</td>
+<td style="text-align:right;">
+87.50418
+</td>
+<td style="text-align:right;">
+52.54006
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div id="clinical-studies" class="section level2">
 <h2>Clinical Studies</h2>
 <div id="years-of-publication-1" class="section level3">
 <h3>Years of Publication</h3>
-<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># number of clinical publications</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>count_clin <span class="ot">&lt;-</span> <span class="fu">nrow</span>(data_clin)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># get an overview over publications years</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>publ_years_clin <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data_clin, <span class="st">&quot;year&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>publ_years_clin <span class="sc">|&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -2286,7 +2518,17 @@ percentage
 </tr>
 </tbody>
 </table>
-<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># range of publication years</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>range_publ_years_clin <span class="ot">&lt;-</span> publ_years_clin <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="at">min_year =</span> <span class="fu">min</span>(<span class="fu">as.numeric</span>(year), <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="at">max_year =</span> <span class="fu">max</span>(<span class="fu">as.numeric</span>(year), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  )</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>range_publ_years_clin <span class="sc">|&gt;</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:right;">
@@ -2311,12 +2553,123 @@ max_year
 </div>
 <div id="sample-sizes-1" class="section level3">
 <h3>Sample Sizes</h3>
-<pre><code>##    vars  n  mean    sd median trimmed   mad min max range skew kurtosis   se
-## X1    1 50 84.22 59.98     69   74.65 47.44  10 270   260 1.32     1.16 8.48</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># select sample_size and prepare for analysis </span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>sample_sizes_clin <span class="ot">&lt;-</span> data_clin <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="fu">select</span>(sample_size) <span class="sc">%&gt;%</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="fu">filter</span>(sample_size <span class="sc">!=</span> <span class="st">&quot;indeterminable&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="fu">unlist</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="fu">as.integer</span>()</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co"># summary of sample sizes across all studies</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>table_clinss <span class="ot">&lt;-</span> <span class="fu">describe</span>(sample_sizes_clin)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>table_clinss <span class="sc">|&gt;</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+vars
+</th>
+<th style="text-align:right;">
+n
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+median
+</th>
+<th style="text-align:right;">
+trimmed
+</th>
+<th style="text-align:right;">
+mad
+</th>
+<th style="text-align:right;">
+min
+</th>
+<th style="text-align:right;">
+max
+</th>
+<th style="text-align:right;">
+range
+</th>
+<th style="text-align:right;">
+skew
+</th>
+<th style="text-align:right;">
+kurtosis
+</th>
+<th style="text-align:right;">
+se
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+X1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+50
+</td>
+<td style="text-align:right;">
+84.22
+</td>
+<td style="text-align:right;">
+59.98003
+</td>
+<td style="text-align:right;">
+69
+</td>
+<td style="text-align:right;">
+74.65
+</td>
+<td style="text-align:right;">
+47.4432
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+270
+</td>
+<td style="text-align:right;">
+260
+</td>
+<td style="text-align:right;">
+1.318544
+</td>
+<td style="text-align:right;">
+1.15859
+</td>
+<td style="text-align:right;">
+8.482457
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="clinical-samples" class="section level3">
 <h3>Clinical Samples</h3>
-<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># get an overview over sample sizes</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>patient_groups <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data_clin, <span class="st">&quot;info&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">arrange</span>(info)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>patient_groups <span class="sc">|&gt;</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -2791,7 +3144,16 @@ young adults with a family history of alcoholism
 <h2>Non-clinical Studies</h2>
 <div id="years-of-publication-2" class="section level3">
 <h3>Years of Publication</h3>
-<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># number of clinical publications</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>count_non_clin <span class="ot">&lt;-</span> <span class="fu">nrow</span>(data_non_clin)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co"># get an overview over publications years</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>publ_years_non_clin <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data_non_clin, <span class="st">&quot;year&quot;</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>publ_years_non_clin <span class="sc">|&gt;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
@@ -2995,7 +3357,17 @@ percentage
 </tr>
 </tbody>
 </table>
-<table class=" lightable-classic" style="font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># range of publication years</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>range_publ_years_non_clin <span class="ot">&lt;-</span> publ_years_non_clin <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>    <span class="at">min_year =</span> <span class="fu">min</span>(<span class="fu">as.numeric</span>(year), <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="at">max_year =</span> <span class="fu">max</span>(<span class="fu">as.numeric</span>(year), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  )</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>range_publ_years_non_clin <span class="sc">|&gt;</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:right;">
@@ -3018,14 +3390,456 @@ max_year
 </tbody>
 </table>
 </div>
+<div id="non-clinical-samples" class="section level3">
+<h3>Non-Clinical Samples</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># get an overview over sample sizes</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>other_groups <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data_non_clin, <span class="st">&quot;info&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="fu">arrange</span>(info)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>other_groups <span class="sc">|&gt;</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+info
+</th>
+<th style="text-align:right;">
+n
+</th>
+<th style="text-align:right;">
+percentage
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+“The aim of the study was to examine the oscillatory neural dynamics of
+attentional control during visual target detection in emerging young
+adults as a function of binge drinking.”
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+age differences
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+age effects on emotion recognition
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+daytime sleepiness
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+driving behavior
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+effect of a specific gene on IGT performance
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+effect of emotion regulation strategies on decision making
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gambling
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gender differences
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+human aggression
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+impulsivity
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+influence of IQ and emotional intelligence on decision making
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+influence of brands on decision making
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+influence of conjunction bias training on task performance
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+influence of more relative left compared to right-sided frontal brain
+activity on decision making
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+influence of passion on decision making
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+influence of perception of one’s heart activity on decision making
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+influence of sensory cues on task performance
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+influence of sleep deprivation on decision making
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+long-term abstinent alcohol-dependent patients
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+patients with damage to different sectors of the prefrontal cortex
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+6
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+patients with temporal lobe epilepsy
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+reversal learning
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sarcasm
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+smokers
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sunscreen use
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+traumatic brain injury
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+30
+</td>
+</tr>
+</tbody>
+</table>
+</div>
 <div id="sample-sizes-2" class="section level3">
 <h3>Sample Sizes</h3>
-<pre><code>##    vars  n  mean     sd median trimmed mad min  max range skew kurtosis     se
-## X1    1 49 198.9 739.94     61   79.32  43  15 5227  5212  6.4    40.52 105.71</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># select sample_size and prepare for analysis </span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>sample_sizes_non_clin <span class="ot">&lt;-</span> data_non_clin <span class="sc">%&gt;%</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="fu">select</span>(sample_size) <span class="sc">%&gt;%</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="fu">filter</span>(sample_size <span class="sc">!=</span> <span class="st">&quot;indeterminable&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="fu">unlist</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="fu">as.integer</span>()</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co"># summary of sample sizes across all studies</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>table_nonclinss <span class="ot">&lt;-</span> <span class="fu">describe</span>(sample_sizes_non_clin) </span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>table_nonclinss<span class="sc">|&gt;</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+vars
+</th>
+<th style="text-align:right;">
+n
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+median
+</th>
+<th style="text-align:right;">
+trimmed
+</th>
+<th style="text-align:right;">
+mad
+</th>
+<th style="text-align:right;">
+min
+</th>
+<th style="text-align:right;">
+max
+</th>
+<th style="text-align:right;">
+range
+</th>
+<th style="text-align:right;">
+skew
+</th>
+<th style="text-align:right;">
+kurtosis
+</th>
+<th style="text-align:right;">
+se
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+X1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+49
+</td>
+<td style="text-align:right;">
+198.898
+</td>
+<td style="text-align:right;">
+739.9356
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+79.31707
+</td>
+<td style="text-align:right;">
+42.9954
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+5227
+</td>
+<td style="text-align:right;">
+5212
+</td>
+<td style="text-align:right;">
+6.399673
+</td>
+<td style="text-align:right;">
+40.518
+</td>
+<td style="text-align:right;">
+105.7051
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiSUdUIFN0dWR5IFNhbXBsZSIKYXV0aG9yOiAiQW5uaWthIEt1ZWxwbWFubiIKZGF0ZTogImByIGZvcm1hdChTeXMudGltZSgpLCAnJWQgJUIsICVZJylgIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDoKICAgIGNvZGVfZG93bmxvYWQ6IHRydWUKICAgIGNvZGVfZm9sZGluZzogc2hvdwogICAgaGlnaGxpZ2h0OiBoYWRkb2NrCiAgICB0aGVtZTogZmxhdGx5CiAgICB0b2M6IHllcwogICAgdG9jX2Zsb2F0OiB5ZXMKLS0tCgoKYGBge3Igc2V0dXB9CiN8IGluY2x1ZGU6IGZhbHNlCgprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUpCgpgYGAKCmBgYHtyIHBhY2thZ2VzfQojfCBpbmNsdWRlOiBmYWxzZQoKIyBsb2FkIFIgcGFja2FnZXMgCmxpYnJhcnkoa25pdHIpCmxpYnJhcnkodGlkeXZlcnNlKQpsaWJyYXJ5KHJlYWR4bCkKbGlicmFyeShjb25mbGljdGVkKQpsaWJyYXJ5KHBzeWNoKQpsaWJyYXJ5KGtuaXRyKQpsaWJyYXJ5KGthYmxlRXh0cmEpCgojIGRlY2xhcmUgcHJlZmVyZW5jZXMgcmVnYXJkaW5nIGNvbmZsaWN0cyAKY29uZmxpY3RzX3ByZWZlcihkcGx5cjo6ZmlsdGVyKQoKYGBgCgpgYGB7ciBob3VzZWtlZXBpbmd9CiN8IGluY2x1ZGU6IGZhbHNlCgojIHJlYWQgc2NvcmluZyBtYXN0ZXIgZmlsZQpkYXRhIDwtIHJlYWRfeGxzeCgiLi4vLi4vZGF0YS9yYXcvbWV0YW1ldGhvZCByZXZpZXcvbWFzdGVyIGNvZGluZy9jb2RlYm9va19wcm9jZWR1cmVfbWFzdGVyLnhsc3giKQpzYW1wbGVzIDwtIHJlYWRfeGxzeCgiLi4vLi4vZGF0YS9yYXcvbWV0YW1ldGhvZCByZXZpZXcvbWFzdGVyIGNvZGluZy9jb2RlYm9va19jYXRlZ29yaXphdGlvbnMueGxzeCIpCgpgYGAKCmBgYHtyIGZ1bmN0aW9uc30KI3wgaW5jbHVkZTogZmFsc2UKCiMgRGVmaW5pbmcgZnVuY3Rpb25zIHVzZWQgaW4gdGhpcyBzY3JpcHQKCiMgZnVuY3Rpb24gMTogb3ZlcnZpZXcgb3ZlciBhIHZhcmlhYmxlCm92ZXJ2aWV3X3ZhcmlhYmxlIDwtIGZ1bmN0aW9uKGRhdGEsIHZhcmlhYmxlKSB7CiAgZGF0YSAlPiUKICAgIHNlbGVjdChhbGxfb2YodmFyaWFibGUpKSAlPiUKICAgIGdyb3VwX2J5KGFjcm9zcyhhbGxfb2YodmFyaWFibGUpKSkgJT4lCiAgICBzdW1tYXJpc2UobiA9IG4oKSwgLmdyb3VwcyA9ICJkcm9wIikgJT4lCiAgICBtdXRhdGUocGVyY2VudGFnZSA9IHJvdW5kKG4gLyBzdW0obikgKiAxMDAsIDIpKQp9CgpgYGAKCmBgYHtyIGRhdGEgcHJlcGFyYXRpb259CiN8IGluY2x1ZGU6IGZhbHNlCgojIHJlZHVjZSBkYXRhIGZyYW1lIHRvIG9uZSBsaW5lIHBlciBhcnRpY2xlCmRhdGEgPC0gZGF0YSAlPiUKICBkaXN0aW5jdChhcnRpY2xlX2lkLCAua2VlcF9hbGwgPSBUUlVFKQoKIyBzZWxlY3QgcmVsZXZhbnQgdmFyaWFibGVzIGZyb20gZGF0YSBmcmFtZSBzYW1wbGVzCnNhbXBsZXMgPC0gc2FtcGxlcyAlPiUgCiAgc2VsZWN0KGFydGljbGVfaWQsIGNhdGVnb3J5LCBpbmZvKQoKIyBqb2luIGRhdGEgd2l0aCBzYW1wbGVzIApkYXRhIDwtIGRhdGEgJT4lIAogIGxlZnRfam9pbihzYW1wbGVzLCBieSA9ICJhcnRpY2xlX2lkIikgIAoKIyBjcmVhdGUgZGF0YWZyYW1lIHdpdGggY2xpbmljYWwgc3R1ZGllcwpkYXRhX2NsaW4gPC0gZGF0YSAlPiUKICBmaWx0ZXIoY2F0ZWdvcnkgPT0gIjEiKQoKIyBjcmVhdGUgZGF0YWZyYW1lIHdpdGggbm9uLWNsaW5pY2FsIHN0dWRpZXMKZGF0YV9ub25fY2xpbiA8LSBkYXRhICU+JQogIGZpbHRlcihjYXRlZ29yeSAhPSAiMSIpCgpgYGAKCgojIyBXaG9sZSBTYW1wbGUKIyMjIFllYXJzIG9mIFB1YmxpY2F0aW9uCmBgYHtyfQojfCBlY2hvOiBmYWxzZQoKIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBwdWJsaWNhdGlvbnMgeWVhcnMKcHVibF95ZWFycyA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAieWVhciIpCgpwdWJsX3llYXJzIHw+CiAga2FibGUoKSB8PgogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQoKIyByYW5nZSBvZiBwdWJsaWNhdGlvbiB5ZWFycwpyYW5nZV9wdWJsX3llYXJzIDwtIHB1YmxfeWVhcnMgJT4lCiAgc3VtbWFyaXNlKAogICAgbWluX3llYXIgPSBtaW4oYXMubnVtZXJpYyh5ZWFyKSwgbmEucm0gPSBUUlVFKSwKICAgIG1heF95ZWFyID0gbWF4KGFzLm51bWVyaWMoeWVhciksIG5hLnJtID0gVFJVRSkKICApCgpyYW5nZV9wdWJsX3llYXJzIHw+CiAga2FibGUoKSB8PgogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQoKYGBgCgojIyMgU2FtcGxlIFNpemVzCmBgYHtyfQojfCBlY2hvOiBmYWxzZQoKIyBzZWxlY3Qgc2FtcGxlX3NpemUgYW5kIHByZXBhcmUgZm9yIGFuYWx5c2lzIApzYW1wbGVfc2l6ZXMgPC0gZGF0YSAlPiUKICBzZWxlY3Qoc2FtcGxlX3NpemUpICU+JQogIGZpbHRlcihzYW1wbGVfc2l6ZSAhPSAiaW5kZXRlcm1pbmFibGUiKSAlPiUKICB1bmxpc3QoKSAlPiUKICBhcy5pbnRlZ2VyKCkKCiMgc3VtbWFyeSBvZiBzYW1wbGUgc2l6ZXMgYWNyb3NzIGFsbCBzdHVkaWVzCmRlc2NyaWJlKHNhbXBsZV9zaXplcykKCmBgYAoKCiMjIENsaW5pY2FsIFN0dWRpZXMgCiMjIyBZZWFycyBvZiBQdWJsaWNhdGlvbgpgYGB7cn0KI3wgZWNobzogZmFsc2UKCiMgbnVtYmVyIG9mIGNsaW5pY2FsIHB1YmxpY2F0aW9ucwpjb3VudF9jbGluIDwtIG5yb3coZGF0YV9jbGluKQoKIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBwdWJsaWNhdGlvbnMgeWVhcnMKcHVibF95ZWFyc19jbGluIDwtIG92ZXJ2aWV3X3ZhcmlhYmxlKGRhdGFfY2xpbiwgInllYXIiKQoKcHVibF95ZWFyc19jbGluIHw+CiAga2FibGUoKSB8PgogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQoKIyByYW5nZSBvZiBwdWJsaWNhdGlvbiB5ZWFycwpyYW5nZV9wdWJsX3llYXJzX2NsaW4gPC0gcHVibF95ZWFyc19jbGluICU+JQogIHN1bW1hcmlzZSgKICAgIG1pbl95ZWFyID0gbWluKGFzLm51bWVyaWMoeWVhciksIG5hLnJtID0gVFJVRSksCiAgICBtYXhfeWVhciA9IG1heChhcy5udW1lcmljKHllYXIpLCBuYS5ybSA9IFRSVUUpCiAgKQoKcmFuZ2VfcHVibF95ZWFyc19jbGluIHw+CiAga2FibGUoKSB8PgogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQoKYGBgCgojIyMgU2FtcGxlIFNpemVzCmBgYHtyfQojfCBlY2hvOiBmYWxzZQoKIyBzZWxlY3Qgc2FtcGxlX3NpemUgYW5kIHByZXBhcmUgZm9yIGFuYWx5c2lzIApzYW1wbGVfc2l6ZXNfY2xpbiA8LSBkYXRhX2NsaW4gJT4lCiAgc2VsZWN0KHNhbXBsZV9zaXplKSAlPiUKICBmaWx0ZXIoc2FtcGxlX3NpemUgIT0gImluZGV0ZXJtaW5hYmxlIikgJT4lCiAgdW5saXN0KCkgJT4lCiAgYXMuaW50ZWdlcigpCgojIHN1bW1hcnkgb2Ygc2FtcGxlIHNpemVzIGFjcm9zcyBhbGwgc3R1ZGllcwpkZXNjcmliZShzYW1wbGVfc2l6ZXNfY2xpbikKCmBgYAoKCiMjIyBDbGluaWNhbCBTYW1wbGVzCmBgYHtyfQojfCBlY2hvOiBmYWxzZQoKIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBzYW1wbGUgc2l6ZXMKcGF0aWVudF9ncm91cHMgPC0gb3ZlcnZpZXdfdmFyaWFibGUoZGF0YV9jbGluLCAiaW5mbyIpICU+JQogIGFycmFuZ2UoaW5mbykKCnBhdGllbnRfZ3JvdXBzIHw+CiAga2FibGUoKSB8PgogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQoKYGBgCgoKIyMgTm9uLWNsaW5pY2FsIFN0dWRpZXMgCiMjIyBZZWFycyBvZiBQdWJsaWNhdGlvbgpgYGB7cn0KI3wgZWNobzogZmFsc2UKCiMgbnVtYmVyIG9mIGNsaW5pY2FsIHB1YmxpY2F0aW9ucwpjb3VudF9ub25fY2xpbiA8LSBucm93KGRhdGFfbm9uX2NsaW4pCgojIGdldCBhbiBvdmVydmlldyBvdmVyIHB1YmxpY2F0aW9ucyB5ZWFycwpwdWJsX3llYXJzX25vbl9jbGluIDwtIG92ZXJ2aWV3X3ZhcmlhYmxlKGRhdGFfbm9uX2NsaW4sICJ5ZWFyIikKCnB1YmxfeWVhcnNfbm9uX2NsaW4gfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgojIHJhbmdlIG9mIHB1YmxpY2F0aW9uIHllYXJzCnJhbmdlX3B1YmxfeWVhcnNfbm9uX2NsaW4gPC0gcHVibF95ZWFyc19ub25fY2xpbiAlPiUKICBzdW1tYXJpc2UoCiAgICBtaW5feWVhciA9IG1pbihhcy5udW1lcmljKHllYXIpLCBuYS5ybSA9IFRSVUUpLAogICAgbWF4X3llYXIgPSBtYXgoYXMubnVtZXJpYyh5ZWFyKSwgbmEucm0gPSBUUlVFKQogICkKCnJhbmdlX3B1YmxfeWVhcnNfbm9uX2NsaW4gfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgpgYGAKCiMjIyBTYW1wbGUgU2l6ZXMKYGBge3J9CiN8IGVjaG86IGZhbHNlCgojIHNlbGVjdCBzYW1wbGVfc2l6ZSBhbmQgcHJlcGFyZSBmb3IgYW5hbHlzaXMgCnNhbXBsZV9zaXplc19ub25fY2xpbiA8LSBkYXRhX25vbl9jbGluICU+JQogIHNlbGVjdChzYW1wbGVfc2l6ZSkgJT4lCiAgZmlsdGVyKHNhbXBsZV9zaXplICE9ICJpbmRldGVybWluYWJsZSIpICU+JQogIHVubGlzdCgpICU+JQogIGFzLmludGVnZXIoKQoKIyBzdW1tYXJ5IG9mIHNhbXBsZSBzaXplcyBhY3Jvc3MgYWxsIHN0dWRpZXMKZGVzY3JpYmUoc2FtcGxlX3NpemVzX25vbl9jbGluKQoKYGBgCgo=</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIklHVCBTdHVkeSBTYW1wbGUiDQphdXRob3I6ICJBbm5pa2EgS3VlbHBtYW5uIg0KZGF0ZTogImByIGZvcm1hdChTeXMudGltZSgpLCAnJWQgJUIsICVZJylgIg0Kb3V0cHV0Og0KICBodG1sX2RvY3VtZW50Og0KICAgIGNvZGVfZG93bmxvYWQ6IHRydWUNCiAgICBjb2RlX2ZvbGRpbmc6IHNob3cNCiAgICBoaWdobGlnaHQ6IGhhZGRvY2sNCiAgICB0aGVtZTogZmxhdGx5DQogICAgdG9jOiB5ZXMNCiAgICB0b2NfZmxvYXQ6IHllcw0KLS0tDQoNCg0KYGBge3Igc2V0dXB9DQojfCBpbmNsdWRlOiBmYWxzZQ0KDQprbml0cjo6b3B0c19jaHVuayRzZXQoZWNobyA9IFRSVUUpDQoNCmBgYA0KDQpgYGB7ciBwYWNrYWdlc30NCiN8IGluY2x1ZGU6IGZhbHNlDQoNCiMgbG9hZCBSIHBhY2thZ2VzIA0KbGlicmFyeShrbml0cikNCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShyZWFkeGwpDQpsaWJyYXJ5KGNvbmZsaWN0ZWQpDQpsaWJyYXJ5KHBzeWNoKQ0KbGlicmFyeShrbml0cikNCmxpYnJhcnkoa2FibGVFeHRyYSkNCg0KIyBkZWNsYXJlIHByZWZlcmVuY2VzIHJlZ2FyZGluZyBjb25mbGljdHMgDQpjb25mbGljdHNfcHJlZmVyKGRwbHlyOjpmaWx0ZXIpDQoNCmBgYA0KDQpgYGB7ciBob3VzZWtlZXBpbmd9DQojfCBpbmNsdWRlOiBmYWxzZQ0KDQojIHJlYWQgc2NvcmluZyBtYXN0ZXIgZmlsZQ0KZGF0YSA8LSByZWFkX3hsc3goIi4uLy4uL2RhdGEvcmF3L21ldGFtZXRob2QgcmV2aWV3L21hc3RlciBjb2RpbmcvY29kZWJvb2tfcHJvY2VkdXJlX21hc3Rlci54bHN4IikNCnNhbXBsZXMgPC0gcmVhZF94bHN4KCIuLi8uLi9kYXRhL3Jhdy9tZXRhbWV0aG9kIHJldmlldy9tYXN0ZXIgY29kaW5nL2NvZGVib29rX2NhdGVnb3JpemF0aW9ucy54bHN4IikNCg0KYGBgDQoNCmBgYHtyIGZ1bmN0aW9uc30NCiN8IGluY2x1ZGU6IGZhbHNlDQoNCiMgRGVmaW5pbmcgZnVuY3Rpb25zIHVzZWQgaW4gdGhpcyBzY3JpcHQNCg0KIyBmdW5jdGlvbiAxOiBvdmVydmlldyBvdmVyIGEgdmFyaWFibGUNCm92ZXJ2aWV3X3ZhcmlhYmxlIDwtIGZ1bmN0aW9uKGRhdGEsIHZhcmlhYmxlKSB7DQogIGRhdGEgJT4lDQogICAgc2VsZWN0KGFsbF9vZih2YXJpYWJsZSkpICU+JQ0KICAgIGdyb3VwX2J5KGFjcm9zcyhhbGxfb2YodmFyaWFibGUpKSkgJT4lDQogICAgc3VtbWFyaXNlKG4gPSBuKCksIC5ncm91cHMgPSAiZHJvcCIpICU+JQ0KICAgIG11dGF0ZShwZXJjZW50YWdlID0gcm91bmQobiAvIHN1bShuKSAqIDEwMCwgMikpDQp9DQoNCmBgYA0KDQpgYGB7ciBkYXRhIHByZXBhcmF0aW9ufQ0KI3wgaW5jbHVkZTogZmFsc2UNCg0KIyByZWR1Y2UgZGF0YSBmcmFtZSB0byBvbmUgbGluZSBwZXIgYXJ0aWNsZQ0KZGF0YSA8LSBkYXRhICU+JQ0KICBkaXN0aW5jdChhcnRpY2xlX2lkLCAua2VlcF9hbGwgPSBUUlVFKQ0KDQojIHNlbGVjdCByZWxldmFudCB2YXJpYWJsZXMgZnJvbSBkYXRhIGZyYW1lIHNhbXBsZXMNCnNhbXBsZXMgPC0gc2FtcGxlcyAlPiUgDQogIHNlbGVjdChhcnRpY2xlX2lkLCBjYXRlZ29yeSwgaW5mbykNCg0KIyBqb2luIGRhdGEgd2l0aCBzYW1wbGVzIA0KZGF0YSA8LSBkYXRhICU+JSANCiAgbGVmdF9qb2luKHNhbXBsZXMsIGJ5ID0gImFydGljbGVfaWQiKSAgDQoNCiMgY3JlYXRlIGRhdGFmcmFtZSB3aXRoIGNsaW5pY2FsIHN0dWRpZXMNCmRhdGFfY2xpbiA8LSBkYXRhICU+JQ0KICBmaWx0ZXIoY2F0ZWdvcnkgPT0gIjEiKQ0KDQojIGNyZWF0ZSBkYXRhZnJhbWUgd2l0aCBub24tY2xpbmljYWwgc3R1ZGllcw0KZGF0YV9ub25fY2xpbiA8LSBkYXRhICU+JQ0KICBmaWx0ZXIoY2F0ZWdvcnkgIT0gIjEiKQ0KDQpgYGANCg0KIyMgV2hvbGUgU2FtcGxlDQojIyMgWWVhcnMgb2YgUHVibGljYXRpb24NCmBgYHtyIHRvdGFsMX0NCg0KIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBwdWJsaWNhdGlvbnMgeWVhcnMNCnB1YmxfeWVhcnMgPC0gb3ZlcnZpZXdfdmFyaWFibGUoZGF0YSwgInllYXIiKQ0KDQpwdWJsX3llYXJzIHw+DQogIGthYmxlKCkgfD4NCiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpDQoNCiMgcmFuZ2Ugb2YgcHVibGljYXRpb24geWVhcnMNCnJhbmdlX3B1YmxfeWVhcnMgPC0gcHVibF95ZWFycyAlPiUNCiAgc3VtbWFyaXNlKA0KICAgIG1pbl95ZWFyID0gbWluKGFzLm51bWVyaWMoeWVhciksIG5hLnJtID0gVFJVRSksDQogICAgbWF4X3llYXIgPSBtYXgoYXMubnVtZXJpYyh5ZWFyKSwgbmEucm0gPSBUUlVFKQ0KICApDQoNCnJhbmdlX3B1YmxfeWVhcnMgfD4NCiAga2FibGUoKSB8Pg0KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkNCg0KYGBgDQoNCiMjIyBTYW1wbGUgU2l6ZXMNCmBgYHtyIHRvdGFsMn0NCg0KIyBzZWxlY3Qgc2FtcGxlX3NpemUgYW5kIHByZXBhcmUgZm9yIGFuYWx5c2lzIA0Kc2FtcGxlX3NpemVzIDwtIGRhdGEgJT4lDQogIHNlbGVjdChzYW1wbGVfc2l6ZSkgJT4lDQogIGZpbHRlcihzYW1wbGVfc2l6ZSAhPSAiaW5kZXRlcm1pbmFibGUiKSAlPiUNCiAgdW5saXN0KCkgJT4lDQogIGFzLmludGVnZXIoKQ0KDQojIHN1bW1hcnkgb2Ygc2FtcGxlIHNpemVzIGFjcm9zcyBhbGwgc3R1ZGllcw0KdGFibGVfc2FtcGxlX3NpemVzIDwtIGRlc2NyaWJlKHNhbXBsZV9zaXplcykNCg0KdGFibGVfc2FtcGxlX3NpemVzIHw+DQogIGthYmxlKCkgfD4NCiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpDQoNCmBgYA0KDQojIyBDbGluaWNhbCBTdHVkaWVzIA0KIyMjIFllYXJzIG9mIFB1YmxpY2F0aW9uDQpgYGB7ciBjbGluMX0NCg0KIyBudW1iZXIgb2YgY2xpbmljYWwgcHVibGljYXRpb25zDQpjb3VudF9jbGluIDwtIG5yb3coZGF0YV9jbGluKQ0KDQojIGdldCBhbiBvdmVydmlldyBvdmVyIHB1YmxpY2F0aW9ucyB5ZWFycw0KcHVibF95ZWFyc19jbGluIDwtIG92ZXJ2aWV3X3ZhcmlhYmxlKGRhdGFfY2xpbiwgInllYXIiKQ0KDQpwdWJsX3llYXJzX2NsaW4gfD4NCiAga2FibGUoKSB8Pg0KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkNCg0KIyByYW5nZSBvZiBwdWJsaWNhdGlvbiB5ZWFycw0KcmFuZ2VfcHVibF95ZWFyc19jbGluIDwtIHB1YmxfeWVhcnNfY2xpbiAlPiUNCiAgc3VtbWFyaXNlKA0KICAgIG1pbl95ZWFyID0gbWluKGFzLm51bWVyaWMoeWVhciksIG5hLnJtID0gVFJVRSksDQogICAgbWF4X3llYXIgPSBtYXgoYXMubnVtZXJpYyh5ZWFyKSwgbmEucm0gPSBUUlVFKQ0KICApDQoNCnJhbmdlX3B1YmxfeWVhcnNfY2xpbiB8Pg0KICBrYWJsZSgpIHw+DQogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQ0KDQpgYGANCg0KIyMjIFNhbXBsZSBTaXplcw0KYGBge3IgY2xpbjJ9DQoNCiMgc2VsZWN0IHNhbXBsZV9zaXplIGFuZCBwcmVwYXJlIGZvciBhbmFseXNpcyANCnNhbXBsZV9zaXplc19jbGluIDwtIGRhdGFfY2xpbiAlPiUNCiAgc2VsZWN0KHNhbXBsZV9zaXplKSAlPiUNCiAgZmlsdGVyKHNhbXBsZV9zaXplICE9ICJpbmRldGVybWluYWJsZSIpICU+JQ0KICB1bmxpc3QoKSAlPiUNCiAgYXMuaW50ZWdlcigpDQoNCiMgc3VtbWFyeSBvZiBzYW1wbGUgc2l6ZXMgYWNyb3NzIGFsbCBzdHVkaWVzDQp0YWJsZV9jbGluc3MgPC0gZGVzY3JpYmUoc2FtcGxlX3NpemVzX2NsaW4pDQoNCnRhYmxlX2NsaW5zcyB8Pg0KICBrYWJsZSgpIHw+DQogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQ0KDQpgYGANCg0KDQojIyMgQ2xpbmljYWwgU2FtcGxlcw0KYGBge3IgY2xpbjN9DQoNCiMgZ2V0IGFuIG92ZXJ2aWV3IG92ZXIgc2FtcGxlIHNpemVzDQpwYXRpZW50X2dyb3VwcyA8LSBvdmVydmlld192YXJpYWJsZShkYXRhX2NsaW4sICJpbmZvIikgJT4lDQogIGFycmFuZ2UoaW5mbykNCg0KcGF0aWVudF9ncm91cHMgfD4NCiAga2FibGUoKSB8Pg0KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkNCg0KYGBgDQoNCg0KIyMgTm9uLWNsaW5pY2FsIFN0dWRpZXMgDQojIyMgWWVhcnMgb2YgUHVibGljYXRpb24NCmBgYHtyIG5vbmNsaW4xfQ0KDQojIG51bWJlciBvZiBjbGluaWNhbCBwdWJsaWNhdGlvbnMNCmNvdW50X25vbl9jbGluIDwtIG5yb3coZGF0YV9ub25fY2xpbikNCg0KIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBwdWJsaWNhdGlvbnMgeWVhcnMNCnB1YmxfeWVhcnNfbm9uX2NsaW4gPC0gb3ZlcnZpZXdfdmFyaWFibGUoZGF0YV9ub25fY2xpbiwgInllYXIiKQ0KDQpwdWJsX3llYXJzX25vbl9jbGluIHw+DQogIGthYmxlKCkgfD4NCiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpDQoNCiMgcmFuZ2Ugb2YgcHVibGljYXRpb24geWVhcnMNCnJhbmdlX3B1YmxfeWVhcnNfbm9uX2NsaW4gPC0gcHVibF95ZWFyc19ub25fY2xpbiAlPiUNCiAgc3VtbWFyaXNlKA0KICAgIG1pbl95ZWFyID0gbWluKGFzLm51bWVyaWMoeWVhciksIG5hLnJtID0gVFJVRSksDQogICAgbWF4X3llYXIgPSBtYXgoYXMubnVtZXJpYyh5ZWFyKSwgbmEucm0gPSBUUlVFKQ0KICApDQoNCnJhbmdlX3B1YmxfeWVhcnNfbm9uX2NsaW4gfD4NCiAga2FibGUoKSB8Pg0KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkNCg0KYGBgDQoNCiMjIyBOb24tQ2xpbmljYWwgU2FtcGxlcw0KYGBge3Igbm9uY2xpbjJ9DQoNCiMgZ2V0IGFuIG92ZXJ2aWV3IG92ZXIgc2FtcGxlIHNpemVzDQpvdGhlcl9ncm91cHMgPC0gb3ZlcnZpZXdfdmFyaWFibGUoZGF0YV9ub25fY2xpbiwgImluZm8iKSAlPiUNCiAgYXJyYW5nZShpbmZvKQ0KDQpvdGhlcl9ncm91cHMgfD4NCiAga2FibGUoKSB8Pg0KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkNCg0KYGBgDQoNCiMjIyBTYW1wbGUgU2l6ZXMNCmBgYHtyIG5vbmNsaW4zfQ0KDQojIHNlbGVjdCBzYW1wbGVfc2l6ZSBhbmQgcHJlcGFyZSBmb3IgYW5hbHlzaXMgDQpzYW1wbGVfc2l6ZXNfbm9uX2NsaW4gPC0gZGF0YV9ub25fY2xpbiAlPiUNCiAgc2VsZWN0KHNhbXBsZV9zaXplKSAlPiUNCiAgZmlsdGVyKHNhbXBsZV9zaXplICE9ICJpbmRldGVybWluYWJsZSIpICU+JQ0KICB1bmxpc3QoKSAlPiUNCiAgYXMuaW50ZWdlcigpDQoNCiMgc3VtbWFyeSBvZiBzYW1wbGUgc2l6ZXMgYWNyb3NzIGFsbCBzdHVkaWVzDQp0YWJsZV9ub25jbGluc3MgPC0gZGVzY3JpYmUoc2FtcGxlX3NpemVzX25vbl9jbGluKSANCg0KdGFibGVfbm9uY2xpbnNzfD4NCiAga2FibGUoKSB8Pg0KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkNCg0KYGBgDQoNCg==</div>
 
 
 </div>
