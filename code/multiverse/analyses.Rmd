@@ -37,7 +37,11 @@ data_processed_participant_level <- read_csv("../../data/processed/multiverse/da
 
 ```
 
+# Summary stats
+
 Number of unique scoring methods implemented = `r ncol(data_processed_participant_level)`.
+
+Number of participants = `r nrow(data_processed_participant_level)`.
 
 # Correlate scores
 
