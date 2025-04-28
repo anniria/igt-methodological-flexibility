@@ -47,9 +47,6 @@ data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_scori
 # read scores overview file
 # this is a file with one row per distinct score 
 scores_overview <- read_xlsx("../../data/raw/metamethod review/master coding/all_scores_overview.xlsx")
-# read monotonic scores file
-# this is a file where we identified scores that can be linear transformed into each other
-monotonic_scores <- read_xlsx("../../data/raw/metamethod review/master coding/monotonic_scores.xlsx")
 
 ```
 
@@ -100,11 +97,7 @@ data <- data %>%
   mutate(monotonic_score_id_freq = n()) %>%
   ungroup()
 
-# join info on monotonic scores to overview of all scores
-scores_overview <- scores_overview %>% 
-  left_join(monotonic_scores, by = "score_id") %>% 
-  mutate(monotonic_score_id = ifelse(is.na(new_score_id), score_id, new_score_id)) %>% 
-  select(score_id, monotonic_score_id, score_description, scoring_approach, category, n_trials, subset_trials)
+
 
 ```
 

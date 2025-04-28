@@ -1,0 +1,118 @@
+---
+title: "Create Scores Overview"
+author: "Annika Kuelpmann"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup}
+#| include: false
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Load Packages
+
+```{r packages}
+#| message: false
+#| warning: false
+
+# load R packages 
+library(knitr)
+library(tidyverse)
+library(readxl)
+library(conflicted)
+library(kableExtra)
+
+# declare preferences regarding conflicts 
+conflicts_prefer(dplyr::filter)
+
+```
+
+## Load Data 
+```{r housekeeping}
+
+# read scoring master file
+data_scoring <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_scoring_master.xlsx") 
+
+# read monotonic scores file
+# this is a file where we identified scores that can be linear transformed into each other
+monotonic <- read_xlsx("../../data/raw/metamethod review/master coding/monotonic_scores.xlsx")
+
+```
+
+```{r overview raw}
+
+# create object with dinstinct scores
+scores_overview <- data_scoring %>%
+  distinct(score_id, .keep_all=TRUE)
+
+```
+
+
+```{r overview monotonic}
+
+# join info on monotonic scores to overview of all scores
+scores_monotonic <- scores_overview %>% 
+  left_join(monotonic, by = "score_id") %>% 
+  mutate(monotonic_score_id = ifelse(is.na(new_score_id), score_id, new_score_id)) %>% 
+  distinct(monotonic_score_id, .keep_all=TRUE)
+
+# align score descriptions and formulas of monotonic scores 
+scores_monotonic <- scores_monotonic %>%
+ mutate(
+    score_description = case_when(
+        str_detect(score_description, fixed("[(C+D)-(A+B)]")) |
+        str_detect(score_description, fixed("(C+D)-(A+B)")) ~ score_description,
+        str_detect(score_description, "\\(A\\+B\\)|\\(C\\+D\\)") ~ str_replace_all(
+        score_description,
+        "\\(A\\+B\\)|\\(C\\+D\\)",
+        "[(C+D)-(A+B)]"
+      ),
+    TRUE ~ score_description)) %>%
+  mutate(
+    deck_selection_formula = str_replace_all(
+      deck_selection_formula,
+      "(late\\(C\\+D\\)-early\\(C\\+D\\))",
+      "late[(A+B)-(C+D)]-early[(A+B)-(C+D)]"
+    ),
+    deck_selection_formula = case_when(
+      deck_selection_formula %in% c("(A+B)", "(C+D)") ~ "(C+D)-(A+B)",
+      TRUE ~ deck_selection_formula
+    ) 
+  ) %>%
+  mutate(
+    score_description       = str_replace_all(score_description,       "\\(B\\+D\\)", "(A+C)"),
+    deck_selection_formula  = str_replace_all(deck_selection_formula,  "\\(B\\+D\\)", "(A+C)")
+  )
+
+  
+# add variable category 
+scores_monotonic <- scores_monotonic %>% 
+  mutate(category = case_when(
+    scoring_approach == "money" ~ "money",
+    scoring_approach == "choice behavior" ~ "choice behavior",
+    str_detect(scoring_approach, "model") ~ "model parameter",
+    scoring_approach == "indeterminable" ~ "indeterminable",
+    str_detect(score_description, "categorized") ~ "categorized score", 
+    deck_selection_formula %in% c("A", "B", "C", "D") ~ "single deck score",
+    deck_selection_formula == "(C+D)-(A+B)" ~ "net score",
+    deck_selection_formula == "(A+C)" ~ "loss frequency based score",
+    str_detect(deck_selection_formula, "early") ~ "difference score",  
+    str_detect(score_description, "one lag") ~ "autocorrelation", 
+    monotonic_score_id %in% c(4023, 4013, 2006) ~ "score across two variants", 
+    TRUE ~ "other"
+  ))
+
+xxx <- scores_monotonic %>%
+  filter(category == "categorized score")
+
+```
