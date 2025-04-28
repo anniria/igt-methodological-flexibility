@@ -2,7 +2,14 @@
 title: "Scrambler"
 author: "Annika Kuelpmann"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
 ---
 
 ```{r setup}
@@ -30,7 +37,7 @@ library(openxlsx)
 ```{r}
 
 # read population file into data frame
-population <- read.xlsx("../../sampling/population.xlsx")
+population <- read.xlsx("data/raw/metamethod review/sampling/population.xlsx")
 
 # set seed to get the same random split each time running the script
 set.seed(42)
@@ -45,6 +52,6 @@ pop_scrambled <- population[sample(1:nrow(population)),]
 ```{r}
 
 # write scrambled population in a new file
-write.xlsx(pop_scrambled, file = "population_scrambled.xlsx")
+write.xlsx(pop_scrambled, file = "data/raw/metamethod review/sampling/population_scrambled.xlsx")
 
 ```
