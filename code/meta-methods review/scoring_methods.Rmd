@@ -40,18 +40,20 @@ conflicts_prefer(dplyr::filter)
 ```
 
 ```{r housekeeping}
-#| include: false
 
 # read scoring master file
 data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_scoring_master.xlsx") 
 # read scores overview file
 # this is a file with one row per distinct score 
-scores_overview <- read_xlsx("../../data/raw/metamethod review/master coding/all_scores_overview.xlsx")
+monotonic_scores <- read_xlsx("../../data/processed/meta-methods review/scores_overview.xlsx")
+# read ID file 
+# this is a file with original score IDs and new IDs 
+# used to merge monotonic scores 
+monotonic_id <- read_xlsx("../../data/raw/metamethod review/master coding/monotonic_scores.xlsx")
 
 ```
 
 ```{r functions}
-#| include: false
 
 # Defining functions used in this script
 
@@ -76,19 +78,19 @@ freq_summary <- function(data) {
 ```
 
 ```{r data preparation}
-#| include: false
 
 # add task_id to data 
 # and select relevant variables 
 data <- data %>%
-  mutate(task_id = group_indices(., article_id, variant)) %>%
-  select(article_id, task_id, score_count, score_id,
-         n_trials, subset_trials)
+  group_by(article_id, variant) %>%
+  mutate(task_id = cur_group_id()) %>%
+  ungroup() %>%
+  select(article_id, task_id, score_count, score_id, n_trials, subset_trials)
 
 # join info on monotonic scores 
 # and add variable with respective ID for each score 
 data <- data %>% 
-  left_join(monotonic_scores, by = "score_id") %>% 
+  left_join(monotonic_id, by = "score_id") %>% 
   mutate(monotonic_score_id = ifelse(is.na(new_score_id), score_id, new_score_id)) 
 
 # add frequencies for monotonic scores 
@@ -196,42 +198,18 @@ percent_scores_per_task_minor |>
 
 This section aims to present a descriptive overview of the distinct scores identified in the sample.
 
-```{r distinct1}
-
-# An overview over the scores that we identified in our sample
-scores_overview <- scores_overview %>%
-  distinct(score_id, .keep_all = TRUE) %>%
-  arrange(score_id)
-
-# scores after collapsing monotonic scores
-scores_collapsed <- scores_overview %>%
-  distinct(monotonic_score_id, .keep_all = TRUE) %>%
-  arrange(monotonic_score_id)
-
-```
-
-
 ### Number of Distinct Scores
 
-This reflects the total number of distinct scores identified in our sample, both prior to and following the collapsing of scores that were initially identified as distinct but were also linear transformations of one another. All of the following analyses are done with the collapsed scores.
+This reflects the total number of distinct scores identified in our sample following the collapsing of scores that were initially identified as distinct but were also linear transformations of one another. All of the following analyses are done with the collapsed scores.
 
-```{r distinct2}
+```{r distinct1}
 
 # count the number of scores we identified in our sample 
-count_scores <- nrow(scores_overview)
+count_scores <- nrow(monotonic_scores)
 
 count_scores |>
   kable() |>
   kable_classic(full_width = FALSE)
-
-
-# count the number of scores after collapsing monotonic scores into one score
-count_scores_collapsed <- nrow(scores_collapsed)
-
-count_scores_collapsed |>
-  kable() |>
-  kable_classic(full_width = FALSE)
-
 
 ```
 
@@ -301,11 +279,11 @@ The following section presents a quantification of the scores, categorized accor
 # proportion of scores per type in sample 
 score_types_total <- data %>%
   select(task_id, monotonic_score_id) %>%
-  left_join(scores_collapsed, by = "monotonic_score_id") %>%
+  left_join(monotonic_scores, by = "monotonic_score_id") %>%
   overview_variable("category") 
 
 # proportion of distinct scores per type 
-score_types <- overview_variable(scores_collapsed, "category") 
+score_types <- overview_variable(monotonic_scores, "category") 
 
 score_types |>
   kable() |>
@@ -321,7 +299,7 @@ A closer look at the tasks that used model parameters:
 # Count the occurrences of model parameters across tasks 
 model_parameters <- data %>%
   select(task_id, monotonic_score_id) %>%
-  left_join(scores_collapsed, by = "monotonic_score_id") %>%
+  left_join(monotonic_scores, by = "monotonic_score_id") %>%
   filter(category == "model parameter")
 
 # view the tasks that used igt models as scoring approaches 
@@ -773,7 +751,7 @@ An indeterminable score is a score with elements that are not clearly defined or
 
 ```{r indeterminable1}
 
-indeterminable_scores <- scores_overview %>%
+indeterminable_scores <- monotonic_scores %>%
   filter(category == "indeterminable")
 
 number_of_indeterminable_scores <- nrow(indeterminable_scores)
@@ -792,9 +770,9 @@ Here we present the number of indeterminate scores per task. "indeterminable_sco
 # count how many articles have with indeterminable scores
 # create data frame
 indeterminable_counts <- data %>%
-  left_join(scores_overview, by = "score_id") %>%
-  select(article_id, task_id, score_id, category) %>%
-  group_by(article_id, task_id, score_id) %>%
+  left_join(monotonic_scores, by = "monotonic_score_id") %>%
+  select(article_id, task_id, monotonic_score_id, category) %>%
+  group_by(article_id, task_id, monotonic_score_id) %>%
   summarise(indeterminable = any(category == "indeterminable"),
             .groups = 'drop')
 

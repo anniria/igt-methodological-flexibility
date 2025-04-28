@@ -19,8 +19,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
+# Preparations 
 ## Load Packages
-
 ```{r packages}
 #| message: false
 #| warning: false
@@ -29,6 +29,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(knitr)
 library(tidyverse)
 library(readxl)
+library(writexl)
 library(conflicted)
 library(kableExtra)
 
@@ -49,17 +50,27 @@ monotonic <- read_xlsx("../../data/raw/metamethod review/master coding/monotonic
 
 ```
 
+# Distinct Scores
+This code creates a an object with distinct scores as described in the IGT articles.
+
 ```{r overview raw}
 
 # create object with dinstinct scores
 scores_overview <- data_scoring %>%
   distinct(score_id, .keep_all=TRUE)
 
+count_scores <- nrow(scores_overview)
+
+count_scores |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 ```
 
+## Monotonic Scores
+Some scores in the sample are described and reported as if they were distinct from each other, but they can be transformed into each other which perfectly preserving ranks. Here, we collapse these scores to prevent an overestimation of the total number of distinct scores. 
 
 ```{r overview monotonic}
-
 # join info on monotonic scores to overview of all scores
 scores_monotonic <- scores_overview %>% 
   left_join(monotonic, by = "score_id") %>% 
@@ -112,7 +123,33 @@ scores_monotonic <- scores_monotonic %>%
     TRUE ~ "other"
   ))
 
-xxx <- scores_monotonic %>%
-  filter(category == "categorized score")
+# add variable: score implemented in graphic table 
+scores_monotonic <- scores_monotonic %>% 
+    mutate(implemented = case_when(
+    monotonic_score_id %in% c(3005, 3025) ~ "yes",
+    monotonic_score_id %in% c(4013, 4016, 4023) ~ "too vague to implement",
+    monotonic_score_id >= 3001 & monotonic_score_id <= 3042 ~ "too vague to implement",
+    monotonic_score_id >= 4039 & monotonic_score_id <= 4054 ~ "referred to in table notes",
+    TRUE ~ "yes"
+  ))
+
+count_scores_monotonic <- nrow(scores_monotonic)
+
+count_scores_monotonic |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+```
+
+## Print 
+Here, we print the table of score into an excel file.
+```{r print file}
+
+# select relevant variables
+scores_monotonic <- scores_monotonic %>%
+  select(monotonic_score_id, score_description, scoring_approach, category, deck_selection_formula, money_formula, choice_behavior_formula, n_trials, subset_trials)
+
+# write into excel file
+write_xlsx(scores_monotonic, path = "../../data/processed/meta-methods review/scores_overview.xlsx")
 
 ```
