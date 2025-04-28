@@ -1,0 +1,204 @@
+---
+title: "Inter Rater Reliability Scoring"
+author: "Annika Kuelpmann"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup}
+#| include: false
+
+# load knitr 
+library(knitr)
+
+# set knitr chunk options 
+opts_chunk$set(echo = TRUE,
+               message = FALSE,
+               warning = FALSE)
+```
+
+# Load Packages
+
+```{r packages}
+#| echo: false
+
+# load packages
+library(readxl)
+library(conflicted)
+library(tidyverse)
+library(irr)
+library(lpSolve)
+library(kableExtra)
+
+# set preferred options 
+conflicts_prefer(dplyr::filter)
+
+```
+
+# Data Preparation
+
+```{r data prep}
+#| echo: false
+
+# read data files
+data_r1 <- read_xlsx("../../data/raw/metamethod review/codebook - rater 1/r1_scoring_aligned.xlsx")
+data_r2 <- read_xlsx("../../data/raw/metamethod review/codebook - rater 2/r2_scoring_aligned.xlsx")
+
+# align data types
+data_r1 <- data_r1 %>%
+  mutate(score_count = as.numeric(score_count)) %>%
+  mutate(score_id_new = as.character(score_id_new)) 
+data_r2 <- data_r2 %>%
+  mutate(score_count = as.numeric(score_count)) %>%
+  mutate(score_id_new = as.character(score_id_new)) 
+```
+
+# Inter Rater Reliability: Number of Scores per Article
+
+```{r irr}
+
+# compute number of scores per article
+# for data_r1
+numbers_r1 <- data_r1 %>%
+  group_by(article_id) %>%
+  summarize(score_count_r1 = max(score_count)) 
+# for data_r2
+numbers_r2 <- data_r2 %>% 
+  group_by(article_id) %>%
+  summarize(score_count_r2 = max(score_count))
+
+# join tables of data_r1 and data_r2
+numbers <- full_join(numbers_r1, numbers_r2,
+                     by = "article_id") 
+
+# Krippendorff's alpha for number of scores per article
+# create wide format
+numbers_wide <- numbers %>%
+  gather(key = "Variable", value = "Value", -article_id) %>%
+  spread(key = "article_id", value = "Value") %>%
+  select(-Variable)
+# compute Krippendorff's alpha 
+kripp_numbers <- numbers_wide %>%
+  as.matrix
+kripp.alpha(kripp_numbers, "ratio")
+```
+
+## Text in manuscript
+
+The above results produce the results reported in the manuscript for the "Interrater reliability" heading. i.e., 
+"1) We calculated Krippendorff's α to assess the interrater reliability of the score count per article (α = .90, high reliability)."
+
+# Inter Rater Reliability: Distinct Scores per Article
+
+```{r irr3}
+
+# a function to pair the scores 
+pair_scores <- function(scores1, scores2) {
+  common <- intersect(scores1, scores2)
+  s1_only <- setdiff(scores1, common)
+  s2_only <- setdiff(scores2, common)
+  # pair common scores 
+  paired_common <- tibble(r1 = common, r2 = common)
+  # fill missings with NA 
+  len_diff <- abs(length(s1_only) - length(s2_only))
+  if (length(s1_only) < length(s2_only)) {
+    s1_only <- c(s1_only, rep(NA, len_diff))
+  } else {
+    s2_only <- c(s2_only, rep(NA, len_diff))
+  }
+  paired_remaining <- tibble(r1 = s1_only, r2 = s2_only)
+  bind_rows(paired_common, paired_remaining)
+}
+
+# create data frames with selected variables
+df_r1 <- data_r1 %>% 
+  select(article_id, score_value = score_id_new) %>% 
+  distinct()
+df_r2 <- data_r2 %>% 
+  select(article_id, score_value = score_id_new) %>% 
+  distinct()
+
+# object with unique article_id values
+all_ids <- unique(data_r1$article_id)
+
+# get a list with paired scores 
+paired_scores_list <- map(all_ids, function(id) {
+  s1 <- df_r1 %>% filter(article_id == id) %>% pull(score_value)
+  s2 <- df_r2 %>% filter(article_id == id) %>% pull(score_value)
+  pair_scores(s1, s2) %>% mutate(article_id = id)
+})
+
+# create data frame with paired scores 
+# In order not to overestimate the IRR by eliminating NA values, these are named as a score
+paired_scores <- bind_rows(paired_scores_list) %>%
+  mutate(
+    r1 = ifelse(is.na(r1), "NA-score", r1),
+    r2 = ifelse(is.na(r2), "NA-score", r2)
+  )
+
+# create matrix for Krippendorff's Alpha 
+ratings_matrix <- paired_scores %>% 
+  select(r1, r2) %>% 
+  as.matrix() 
+
+# compute kappa 
+kappa2(ratings_matrix)
+
+```
+
+## Text in manuscript
+
+The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
+
+"2) xxx"
+
+# Inter Rater Reliability: Occurrence of Each Distinct Score in the Whole Sample
+
+```{r irr2}
+
+# add variable for frequency of each score ID
+# for data_r1
+score_freq_r1 <- data_r1 %>%
+  group_by(score_id_new) %>%
+  mutate(frequency_r1 = n()) %>%
+  distinct(score_id_new, .keep_all = TRUE) %>%
+  select(score_id_new, frequency_r1)
+# for data_r2
+score_freq_r2 <- data_r2 %>% 
+  group_by(score_id_new) %>%
+  mutate(frequency_r2 = n()) %>% 
+  distinct(score_id, .keep_all = TRUE) %>%
+  select(score_id_new, frequency_r2)
+
+# join tables
+score_freq <- full_join(score_freq_r1, score_freq_r2,
+                        by = "score_id_new") %>%
+  distinct(score_id_new, .keep_all = TRUE) 
+
+# Krippendorff's alpha for occurrence of each score in the whole sample
+# create wide format
+score_freq_wide <- score_freq %>%
+  gather(key = "Variable", value = "Value", -score_id_new) %>%
+  spread(key = "score_id_new", value = "Value") %>%
+  select(-Variable)
+# compute Krippendorff's alpha 
+kripp_score_freq <- score_freq_wide %>%
+  as.matrix
+kripp.alpha(kripp_score_freq, "ratio")
+
+```
+
+## Text in manuscript
+
+The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
+
+"3) We also calculated Krippendorff's α for the occurrence of each score in the entire sample (α = .92)."
+
+

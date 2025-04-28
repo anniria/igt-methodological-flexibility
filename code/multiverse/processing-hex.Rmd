@@ -1,0 +1,1116 @@
+---
+title: "IGT multiverse"
+subtitle: "Data processing"
+author: "Ian Hussey"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+```
+
+# Get data
+
+```{r}
+
+options(scipen=999)
+
+# dependencies
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+#library(sjPlot)
+#library(forcats)
+library(janitor)
+
+# function to round all numeric vars in a data frame
+round_df <- function(df, n_digits = 3) {
+  df %>% mutate_if(is.numeric, janitor::round_half_up, digits = n_digits)
+}
+
+# get data
+load("../../data/raw/multiverse/IGTdata.rdata")
+
+```
+
+# Score items
+
+## Win/loss
+
+```{r}
+
+data_wins <- 
+  bind_rows(
+    wi_100 |>
+      as.tibble() |>
+      rownames_to_column(var = "id") |>
+      pivot_longer(cols = -id,
+                   names_to = "trial",
+                   values_to = "win") |>
+      mutate(trial = as.numeric(str_remove(trial, "Wins_")),
+             id = paste("100trials", id, sep = "_")),
+    # # i originally included the data for the other procedural versions of the task, but this greatly complicates things as you have to standardize things like money won by the number of trials. better to simply not include these.
+    # wi_95 |>
+    #   as.tibble() |>
+    #   rownames_to_column(var = "id") |>
+    #   pivot_longer(cols = -id,
+    #                names_to = "trial",
+    #                values_to = "win") |>
+    #   mutate(trial = as.numeric(str_remove(trial, "Wins_")),
+    #          id = paste("95trials", id, sep = "_")),
+    # wi_150 |>
+    #   as.tibble() |>
+    #   rownames_to_column(var = "id") |>
+    #   pivot_longer(cols = -id,
+    #                names_to = "trial",
+    #                values_to = "win") |>
+    #   mutate(trial = as.numeric(str_remove(trial, "Wins_")),
+    #          id = paste("150trials", id, sep = "_"))
+  )
+
+data_losses <- 
+  bind_rows(
+    lo_100 |>
+      as.tibble() |>
+      rownames_to_column(var = "id") |>
+      pivot_longer(cols = -id,
+                   names_to = "trial",
+                   values_to = "loss") |>
+      mutate(trial = as.numeric(str_remove(trial, "Losses_")),
+             id = paste("100trials", id, sep = "_")),
+    # # i originally included the data for the other procedural versions of the task, but this greatly complicates things as you have to standardize things like money won by the number of trials. better to simply not include these.
+    # lo_95 |>
+    #   as.tibble() |>
+    #   rownames_to_column(var = "id") |>
+    #   pivot_longer(cols = -id,
+    #                names_to = "trial",
+    #                values_to = "loss") |>
+    #   mutate(trial = as.numeric(str_remove(trial, "Losses_")),
+    #          id = paste("95trials", id, sep = "_")),
+    # lo_150 |>
+    #   as.tibble() |>
+    #   rownames_to_column(var = "id") |>
+    #   pivot_longer(cols = -id,
+    #                names_to = "trial",
+    #                values_to = "loss") |>
+    #   mutate(trial = as.numeric(str_remove(trial, "Losses_")),
+    #          id = paste("150trials", id, sep = "_"))
+  )
+
+data_winloss <- 
+  full_join(data_wins, data_losses, by = c("id", "trial")) |>
+  mutate(balance_for_trial = win + loss, 
+         loss_binary = ifelse(loss < 0, 1, 0))
+
+```
+
+## Choices
+
+This assumes 1 = A, 2 = B, 3 = C, 4 = D. This seems to be correct when comparing against the average amount won per deck.
+
+```{r}
+
+data_choice <- 
+  bind_rows(
+    choice_100 |>
+      as.tibble() |>
+      rownames_to_column(var = "id") |>
+      pivot_longer(cols = -id,
+                   names_to = "trial",
+                   values_to = "choice") |>
+      mutate(trial = as.numeric(str_remove(trial, "Choice_")),
+             id = paste("100trials", id, sep = "_")),
+    # choice_95 |>
+    #   as.tibble() |>
+    #   rownames_to_column(var = "id") |>
+    #   pivot_longer(cols = -id,
+    #                names_to = "trial",
+    #                values_to = "choice") |>
+    #   mutate(trial = as.numeric(str_remove(trial, "Choice_")),
+    #          id = paste("95trials", id, sep = "_")),
+    # choice_150 |>
+    #   as.tibble() |>
+    #   rownames_to_column(var = "id") |>
+    #   pivot_longer(cols = -id,
+    #                names_to = "trial",
+    #                values_to = "choice") |>
+    #   mutate(trial = as.numeric(str_remove(trial, "Choice_")),
+    #          id = paste("150trials", id, sep = "_"))
+  ) |>
+  mutate(choice = as.factor(case_when(choice == 1 ~ "A",
+                                      choice == 2 ~ "B",
+                                      choice == 3 ~ "C",
+                                      choice == 4 ~ "D")))
+
+```
+
+## Combine
+
+```{r}
+
+data_processed_trial_level <- data_winloss |>
+  full_join(data_choice, by = c("id", "trial"))
+
+```
+
+## Compare decks
+
+To check that I have correctly labelled the disadvantagous decks (A and B) and the advantagous ones (C and D)
+
+```{r}
+
+data_processed_trial_level |>
+  group_by(choice) |>
+  summarize(mean_win = mean(win),
+            mean_loss = mean(loss),
+            mean_balance = mean(balance_for_trial)) |>
+  round_df(0)
+
+```
+
+## Check all participants have 100 trials
+
+```{r}
+
+data_processed_trial_level |>
+  count(id) |>
+  count(n)
+
+```
+
+## Write to disk
+
+```{r}
+
+write_csv(data_processed_trial_level,
+          "../../data/processed/multiverse/data_processed_trial_level.csv")
+
+```
+
+# Score participants
+
+## Overview
+
+Data is scored using the following factorial design:
+
+- 3 X subset: 
+  - all trials
+  - first vs last block [20%]
+  - difference between first and last block [20%]
+- 21 X scoring approach: 
+  - total money won, total lost, total final balance (won-lost)
+  - number of trials on which a loss was incurred [brutto loss, agnostic to money won on that trial]
+  - number of selection from deck(s) A, B, C, D, A_plus_B, A_plus_C, B_plus_D, C_minus_A, C_plus_D, C_minus_D, D_minus_B, C_plus_D_minus_A_plus_B, C_plus_D_divided_by_A_plus_B.
+  - number of switches between decks: total number of switches between decks, total number of switches between decks on trials following a loss trial, total number of switches between advantageous vs. disadvantageous decks (C and D vs A and B), total number of switches between advantageous vs. disadvantageous decks (C and D vs A and B) on trials following a loss trial.
+- total of 63 scores per person.
+
+Other scoring strategies that could be implemented which were observed in the literature:
+
+- [(C+D)-(A+B)]: each 5% of trials, first 40% of trials, first 50% of trials, first 60% of trials, last 40% of trials, last 50% of trials, last 60% of trials, diff between first 40% of trials and last 60% of trials, diff between first 33% of trials and last 33% of trials, dichotomised to less than -10 (impaired) or more than -10 (not impaired), dichotomised to less than 0 (impaired) or more than 0 (not impaired), last 60% dichotomised using median split.  [done in spreadsheet]
+- A, B, C, D: first 33%, second 33%, third 33%, dichotomised to 60+ selections from this deck.  [done in spreadsheet]
+- A+B: first 10%, trials 11-50, trials 51-80, first 33%, second 33%, third 33%  [done in spreadsheet]
+- C+D: first 10%, trials 11-50, trials 51-80, each 16.66%, first 16.66% of trials vs last 16.66% of trials [done in spreadsheet]
+- A, B, C, D, C+D, B+D [weird]: first 25%, second 25%, third 25%, fourth 25%  [done in spreadsheet]
+- C-A: 100% of trials [done in spreadsheet]
+- D-B: 100% of trials [done in spreadsheet]
+- A+C: 100% [done in spreadsheet] *NOT IMPLEMENTED BELOW?*
+- B+D: [weird]: 100%, first 25%, second 25%, third 25%, fourth 25% [done in spreadsheet] *NOT IMPLEMENTED BELOW?*
+
+- not switching decks to disadvantageous decks after receiving a punishment on an advantageous deck
+- A following a loss on A
+
+Other rare strategies
+
+- one lag autocorrelation between deck selections and overall value (wins-losses) of the preceding card chosen for block 3, within 3 blocks (first 33.33$, last 33.33% of trials)
+
+## Deck choice counts
+
+### All trials
+
+```{r}
+
+data_scored_deck_choices_temp <- data_processed_trial_level |>
+  group_by(id) |>
+  count(choice) |>
+  pivot_wider(names_from = choice,
+              values_from = n) |>
+  ungroup() |>
+  # replacing NA with 0
+  mutate(A = ifelse(is.na(A), 0, A),
+         B = ifelse(is.na(B), 0, B),
+         C = ifelse(is.na(C), 0, C),
+         D = ifelse(is.na(D), 0, D)) |>
+  # convert counts to proportions to control for number of trials
+  mutate(total = A+B+C+D,
+         A = A/total,
+         B = B/total,
+         C = C/total,
+         D = D/total) |>
+  select(-total) |>
+  mutate(A_60_cutoff = as.numeric(A >= .60),
+         B_60_cutoff = as.numeric(B >= .60),
+         C_60_cutoff = as.numeric(C >= .60),
+         D_60_cutoff = as.numeric(D >= .60),
+         A_plus_B  = A+B, # must correlate perfectly with C_plus_D_minus_A_plus_B, redundant
+         A_plus_C  = A+C, 
+         #B_plus_D  = B+D, # not found in review? 
+         C_minus_A = C-A, 
+         C_plus_D  = C+D, # must correlate perfectly with C_plus_D_minus_A_plus_B, redundant
+         C_plus_D_log_transform = log(C+D / (1 - C+D)),
+         #C_minus_D = C-D, # not found in review?
+         D_minus_B = D-B, 
+         C_plus_D_minus_A_plus_B = C_plus_D-A_plus_B,
+         C_plus_D_minus_A_plus_B_median_split  = as.numeric(C_plus_D_minus_A_plus_B > median(C_plus_D_minus_A_plus_B)),
+         C_plus_D_minus_A_plus_B_zero_cutoff  = as.numeric(C_plus_D_minus_A_plus_B > 0),
+         C_plus_D_minus_A_plus_B_t_score = 50 + 10 * (C_plus_D_minus_A_plus_B - mean(C_plus_D_minus_A_plus_B)) / sd(C_plus_D_minus_A_plus_B),
+         C_plus_D_minus_A_plus_B_t_score_50_cutoff = as.numeric(C_plus_D_minus_A_plus_B_t_score > 50),
+         C_plus_D_minus_A_plus_B_t_score_39_cutoff = as.numeric(C_plus_D_minus_A_plus_B_t_score > 39),
+         C_plus_D_divided_by_A_plus_B = C_plus_D/A_plus_B) |>
+  select(-A_plus_B, -C_plus_D) # must correlate perfectly with C_plus_D_minus_A_plus_B, redundant
+
+
+# one study in the literature calculated modal deck choice, but this is a categorical variable that cant be used in the multiverse
+# as compromise, calculate the modal deck and then dichotomise this as 0 (disadvantageous, A or B) or 1 (advantageous, C or D)
+get_mode_factor <- function(x) {
+  tab <- table(x) # Frequency table
+  levels(x)[which.max(tab)] # Return the most frequent level while preserving factor structure
+}
+
+data_scored_deck_choices_modal <- data_processed_trial_level |>
+  group_by(id) |>
+  summarise(modal_deck_choice = get_mode_factor(choice), .groups = "drop") |>
+  mutate(modal_deck_choice_dichotomised = case_when(modal_deck_choice %in% c("A", "B") ~ 0,
+                                                    modal_deck_choice %in% c("C", "D") ~ 1)) |>
+  select(-modal_deck_choice)
+
+data_scored_deck_choices <- data_scored_deck_choices_temp |>
+  left_join(data_scored_deck_choices_modal, by = "id") 
+
+```
+
+### By block (different subsets)
+
+```{r}
+
+data_scored_deck_choices_blocks_5_long <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(total_trials = max(trial),
+         trial_proportion = trial/total_trials) |>
+  ungroup() |>
+  mutate(subset = ((trial - 1) %/% 5) + 1) |> # blocks of 5 trials
+  drop_na(subset) |>
+  group_by(id, subset) |>
+  count(choice) |>
+  pivot_wider(names_from = choice,
+              values_from = n) |>
+  ungroup() |>
+  # replacing NA with 0
+  mutate(A = ifelse(is.na(A), 0, A),
+         B = ifelse(is.na(B), 0, B),
+         C = ifelse(is.na(C), 0, C),
+         D = ifelse(is.na(D), 0, D)) |>
+  # convert counts to proportions to control for number of trials
+  mutate(total = A+B+C+D,
+         A = A/total,
+         B = B/total,
+         C = C/total,
+         D = D/total) |>
+  select(-total) |>
+  mutate(
+    C_plus_D_minus_A_plus_B = (C+D)-(A+B),
+  ) |>
+  select(-A, -B, -C, -D)
+
+data_scored_deck_choices_blocks_5 <- data_scored_deck_choices_blocks_5_long |>
+  pivot_wider(names_from = "subset",
+              values_from = c(-id, -subset),
+              names_prefix = "C_plus_D_minus_A_plus_B_blocks_5_block_")
+
+
+
+data_scored_deck_choices_blocks_10_long <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(total_trials = max(trial),
+         trial_proportion = trial/total_trials) |>
+  ungroup() |>
+  mutate(subset = ((trial - 1) %/% 10) + 1) |> # blocks of 10 trials
+  drop_na(subset) |>
+  group_by(id, subset) |>
+  count(choice) |>
+  pivot_wider(names_from = choice,
+              values_from = n) |>
+  ungroup() |>
+  # replacing NA with 0
+  mutate(A = ifelse(is.na(A), 0, A),
+         B = ifelse(is.na(B), 0, B),
+         C = ifelse(is.na(C), 0, C),
+         D = ifelse(is.na(D), 0, D)) |>
+  # convert counts to proportions to control for number of trials
+  mutate(total = A+B+C+D,
+         A = A/total,
+         B = B/total,
+         C = C/total,
+         D = D/total) |>
+  select(-total) |>
+  mutate(
+    C_plus_D_minus_A_plus_B = (C+D)-(A+B),
+  ) |>
+  select(-A, -B, -C, -D)
+
+data_scored_deck_choices_blocks_10 <- data_scored_deck_choices_blocks_10_long |>
+  pivot_wider(names_from = "subset",
+              values_from = c(-id, -subset),
+              names_prefix = "C_plus_D_minus_A_plus_B_blocks_10_block_")
+
+
+
+data_scored_deck_choices_blocks_16_long <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(total_trials = max(trial),
+         trial_proportion = trial/total_trials) |>
+  ungroup() |>
+  mutate(subset = case_when(trial_proportion <= .16 ~ 1,
+                           trial_proportion > .16 & trial_proportion <= .33 ~ 2,
+                           trial_proportion > .33 & trial_proportion <= .50 ~ 3,
+                           trial_proportion > .50 & trial_proportion <= .67 ~ 4,
+                           trial_proportion > .67 & trial_proportion <= .83 ~ 5,
+                           trial_proportion > .83 ~ 6)) |>
+  drop_na(subset) |>
+  group_by(id, subset) |>
+  count(choice) |>
+  pivot_wider(names_from = choice,
+              values_from = n) |>
+  ungroup() |>
+  # replacing NA with 0
+  mutate(A = ifelse(is.na(A), 0, A),
+         B = ifelse(is.na(B), 0, B),
+         C = ifelse(is.na(C), 0, C),
+         D = ifelse(is.na(D), 0, D)) |>
+  # convert counts to proportions to control for number of trials
+  mutate(total = A+B+C+D,
+         A = A/total,
+         B = B/total,
+         C = C/total,
+         D = D/total) |>
+  select(-total) |>
+  mutate(
+    C_plus_D_minus_A_plus_B = (C+D)-(A+B),
+  ) |>
+  select(-A, -B, -C, -D)
+
+data_scored_deck_choices_blocks_16 <- data_scored_deck_choices_blocks_16_long |>
+  pivot_wider(names_from = "subset",
+              values_from = c(-id, -subset),
+              names_prefix = "C_plus_D_minus_A_plus_B_blocks_16_block_")
+
+
+
+data_scored_deck_choices_blocks_20_long <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(total_trials = max(trial),
+         trial_proportion = trial/total_trials) |>
+  ungroup() |>
+  mutate(subset = ((trial - 1) %/% 20) + 1) |> # blocks of 20 trials
+  drop_na(subset) |>
+  group_by(id, subset) |>
+  count(choice) |>
+  pivot_wider(names_from = choice,
+              values_from = n) |>
+  ungroup() |>
+  # replacing NA with 0
+  mutate(A = ifelse(is.na(A), 0, A),
+         B = ifelse(is.na(B), 0, B),
+         C = ifelse(is.na(C), 0, C),
+         D = ifelse(is.na(D), 0, D)) |>
+  # convert counts to proportions to control for number of trials
+  mutate(total = A+B+C+D,
+         A = A/total,
+         B = B/total,
+         C = C/total,
+         D = D/total) |>
+  select(-total) |>
+  mutate(
+    C_plus_D_minus_A_plus_B = (C+D)-(A+B),
+  ) |>
+  select(-A, -B, -C, -D)
+
+data_scored_deck_choices_blocks_20 <- data_scored_deck_choices_blocks_20_long |>
+  pivot_wider(names_from = "subset",
+              values_from = c(-id, -subset),
+              names_prefix = "C_plus_D_minus_A_plus_B_blocks_20_block_")
+
+
+
+data_scored_deck_choices_blocks_25_long <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(total_trials = max(trial),
+         trial_proportion = trial/total_trials) |>
+  ungroup() |>
+  mutate(subset = ((trial - 1) %/% 25) + 1) |> # blocks of 25 trials
+  drop_na(subset) |>
+  group_by(id, subset) |>
+  count(choice) |>
+  pivot_wider(names_from = choice,
+              values_from = n) |>
+  ungroup() |>
+  # replacing NA with 0
+  mutate(A = ifelse(is.na(A), 0, A),
+         B = ifelse(is.na(B), 0, B),
+         C = ifelse(is.na(C), 0, C),
+         D = ifelse(is.na(D), 0, D)) |>
+  # convert counts to proportions to control for number of trials
+  mutate(total = A+B+C+D,
+         A = A/total,
+         B = B/total,
+         C = C/total,
+         D = D/total) |>
+  select(-total) |>
+  mutate(
+    C_plus_D_minus_A_plus_B = (C+D)-(A+B),
+  ) |>
+  select(-A, -B, -C, -D)
+
+data_scored_deck_choices_blocks_25 <- data_scored_deck_choices_blocks_25_long |>
+  pivot_wider(names_from = "subset",
+              values_from = c(-id, -subset),
+              names_prefix = "C_plus_D_minus_A_plus_B_blocks_25_block_")
+
+
+
+data_scored_deck_choices_blocks_33_long <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(total_trials = max(trial),
+         trial_proportion = trial/total_trials) |>
+  ungroup() |>
+  mutate(subset = case_when(trial_proportion <= .33 ~ 1,
+                           trial_proportion > .33 & trial_proportion <= .66 ~ 2,
+                           trial_proportion > .66 ~ 3)) |>
+  drop_na(subset) |>
+  group_by(id, subset) |>
+  count(choice) |>
+  pivot_wider(names_from = choice,
+              values_from = n) |>
+  ungroup() |>
+  # replacing NA with 0
+  mutate(A = ifelse(is.na(A), 0, A),
+         B = ifelse(is.na(B), 0, B),
+         C = ifelse(is.na(C), 0, C),
+         D = ifelse(is.na(D), 0, D)) |>
+  # convert counts to proportions to control for number of trials
+  mutate(total = A+B+C+D,
+         A = A/total,
+         B = B/total,
+         C = C/total,
+         D = D/total) |>
+  select(-total) |>
+  mutate(
+    C_plus_D_minus_A_plus_B = (C+D)-(A+B),
+  ) |>
+  select(-A, -B, -C, -D)
+
+data_scored_deck_choices_blocks_33 <- data_scored_deck_choices_blocks_33_long |>
+  pivot_wider(names_from = "subset",
+              values_from = c(-id, -subset),
+              names_prefix = "C_plus_D_minus_A_plus_B_blocks_33_block_")
+
+
+data_scored_deck_choices_blocks <- data_scored_deck_choices_blocks_5 |>
+  full_join(data_scored_deck_choices_blocks_10, by = "id") |>
+  full_join(data_scored_deck_choices_blocks_16, by = "id") |>
+  full_join(data_scored_deck_choices_blocks_20, by = "id") |>
+  full_join(data_scored_deck_choices_blocks_25, by = "id") |>
+  full_join(data_scored_deck_choices_blocks_33, by = "id") 
+
+```
+
+### Subets
+
+```{r}
+
+C_plus_D_minus_A_plus_B_subset <- function(dat, start, end){
+  new_name <- paste0("C_plus_D_minus_A_plus_B_", start, "_to_", end)
+  
+  dat |>
+    group_by(id) |>
+    mutate(total_trials = max(trial),
+           trial_proportion = trial/total_trials) |>
+    ungroup() |>
+    filter(trial %in% start:end) |> 
+    group_by(id) |>
+    count(choice) |>
+    pivot_wider(names_from = choice,
+                values_from = n) |>
+    ungroup() |>
+    # replacing NA with 0
+    mutate(A = ifelse(is.na(A), 0, A),
+           B = ifelse(is.na(B), 0, B),
+           C = ifelse(is.na(C), 0, C),
+           D = ifelse(is.na(D), 0, D)) |>
+    # convert counts to proportions to control for number of trials
+    mutate(total = A+B+C+D,
+           A = A/total,
+           B = B/total,
+           C = C/total,
+           D = D/total) |>
+    select(-total) |>
+    mutate(
+      C_plus_D_minus_A_plus_B = (C+D)-(A+B),
+    ) |>
+    select(-A, -B, -C, -D) |>
+    rename(!!new_name := C_plus_D_minus_A_plus_B)
+}
+
+data_scored_deck_choices_subsets <- 
+  C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 1, 40) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 1, 50)) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 1, 60)) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 11, 50)) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 41, 100)) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 51, 80)) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 51, 100)) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 61, 100)) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 68, 100)) |>
+  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 76, 100)) 
+  
+```
+
+## Deck switching
+
+### All trials
+
+```{r}
+
+# "trials participants switch decks"
+data_scored_deck_switching_any <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(switch = choice != dplyr::lag(choice)) |>
+  summarize(proportion_switch_any = mean(switch, na.rm = TRUE))
+
+# "deck switching after loss"
+# proportion of switching vs non switching after loss, excluding trial on which there were not losses. 
+data_scored_deck_switching_after_loss <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(switch = choice != dplyr::lag(choice)) |>
+  filter(dplyr::lag(loss_binary == 1) == TRUE) |>
+  summarize(proportion_switch_after_loss = mean(switch, na.rm = TRUE)) 
+
+# "trials participants switch from disadvantageous to advantageous decks"
+data_scored_deck_switching_to_cd_any <- data_processed_trial_level |>
+  mutate(choice_binary = case_when(choice %in% c("C", "D")  ~ "advantageous",
+                                   choice %in% c("A", "B")  ~ "disadvantageous")) |>
+  group_by(id) |>
+  mutate(switch = choice_binary != dplyr::lag(choice_binary)) |>
+  summarize(proportion_switch_advantageous = mean(switch, na.rm = TRUE))
+
+# "trials participants switch from disadvantageous to advantageous decks after loss"
+# proportion of switching to deck C or D after a loss on A or B
+data_scored_deck_switching_to_cd_after_loss_on_disadvantageous <- data_processed_trial_level |>
+  mutate(choice_binary = case_when(choice %in% c("C", "D")  ~ "advantageous",
+                                   choice %in% c("A", "B")  ~ "disadvantageous")) |>
+  group_by(id) |>
+  mutate(switch = choice_binary != dplyr::lag(choice_binary)) |>
+  filter(dplyr::lag(loss_binary == 1) == TRUE) |>
+  summarize(proportion_switch_advantageous_after_loss = mean(switch, na.rm = TRUE)) 
+
+data_scored_deck_choices_A_after_loss_on_A <- data_processed_trial_level |>
+  group_by(id) |>
+  mutate(A_after_loss_on_A = choice == "A" & lag(choice) == "A" & lag(loss) < 0) |>
+  summarize(A_after_loss_on_A = mean(A_after_loss_on_A, na.rm = TRUE)) |>
+  ungroup()
+
+# combine
+data_scored_deck_switching <- data_scored_deck_switching_any |>
+  full_join(data_scored_deck_switching_after_loss, by = "id") |>
+  full_join(data_scored_deck_switching_to_cd_any, by = "id") |>
+  full_join(data_scored_deck_switching_to_cd_after_loss_on_disadvantageous, by = "id") |>
+  left_join(data_scored_deck_choices_A_after_loss_on_A, by = "id")
+
+```
+
+### By block (20% subsets)
+
+Add?
+
+### Difference between first and last block
+
+Add?
+
+## Total money won/lost/balance
+
+Ignores starting capital
+
+### All trials
+
+```{r}
+
+data_scored_earnings <- data_processed_trial_level |>
+  group_by(id) |>
+  summarize(total_won = sum(win),
+            total_lost = sum(loss),
+            total_balance = sum(balance_for_trial))
+
+```
+
+### By block (20% subsets)
+
+```{r}
+
+# data_scored_earnings_subset_long <- data_processed_trial_level |>
+#   group_by(id) |>
+#   mutate(total_trials = max(trial),
+#          trial_proportion = trial/total_trials) |>
+#   ungroup() |>
+#   mutate(subset = case_when(trial_proportion <= .20 ~ 1,
+#                             trial_proportion > .20 & trial_proportion <= .40 ~ 2,
+#                             trial_proportion > .40 & trial_proportion <= .60 ~ 3,
+#                             trial_proportion > .60 & trial_proportion <= .80 ~ 4,
+#                             trial_proportion > .80 ~ 5)) |>
+#   group_by(id, subset) |>
+#   summarize(total_won = sum(win),
+#             total_lost = sum(loss),
+#             total_balance = sum(balance_for_trial))
+# 
+# data_scored_earnings_subset <- data_scored_earnings_subset_long |>
+#   pivot_wider(names_from = "subset",
+#               values_from = c(-id, -subset))
+
+```
+
+### Difference between first and last block
+
+```{r}
+
+# data_scored_earnings_subset_diff <- data_scored_earnings_subset_long |>
+#   pivot_longer(names_to = "variable",
+#                values_to = "score",
+#                cols = c(-id, -subset)) |>
+#   pivot_wider(names_from = subset, 
+#               values_from = score,
+#               names_prefix = "block_") |>
+#   mutate(earnings_diff = block_5 - block_1) |>
+#   select(id, variable, earnings_diff) |>
+#   pivot_wider(names_from = variable,
+#               values_from = earnings_diff) |>
+#   rename(total_won_block_5_minus_block_1 = total_won,
+#          total_lost_block_5_minus_block_1 = total_lost,
+#          total_balance_block_5_minus_block_1 = total_balance)
+
+```
+
+## One-lag autocorrelation between deck selections and overall value (wins-losses) of the preceding card
+
+### By block (33% subsets) and difference between first and last block
+
+```{r}
+
+data_scored_one_lag_autocorrelation <- data_processed_trial_level %>%
+  mutate(block = case_when(trial < 34 ~ 1,
+                           trial > 66 ~ 3,
+                           TRUE ~ 2)) |>
+  group_by(id, block) %>%
+  mutate(deck_choice_dichotomous = case_when(choice %in% c("A", "B") ~ 0,
+                                             choice %in% c("C", "D") ~ 1),
+         lagged_balance_for_trial = lag(balance_for_trial)) %>%
+  summarise(one_lag_autocorrelation = cor(deck_choice_dichotomous, lagged_balance_for_trial, use = "complete.obs"), 
+            .groups = "drop") |>
+  pivot_wider(names_from = "block", 
+              values_from = "one_lag_autocorrelation",
+              names_prefix = "one_lag_autocorrelation_block_") |>
+  select(-one_lag_autocorrelation_block_2) |>
+  mutate(one_lag_autocorrelation_block_3_minus_block_1 = ifelse(!is.na(one_lag_autocorrelation_block_1) & !is.na(one_lag_autocorrelation_block_3),
+                                                                one_lag_autocorrelation_block_3 - one_lag_autocorrelation_block_1,
+                                                                NA))
+
+```
+
+## Combine
+
+```{r}
+
+data_processed_participant_level <- data_scored_earnings |>
+  full_join(data_scored_deck_choices_blocks, by = "id") |>
+  full_join(data_scored_deck_choices_subsets, by = "id") |>
+
+  full_join(data_scored_loss_trials, by = "id") |>
+  #full_join(data_scored_loss_trials_subset, by = "id") |>
+  #full_join(data_scored_loss_trials_subset_diff, by = "id") |>
+  
+  full_join(data_scored_deck_choices, by = "id") |>
+  #full_join(data_scored_deck_choices_subset, by = "id") |>
+  #full_join(data_scored_deck_choices_subset_diff, by = "id") |>
+
+  full_join(data_scored_deck_switching, by = "id") |>
+  # full_join(data_scored_deck_switching_subset, by = "id") |> # add?
+  # full_join(data_scored_deck_switching_subset_diff, by = "id") # add?
+  
+  full_join(data_scored_one_lag_autocorrelation, by = "id") |>
+  
+  # diff scores
+  mutate(C_plus_D_minus_A_plus_B_blocks_33_block_3_minus_1 =
+           C_plus_D_minus_A_plus_B_blocks_33_block_3 -
+           C_plus_D_minus_A_plus_B_blocks_33_block_1,
+         C_plus_D_minus_A_plus_B_blocks_16_block_6_minus_1 =
+           C_plus_D_minus_A_plus_B_blocks_16_block_6 -
+           C_plus_D_minus_A_plus_B_blocks_16_block_1,
+         C_plus_D_minus_A_plus_B_last_60_minus_first_40 = 
+           C_plus_D_minus_A_plus_B_41_to_100 - 
+           C_plus_D_minus_A_plus_B_1_to_40) |>
+  
+  # round all
+  round_df(4)
+
+```
+
+#### Check my intuition that some of these are monotonic / redundant with one another
+
+```{r eval=FALSE, include=FALSE}
+
+monotonic_scoring_methods <- data_processed_participant_level |>
+  select(-id) |>
+  select(!ends_with("_1") & !ends_with("_2") & !ends_with("_3") & !ends_with("_4") & !ends_with("_5")) |>
+  cor() |>
+  as.data.frame() |>
+  rownames_to_column(var = "var1") |>
+  pivot_longer(cols = -var1,
+               names_to = "var2",
+               values_to = "r") |>
+  filter(abs(r) == 1 & 
+           var1 != var2)
+
+monotonic_scoring_methods
+
+
+data_processed_participant_level |>
+  select(A_plus_B, C_plus_D, C_plus_D_minus_A_plus_B, C_plus_D_divided_by_A_plus_B) |>
+  cor()
+
+data_processed_participant_level |>
+  select(B_plus_D, A_plus_C) |>
+  cor()
+
+```
+
+- A_plus_B, C_plus_D, and C_plus_D_minus_A_plus_B are perfectly correlated / redundant
+- B_plus_D and A_plus_C are perfectly correlated / redundant
+
+## Write to disk
+
+```{r}
+
+write_csv(data_processed_participant_level, "../../data/processed/multiverse/data_processed_participant_level.csv")
+
+# data_processed_participant_level_frequent <- data_processed_participant_level |>
+#   select(id,
+#          C_plus_D_minus_A_plus_B,
+#          C_plus_D_minus_A_plus_B_1, 
+#          C_plus_D_minus_A_plus_B_2, 
+#          C_plus_D_minus_A_plus_B_3, 
+#          C_plus_D_minus_A_plus_B_4, 
+#          C_plus_D_minus_A_plus_B_5,
+#          # C_plus_D, # correlates 1.0 with C_plus_D_minus_A_plus_B
+#          A,
+#          B, 
+#          D, 
+#          C, 
+#          # A_plus_B, # correlates 1.0 with C_plus_D_minus_A_plus_B
+#          C_plus_D_minus_A_plus_B_345,
+#          #A_plus_B_5, 
+#          #C_plus_D_5, 
+#          # Attention to losses and gains parameter (EV model)
+#          # Recency parameter (EV model)
+#          # Choice consistency parameter (EV model parameter)
+#          C_plus_D_minus_A_plus_B_12,
+#          #A_plus_B_1, 
+#          #A_plus_B_2, 
+#          #A_plus_B_3, 
+#          #A_plus_B_4, 
+#          #C_plus_D_1, 
+#          #C_plus_D_2, 
+#          #C_plus_D_3, 
+#          #C_plus_D_4, 
+#          A_plus_C, 
+#          #B_plus_D,  # correlates 1.0 with A_plus_C
+#          C_plus_D_minus_A_plus_B_45,
+#          total_won_minus_lost,
+#          C_plus_D_minus_A_plus_B_block_5_minus_block_1) # this one isn't in the most common scores, but represents how two common scores are used in the analyses
+# 
+# write_csv(data_processed_participant_level_frequent, "../../data/processed/multiverse/data_processed_participant_level_frequent.csv")
+
+```
+
+# Correlations
+
+```{r}
+
+common_cors <- 
+  data_processed_participant_level |>
+  #data_processed_participant_level_frequent |>
+  select(-id) |>
+  cor()
+
+diag(common_cors) <- NA
+
+common_cors[lower.tri(common_cors, diag = TRUE)] <- NA
+
+abs(common_cors) |>
+  as.data.frame()
+
+
+dat <- data.frame(r = as.vector(common_cors)) |>
+  drop_na()
+
+ggplot(dat, aes(x = abs(r))) +
+  geom_histogram(boundary = 0, binwidth = 0.05) +
+  xlim(0,1)
+
+ggplot(dat, aes(x = r)) +
+  geom_histogram(boundary = 0, binwidth = 0.05) +
+  xlim(-1,1)
+
+```
+
+# network plot
+
+```{r fig.height=7, fig.width=7}
+library(qgraph)
+
+cor_matrix <- 
+  data_processed_participant_level |>
+  select(-id) |>
+  cor()
+
+# Define variable names 
+num_vars <- data_processed_participant_level |>
+  select(-id) |> 
+  ncol()
+
+generic_labels <- paste0("X", 1:num_vars)
+
+# Generate the unregularized correlation network plot
+qgraph(cor_matrix, 
+       layout = "circle",  # Force-directed layout
+       theme = "classic",  # Clean visual style
+       vsize = 2,          # Node size
+       labels = generic_labels,  # Use generic labels
+       edge.color = "grey20", # Edge color
+       fade = TRUE,
+       edge.width = abs(cor_matrix) * .2,
+       minimum = 0.5,      # Minimum correlation to show
+       cut = 0)           # No thresholding (all correlations shown)
+
+```
+
+
+```{r fig.height=7, fig.width=7}
+
+# Load necessary packages
+library(qgraph)
+library(gplots)
+
+# Example dataset: Using the built-in mtcars dataset
+dat <- data_processed_participant_level |>
+  select(-id)
+
+# Compute the correlation matrix
+cor_matrix <- cor(dat, use = "pairwise.complete.obs")
+
+# Perform hierarchical clustering based on correlation distance
+dist_matrix <- as.dist(1 - abs(cor_matrix))  # Use 1 - |correlation| as distance
+
+dist_matrix[is.na(dist_matrix)] <- 0  # Replace any NA values with 0
+
+clustering <- hclust(dist_matrix, method = "ward.D2")  # Ward's method for clustering
+
+# Reorder the data based on clustering
+dat_ordered <- dat[, colnames(dat)[clustering$order]]
+
+# Recalculate the correlation matrix with ordered variables
+ordered_cor_matrix <- cor(dat_ordered, use = "pairwise.complete.obs")
+
+# Remove self-loops (set diagonal to 0)
+diag(ordered_cor_matrix) <- 0
+
+# Generate generic labels: X1, X2, ..., XN
+num_vars <- ncol(dat_ordered)
+generic_labels <- paste0("X", 1:num_vars)
+
+# Set edge transparency and width based on absolute correlation values
+edge_transparency <- abs(ordered_cor_matrix)  # Stronger correlations = more opaque edges
+edge_widths <- abs(ordered_cor_matrix) * 5    # Scale width by correlation strength
+
+# Generate the unregularized correlation network plot with reordered variables
+qgraph(abs(ordered_cor_matrix), 
+       layout = "circle",  # Force-directed layout
+       theme = "classic",  # Clean visual style
+       vsize = 2,          # Node size
+       labels = generic_labels,  # Use generic labels
+       edge.color = "grey20", # Edge color
+       fade = TRUE,
+       edge.width = edge_widths * .1, # Edge width scales with correlation
+       minimum = 0.4,      # Minimum correlation to show
+       cut = 0)           # No thresholding (all correlations shown)
+
+
+```
+
+
+```{r}
+
+cors_with_modal <- 
+  data_processed_participant_level |>
+  #data_processed_participant_level_frequent |>
+  select(-id) |>
+  cor() |>
+  round(2) |>
+  as.data.frame() 
+
+ggplot(cors_with_modal, aes(x = abs(C_plus_D_minus_A_plus_B))) +
+  geom_histogram(boundary = 0, binwidth = 0.05) +
+  xlim(0,1)
+
+ggplot(cors_with_modal, aes(x = C_plus_D_minus_A_plus_B)) +
+  geom_histogram(boundary = 0, binwidth = 0.05) +
+  xlim(-1,1)
+
+```
+
+```{r}
+
+median_splits <- 
+  data_processed_participant_level |>
+  #data_processed_participant_level_frequent |>
+  select(-id) |>
+  mutate(across(everything(), ~ as.integer(. >= median(., na.rm = TRUE)), .names = "{.col}_median_split")) 
+
+library(dplyr)
+library(purrr)
+
+# Function to calculate percent agreement between two logical columns
+percent_agreement <- function(x, y) {
+  mean(x == y, na.rm = TRUE) * 100
+}
+
+# Function to compute the percent agreement matrix
+percent_agreement_matrix <- function(df) {
+  # Ensure all columns are logical
+  logical_df <- df %>%
+    mutate(across(everything(), as.logical))
+  
+  # Compute agreement between all pairs
+  result <- outer(names(logical_df), names(logical_df), Vectorize(function(a, b) {
+    percent_agreement(logical_df[[a]], logical_df[[b]])
+  }))
+  
+  # Convert to a dataframe
+  result_df <- as.data.frame(result)
+  colnames(result_df) <- names(logical_df)
+  rownames(result_df) <- names(logical_df)
+  
+  return(result_df)
+}
+
+agreement_matrix <- percent_agreement_matrix(median_splits)
+
+agreement_matrix_tri <- agreement_matrix |>
+  as.matrix()
+
+diag(agreement_matrix_tri) <- NA
+
+agreement_matrix_tri[lower.tri(agreement_matrix_tri, diag = TRUE)] <- NA
+
+abs(agreement_matrix_tri) |>
+  as.data.frame()
+
+dat <- data.frame(r = as.vector(agreement_matrix_tri)) |>
+  drop_na()
+
+ggplot(dat, aes(x = r)) +
+  geom_histogram() +
+  xlim(0,100)
+
+
+ggplot(agreement_matrix, aes(x = C_plus_D_minus_A_plus_B)) +
+  geom_histogram() +
+  xlim(0,100)
+
+```
+
+
+```{r}
+
+top_loading_cors <- 
+  data_processed_participant_level |>
+  #data_processed_participant_level_frequent |>
+  select(C_plus_D_minus_A_plus_B, # long term winning strategy
+         C_plus_D_minus_A_plus_B_block_5_minus_block_1, # learning across task. returns the same score for people who start and continue well as those who start and continue badly.
+         A_plus_C, # preference for frequent rewards over other factors
+         A) |> # preference for frequent rewards despite long term large losses
+  cor() |>
+  round(2)
+
+diag(top_loading_cors) <- NA
+
+top_loading_cors[lower.tri(top_loading_cors, diag = TRUE)] <- NA
+abs(top_loading_cors)
+
+```
+
+# Simulated group differences
+
+```{r fig.height=12, fig.width=6}
+
+tidy_d <- function(dat){
+  res <- effsize::cohen.d(score ~ as.factor(group), data = dat)
+  data.frame(d = ifelse(!is.nan(res$estimate), res$estimate, NA),
+             ci_lower = ifelse(!is.nan(res$conf.int[1]), res$conf.int[1], NA),
+             ci_upper = ifelse(!is.nan(res$conf.int[2]), res$conf.int[2], NA))
+}
+
+dat <- data_processed_participant_level |>
+  rename(group = C_plus_D_minus_A_plus_B_median_split) |>
+  pivot_longer(cols = !c("id", "group"),
+               names_to = "metric",
+               values_to = "score") |>
+  group_by(metric) %>%
+  do(tidy_d(.)) |>
+  ungroup() |>
+  drop_na() |>
+  mutate(ci_lower = ifelse(d < 0, ci_lower*-1, ci_lower),
+         ci_upper = ifelse(d < 0, ci_upper*-1, ci_upper),
+         d = ifelse(d < 0, d*-1, d)) |>
+  mutate(metric = forcats::fct_reorder(metric, d)) |>
+  arrange(d) |>
+  mutate(label = ifelse(metric == "C_plus_D_minus_A_plus_B", "a", "b"))
+
+ggplot(dat, aes(d, metric, color = label)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  ggstance::geom_linerangeh(aes(xmin = ci_lower, xmax = ci_upper)) +
+  geom_point() +
+  theme_linedraw() +
+  xlab("abs(Cohen's d)") +
+  ylab("")
+
+```
+
+
+# scrap
+
+```{r eval=FALSE, include=FALSE}
+
+# # "card selections from deck A which immediately followed a loss on that deck"
+# # proportion of switching away from deck A after a loss on deck A
+# data_scored_deck_switching_a_after_loss_on_a <- data_processed_trial_level |>
+#   filter(lag(loss_binary) == TRUE & lag(choice == "A")) |>
+#   group_by(id) |>
+#   mutate(switch_from_a_after_loss_on_a = choice != "A") |>
+#   summarize(proportion_switch_from_a_after_loss_on_a = mean(switch_from_a_after_loss_on_a, na.rm = TRUE))
+
+```

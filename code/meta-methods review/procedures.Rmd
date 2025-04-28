@@ -2,7 +2,15 @@
 title: "Analyses of IGT Procedures"
 author: "Annika Kuelpmann"
 date: "`r Sys.Date()`"
-output: github_document
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+
 ---
 
 ```{r setup}
@@ -21,6 +29,7 @@ library(knitr)
 library(tidyverse)
 library(readxl)
 library(conflicted)
+library(kableExtra)
 
 # declare preferences regarding conflicts 
 conflicts_prefer(dplyr::filter)
@@ -51,7 +60,6 @@ overview_variable <- function(data, variable) {
     mutate(percentage = round(n / sum(n) * 100, 2)) %>%
     arrange(desc(n))
 }
-
 
 # function 2: count and calculate percentages for certain values of a subset of variables
 value_counts <- function(data, value_to_count, columns = NULL) {
@@ -88,7 +96,7 @@ data <- data %>%
 ## IGT Variants
 
 This section provides an overview of the IGT variants employed in the sample. 
-```{r}
+```{r variants}
 #| echo: false
 
 ### Data Cleaning
@@ -120,13 +128,11 @@ data <- data %>%
 
 # get an overview over task variants 
 variants <- overview_variable(data, "protocol")
-print(variants)
 
 ```
 
 In order to organise the variants in a systematic manner, they have been aggregated into the following categories:
-```{r}
-#| echo: false
+```{r variants aggr}
 
 # aggregate task variants
 data <- data %>%
@@ -138,8 +144,11 @@ data <- data %>%
   ungroup()
 
 # get an overview over aggregated task variants
-variants_aggr <- overview_variable(data, "protocol_aggr")
-print(variants_aggr)
+variants_aggr <- overview_variable(data, "protocol_aggr") 
+
+variants_aggr|>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -150,12 +159,15 @@ We conducted a descriptive analysis of the modifications that were made to the I
 ### Number of Trials
 
 The frequency of alterations to the number of trials was examined. The variable "n" refers to the number of tasks with the corresponding number of trials, represented as "n_trials". 
-```{r}
-#| echo: false
+```{r trials}
 
 # get an overview over number of trials  
-trials_n <- overview_variable(data, "n_trials")
-print(trials_n)
+trials_n <- overview_variable(data, "n_trials") 
+
+trials_n|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # aggregate numbers of trials
 data <- data %>%
@@ -167,8 +179,10 @@ data <- data %>%
   ungroup()
 
 # get an overview over aggregated number of trials  
-trials_aggr <- overview_variable(data, "trials_aggr")
-print(trials_aggr)
+trials_aggr <- overview_variable(data, "trials_aggr") |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # range of number of trials
 range_n_trials <- data %>%
@@ -177,34 +191,48 @@ range_n_trials <- data %>%
     min_trials = min(as.numeric(n_trials), na.rm = TRUE),
     max_trials = max(as.numeric(n_trials), na.rm = TRUE),
     valid_observations = n()
-  )
-print(range_n_trials)
+  ) 
+
+range_n_trials|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
 ### Instructions and Feedback
 
 A descriptive analysis was conducted to determine whether the instructions, the primary goal of the task which can be considered a part of the instruction, and the feedback provided to the participants were consistent with the original task or modified. Additionally, we aimed to quantify the number of instances where these elements could not be determined (value "indeterminable"). The variable "n" represents the number of tasks for which this is the case. 
-```{r}
-#| echo: false
+```{r instructions}
 
 # get an overview over IGT goal as a part of instruction  
-goal <- overview_variable(data, "goal")
-print(goal)
+goal <- overview_variable(data, "goal") 
+
+goal|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # get an overview over information on instructions
-instructions <- overview_variable(data, "instructions")
-print(instructions)
+instructions <- overview_variable(data, "instructions") 
+
+instructions|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # get an overview over information on feedback
-feedback <- overview_variable(data, "feedback")
-print(feedback)
+feedback <- overview_variable(data, "feedback") 
+
+feedback|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
 Here, the variables of goal, instructions, and feedback were combined into a single variable, named "characteristics". 
-```{r}
-#| echo: false
+```{r characteristics}
 
 # add summary variable for general task characteristics (goal, instructions, feedback)
 data <- data %>%
@@ -220,24 +248,35 @@ data <- data %>%
   ungroup()
 
 # get an overview over information on general task characteristics
-characteristics <- overview_variable(data, "characteristics")
-print(characteristics)
+characteristics <- overview_variable(data, "characteristics") 
+
+characteristics|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
 ### Loans and Currencies
 
 Here, we present the currencies and capitals that were employed in our sample.
-```{r}
-#| echo: false
+```{r loans}
 
 # get an overview over currencies 
-currency <- overview_variable(data, "currency")
-print(currency)
+currency <- overview_variable(data, "currency") 
+
+currency|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # get an overview over loans
-loan <- overview_variable(data, "starting_capital")
-print(loan)
+loan <- overview_variable(data, "starting_capital") 
+
+loan|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 # create data frame with combination of loans and currencies
 capital <- data %>%
@@ -245,8 +284,12 @@ capital <- data %>%
   group_by(starting_capital, currency) %>%
   summarise(n = n(), .groups = 'drop') %>%
   mutate(percentage = round(n / sum(n) * 100, 2)) %>%
-  arrange(currency)
-print(capital)
+  arrange(currency) 
+
+capital|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
@@ -254,8 +297,7 @@ print(capital)
 
 A number of variables were examined which reflect the gain-loss schedule of the tasks in use, including the fixed gains and losses for each deck and the frequencies of gains and losses for a given interval of trials. These variables were then aggregated to create a new variable which indicates whether the gain-loss schedule is similar to that of the original task, or whether it is deviating from it, and/or whether it contains elements which are indeterminable. 
 
-```{r}
-#| echo: false
+```{r schedule}
 
 # add aggregated variable for gain loss schedule information to data
 data <- data %>%
@@ -291,20 +333,26 @@ data <- data %>%
   ungroup()
 
 # get an overview over schedules 
-schedules <- overview_variable(data, "schedule")
-print(schedules)
+schedules <- overview_variable(data, "schedule") 
+
+schedules|>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```
 
 ### Incentives
 
 Here, we sought to determine whether the incentives provided to participants were contingent upon their performance in the task or not. 
-```{r}
-#| echo: false
+```{r incentive}
 
 # get an overview over incentives 
-incentives <- overview_variable(data, "incentives")
-print(incentives)
+incentives <- overview_variable(data, "incentives") 
+
+incentives|>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
 
@@ -314,8 +362,7 @@ One of the objectives of this study was to ascertain the degree of transparency 
 ### Summary of Indeterminables
 In order to achieve this, we demonstrate, for each variable, the frequency of instances where an indeterminable value was assigned. The variable "count" represents the number of tasks for which this occurred. 
 
-```{r}
-#| echo: false
+```{r indeterminables}
 
 # create data frame with relevant variables
 data_ind <- data %>%
@@ -328,6 +375,9 @@ indeterminables <- value_counts(data_ind, "indeterminable") %>%
   arrange(desc(count))
 
 # print data frame with frequency of indeterminable values 
-print(indeterminables)
+indeterminables |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 
 ```

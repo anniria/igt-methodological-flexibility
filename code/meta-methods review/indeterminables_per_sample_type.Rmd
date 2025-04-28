@@ -1,0 +1,190 @@
+---
+title: "Indeterminable Variables of Clinical vs. Non-Clinical Studies"
+author: "Annika Kuelpmann"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup}
+#| include: false
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r packages}
+#| include: false
+
+# load R packages 
+library(knitr)
+library(tidyverse)
+library(readxl)
+library(conflicted)
+library(psych)
+library(kableExtra)
+library(scales)
+
+# declare preferences regarding conflicts 
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(readxl::read_excel)
+
+```
+
+```{r housekeeping}
+#| include: false
+
+# set working directory
+setwd("C:/Users/annik/OneDrive/Documents/SOBER/IGT Projekt/r code/igt metamethods review")
+
+# read procedure file
+procedures_data <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/codebook_procedure_master.xlsx") 
+# read scoring master file
+scoring_data <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/codebook_scoring_master.xlsx") 
+# read scores overview file
+# this is a file with one row per distinct score 
+scores_overview <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/all_scores_overview.xlsx")
+# read monotonic scores file
+# this is a file where we identified scores that can be linear transformed into each other
+monotonic_scores <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/monotonic_scores.xlsx")
+# read sample categorization file
+# this is a file that categorizes the study samples into clinical and non-clinical samples
+sample_categories <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/codebook_categorizations.xlsx")
+
+```
+
+## Indeterminable Values by Variable and Sample Type
+```{r proc1}
+
+# select relevant variables from data frame sample_categories
+samples <- sample_categories %>% 
+  select(article_id, category, info)
+
+# join procedures_data with samples 
+procedures_by_category <- procedures_data %>% 
+  left_join(samples, by = "article_id") %>%
+  mutate(clinical = category == 1) 
+
+# count the tasks with clinical and non-clinical samples
+row_counts <- procedures_by_category %>%
+  count(clinical)
+
+# select variables of interest
+# create a boolean variable for clinical vs. non-clinical studies
+# count the number of indeterminables for each variable
+indeterminables_by_cat <- procedures_by_category %>%
+  select(7:29, clinical) %>%
+  pivot_longer(cols = 1:23, 
+               names_to = "variable", values_to = "value") %>% 
+  filter(value == "indeterminable") %>%
+  count(clinical, variable) %>%
+  pivot_wider(names_from = clinical, values_from = n, values_fill = 0) %>%
+  rename(`count_clinical` = `TRUE`, `count_non_clinical` = `FALSE`) %>%
+  mutate(
+    pct_clinical = (count_clinical / 53 * 100),
+    pct_non_clinical = (count_non_clinical / 53 * 100)
+  ) %>%
+  select(variable, count_clinical, pct_clinical, count_non_clinical, pct_non_clinical)
+
+# calculate the totals across all variables
+total_ind <- indeterminables_by_cat %>%
+  summarise(
+    variable = "total",
+    count_clinical = sum(count_clinical),
+    pct_clinical = (sum(count_clinical) / (53 * 23)) * 100, 
+    count_non_clinical = sum(count_non_clinical),
+    pct_non_clinical = (sum(count_non_clinical) / (53 * 23)) * 100
+  )
+
+# bind the total row to the main table
+indeterminables_by_cat <- bind_rows(indeterminables_by_cat, total_ind)
+
+indeterminables_by_cat |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+```
+
+### Plot 1
+```{r proc2}
+
+# Filter out the "total" row for better visualization
+indeterminables_dot_data <- indeterminables_by_cat %>%
+  filter(variable != "total") %>%
+  pivot_longer(
+    cols = starts_with("pct_"), 
+    names_to = "sample_type", 
+    values_to = "percentage"
+  ) %>%
+  mutate(
+    sample_type = recode(sample_type,
+                         "pct_clinical" = "Clinical",
+                         "pct_non_clinical" = "Non-Clinical")
+  )
+
+# sort percentages of interderminables in descending order
+indeterminables_dot_data <- indeterminables_dot_data %>%
+  group_by(variable) %>%
+  mutate(max_percentage = max(percentage, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(variable = fct_reorder(variable, max_percentage, .desc = FALSE))
+
+# Create the dot plot
+plot1 <- ggplot(indeterminables_dot_data, 
+                aes(x = percentage, y = variable, color = sample_type)) +
+  geom_point(size = 3, alpha = 0.8) +
+  scale_color_manual(
+    name = "Sample Type",
+    values = c("Clinical" = "#31688E", "Non-Clinical" = "#35B779")
+  ) +
+  labs(
+    title = "Indeterminable Values by Variable and Sample Type",
+    x = "Percentage of Indeterminable Values",
+    y = "Variable"
+  )  +
+  theme_minimal() +
+  scale_x_continuous(labels = percent_format(scale = 1))  # Show x-axis as percentages
+
+print(plot1)
+
+```
+
+### Plot 2
+```{r proc3}
+
+# Prepare the data for plotting
+indeterminables_dot_data <- indeterminables_by_cat %>%
+  filter(variable != "total") %>%
+  pivot_longer(
+    cols = starts_with("pct_"), 
+    names_to = "sample_type", 
+    values_to = "percentage"
+  ) %>%
+  mutate(
+    sample_type = recode(sample_type,
+                         "pct_clinical" = "Clinical",
+                         "pct_non_clinical" = "Non-Clinical")
+  )
+
+# Create the dot plot
+plot2 <- ggplot(indeterminables_dot_data, 
+                aes(x = sample_type, y = percentage, color = variable)) +
+  geom_point(size = 3, alpha = 0.8, position = position_jitter(width = 0.2)) +
+  scale_color_viridis_d(name = "Variable") +
+  labs(
+    title = "Indeterminable Values by Variable and Sample Type",
+    x = "Sample Type",
+    y = "Percentage of Indeterminable Values"
+  ) +
+  theme_minimal()+
+  scale_y_continuous(labels = percent_format(scale = 1))  # Show y-axis as percentages
+
+print(plot2)
+
+```
