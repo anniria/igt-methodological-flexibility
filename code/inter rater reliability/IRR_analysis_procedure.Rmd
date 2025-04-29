@@ -41,8 +41,8 @@ library(janitor)
 
 ```{r}
 
-df_r1 <- readxl::read_xlsx("../../data/raw/metamethod review/codebook - rater 1/r1_procedure_aligned.xlsx")
-df_r2 <- readxl::read_xlsx("../../data/raw/metamethod review/codebook - rater 2/r2_procedure_aligned.xlsx")
+df_r1 <- readxl::read_xlsx("../../data/raw/interrater reliability/codebook - rater 1/r1_procedure_aligned.xlsx")
+df_r2 <- readxl::read_xlsx("../../data/raw/interrater reliability/codebook - rater 2/r2_procedure_aligned.xlsx")
 
 ```
 
