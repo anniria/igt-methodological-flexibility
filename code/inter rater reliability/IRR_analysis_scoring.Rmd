@@ -48,8 +48,8 @@ conflicts_prefer(dplyr::filter)
 #| echo: false
 
 # read data files
-data_r1 <- read_xlsx("../../data/raw/metamethod review/codebook - rater 1/r1_scoring_aligned.xlsx")
-data_r2 <- read_xlsx("../../data/raw/metamethod review/codebook - rater 2/r2_scoring_aligned.xlsx")
+data_r1 <- read_xlsx("../../data/raw/interrater reliability/codebook - rater 1/r1_scoring_aligned.xlsx")
+data_r2 <- read_xlsx("../../data/raw/interrater reliability/codebook - rater 2/r2_scoring_aligned.xlsx")
 
 # align data types
 data_r1 <- data_r1 %>%
