@@ -202,33 +202,33 @@ This analysis assumes `score_id` is correct and aligned with `score_description`
 
 ```{r}
 
-library(vegan)
-
-data_reshaped <- data |>
-  select(article_id, score_id) |>
-  # remove duplicates
-  distinct(article_id, score_id, .keep_all = TRUE) |>
-  mutate(score_used = 1) |>
-  pivot_wider(names_from = "score_id",
-              names_prefix = "scoring_",
-              values_from = "score_used",
-              values_fill = 0) |>
-  column_to_rownames("article_id") |>
-  as.matrix()
-
-chao2_estimate <- vegan::specpool(data_reshaped)
-
-chao2_estimate |>
-  as_tibble() |>
-  select(scoring_strategies_observed = Species,
-         chao2_estimate = chao,
-         chao2_se = chao.se,
-         boot_estimate = boot,
-         boot_se = boot.se) |>
-  mutate(chao2_estimate = round_half_up(chao2_estimate, digits = 0),
-         chao2_se = round_half_up(chao2_se, digits = 2),
-         boot_estimate = round_half_up(boot_estimate, digits = 0),
-         boot_se = round_half_up(boot_se, digits = 2))
+# library(vegan)
+# 
+# data_reshaped <- data |>
+#   select(article_id, score_id) |>
+#   # remove duplicates
+#   distinct(article_id, score_id, .keep_all = TRUE) |>
+#   mutate(score_used = 1) |>
+#   pivot_wider(names_from = "score_id",
+#               names_prefix = "scoring_",
+#               values_from = "score_used",
+#               values_fill = 0) |>
+#   column_to_rownames("article_id") |>
+#   as.matrix()
+# 
+# chao2_estimate <- vegan::specpool(data_reshaped)
+# 
+# chao2_estimate |>
+#   as_tibble() |>
+#   select(scoring_strategies_observed = Species,
+#          chao2_estimate = chao,
+#          chao2_se = chao.se,
+#          boot_estimate = boot,
+#          boot_se = boot.se) |>
+#   mutate(chao2_estimate = round_half_up(chao2_estimate, digits = 0),
+#          chao2_se = round_half_up(chao2_se, digits = 2),
+#          boot_estimate = round_half_up(boot_estimate, digits = 0),
+#          boot_se = round_half_up(boot_se, digits = 2))
 
 ```
 

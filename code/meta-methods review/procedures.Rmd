@@ -93,60 +93,26 @@ data <- data %>%
 
 ```
 
-## IGT Variants
+## Lack of Reporting
+One of the objectives of this study was to ascertain the degree of transparency in the reporting of IGT procedures.
 
-This section provides an overview of the IGT variants employed in the sample. 
-```{r variants}
-#| echo: false
+### Summary of Indeterminables
+In order to achieve this, we demonstrate, for each variable, the frequency of instances where an indeterminable value was assigned. The variable "count" represents the number of tasks for which this occurred. 
 
-### Data Cleaning
-# the variable "protocol" is difficult to read, therefore cleaning it up here 
-# Define a mapping from old names to new names
-protocol_renaming <- c(
-  "indeterminable" = "indeterminable",
-  "new protocol" = "new variant",
-  "Bechara et al. (1994)" = "original task",
-  "Bechara, 2007" = "clinical variant",
-  "Bechara, A., Damasio, H., & Damasio, A. R. (2000). Emotion, decision-making, and the orbitofrontal cortex. Cerebral Cortex, 10(3), 295–307." = "Bechara, Damasio, & Damasio, 2000",
-    "protocol described in Bechara, Damasio & Damasio 2000 (ABCD)" = "Bechara, Damasio & Damasio, 2000 (ABCD)",
-  "Bechara, Tranel & Damasio 2000 (E'F'G'H')" = "Bechara, Tranel & Damasio, 2000 (E'F'G'H')",
-  "Cauffman et al., 2010" = "Cauffman, 2010",
-  "van den Bos et al., 2006" = "van den Bos, 2006",
-  "Crone EA, Somsen RJ, Van BB, et al. Heart rate and skin conductance analysis of antecendents and consequences of decision making. Psychophysiology 2004;41:53140" = "Crone, 2004",
-  "Mueller, S. (2012). The psychology experiment building language (Version 0.13.)" = "Mueller, 2012",
-  "Becker MP, Collins PF, & Luciana M (2014). Neurocognition in college-aged daily marijuana users. Journal of Clinical and Experimental Neuropsychology, 36(4), 379–98" = "Becker, 2014",
-  "protocol described in Windmann 2006" = "Windmann, 2006",
-  "Overman et al. (2004)" = "Overman, 2004",
-  "Mintzer, M. Z., & Stitzer, M. L. (2002). Cognitive impairment in methadone maintenance patients." = "Mintzer & Stitzer, 2002",
-  "Quednow BB, Kuhn KU, Hoppe C, Westheide J, Maier W, Daum I, Wagner M (2007) Elevated impulsivity and impaired decision-making cognition in heavy users of MDMA (‘‘Ecstasy’’)." = "Quednow, 2007",
-  "Christakou, Brammer, et al. (2009)" = "Christakou, 2009"
-)
+```{r indeterminables}
 
-# Rename the protocol values
-data <- data %>%
-  mutate(protocol = recode(protocol, !!!protocol_renaming))
+# create data frame with relevant variables
+data_ind <- data %>%
+  select(goal, instructions, feedback, currency, starting_capital, 
+         contains("reward"), contains("1"), contains("2"), 
+         contains("aggr"), n_trials)
 
-# get an overview over task variants 
-variants <- overview_variable(data, "protocol")
+# count how often variable is set to indeterminable
+indeterminables <- value_counts(data_ind, "indeterminable") %>%
+  arrange(desc(count))
 
-```
-
-In order to organise the variants in a systematic manner, they have been aggregated into the following categories:
-```{r variants aggr}
-
-# aggregate task variants
-data <- data %>%
-  group_by(task_id) %>%
-  mutate(protocol_aggr = case_when(
-    protocol %in% c("original task", "clinical variant", "new variant", "indeterminable") ~ protocol,
-    TRUE ~ "other cited variant"
-  )) %>%
-  ungroup()
-
-# get an overview over aggregated task variants
-variants_aggr <- overview_variable(data, "protocol_aggr") 
-
-variants_aggr|>
+# print data frame with frequency of indeterminable values 
+indeterminables |>
   kable() |>
   kable_classic(full_width = FALSE)
 
@@ -345,7 +311,7 @@ schedules|>
 ### Incentives
 
 Here, we sought to determine whether the incentives provided to participants were contingent upon their performance in the task or not. 
-```{r incentive}
+```{r incentives}
 
 # get an overview over incentives 
 incentives <- overview_variable(data, "incentives") 
@@ -356,28 +322,81 @@ incentives|>
 
 ```
 
-## Lack of Reporting
-One of the objectives of this study was to ascertain the degree of transparency in the reporting of IGT procedures.
+## Summary 
 
-### Summary of Indeterminables
-In order to achieve this, we demonstrate, for each variable, the frequency of instances where an indeterminable value was assigned. The variable "count" represents the number of tasks for which this occurred. 
+Here, we summarize how many IGTs can be considered the original IGT, modified IGT, or indeterminable whether deviating from the original IGT or not. 
 
-```{r indeterminables}
+```{r summary}
 
-# create data frame with relevant variables
-data_ind <- data %>%
-  select(goal, instructions, feedback, currency, starting_capital, 
-         contains("reward"), contains("1"), contains("2"), 
-         contains("aggr"))
+# defining the original IGT values
+original_values <- list(
+  goal             = "standard goal",
+  instructions     = "standard instructions",
+  feedback         = "standard feedback",
+  reward_adv       = 50,
+  reward_disadv    = 100,
+  gain1            = 250,
+  loss1            = -250,
+  gain_int1        = 10,
+  loss_int1        = 10,
+  freq_adv1        = 0.5,
+  freq_disadv1     = 0.5,
+  gain2            = 250,
+  loss2            = -250,
+  gain_int2        = 10,
+  loss_int2        = 10,
+  freq_adv2        = 0.1,
+  freq_disadv2     = 0.1,
+  n_trials         = 100
+)
 
-# count how often variable is set to indeterminable
-indeterminables <- value_counts(data_ind, "indeterminable") %>%
-  arrange(desc(count))
+# define a function to classify the IGT 
+classify_igt <- function(row) {
+  vals <- as.list(row[names(original_values)])
+  # check whether all values match reference list 
+  all_match <- all(mapply(function(a, b) isTRUE(a == b), vals, original_values))
+  if (all_match) return("original IGT")
+  # check whether values match either reference list or indeterminable 
+  matches_or_indet <- mapply(function(val, ref) {
+    isTRUE(val == ref) || isTRUE(val == "indeterminable")
+  }, vals, original_values)
+  # return modified for all other 
+  if (all(matches_or_indet)) return("indeterminable")
+  return("modified IGT")
+}
+  
+# apply function 
+data <- data %>%
+  rowwise() %>%
+  mutate(igt_version = classify_igt(pick(everything()))) %>%
+  ungroup() 
 
-# print data frame with frequency of indeterminable values 
-indeterminables |>
+# create table
+igt_classfication <- table(data$igt_version) %>%
+  as.data.frame() %>%
+  rename(
+    "IGT Version" = Var1,
+    "n" = Freq
+  ) %>%
+  mutate(percentage = paste0(round((n / sum(n)) * 100, 2), " %"))
+
+# print table 
+igt_classfication |>
   kable() |>
   kable_classic(full_width = FALSE)
 
+# how many of the modified IGTs are in fact the clinical IGT? 
+clinical_igt <- data %>%
+  filter(igt_version == "modified IGT", protocol == "Bechara, 2007") %>%
+  summarise(`modified task type` = "clinical IGT", 
+            n = n(),
+            percentage = round((n() / nrow(data)) * 100, 2)) 
+
+clinical_igt %>%
+  kable() %>%
+  kable_classic(full_width = FALSE)
 
 ```
+
+
+
