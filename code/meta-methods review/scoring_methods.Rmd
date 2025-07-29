@@ -99,8 +99,6 @@ data <- data %>%
   mutate(monotonic_score_id_freq = n()) %>%
   ungroup()
 
-
-
 ```
 
 ## Number of Scores
@@ -119,7 +117,6 @@ total_of_scores |>
   kable() |>
   kable_classic(full_width = FALSE)
 
-
 ```
 
 ### Number of Scores per Task 
@@ -131,9 +128,14 @@ We analyzed how many scores were used per task; "number_of_scores" represents th
 # count the number of scores per task 
 scores_per_task <- overview_variable(data, "task_id") 
 
+# exclude two scores which are derived from two tasks
+scores_per_task <- scores_per_task %>%
+  filter(task_id != 21)
+
 # summarize the counts of scores per task 
 scores_per_task_summary <- freq_summary(scores_per_task) %>%
-  rename(number_of_scores = frequency, number_of_tasks = count)
+  rename(number_of_scores = frequency, number_of_tasks = count) %>%
+  mutate(percent = round(number_of_scores / sum(number_of_scores) * 100, 2))
 
 # print the tibble
 scores_per_task_summary |>
@@ -267,7 +269,8 @@ This illustrates the frequency with which scores were reused within the sample. 
 # Count how many scores are reused and how often they are reused
 scores_reusage <- overview_variable(data, "monotonic_score_id") %>%
   freq_summary() %>%
-  rename(times_reused = frequency, number_of_scores = count)
+  rename(times_reused = frequency, number_of_scores = count) %>%
+  mutate(percent = round(number_of_scores / sum(number_of_scores) * 100, 2))
 
 scores_reusage |>
   kable() |>
@@ -797,7 +800,12 @@ An indeterminable score is a score with elements that are not clearly defined or
 ```{r indeterminable1}
 
 indeterminable_scores <- monotonic_scores %>%
-  filter(category == "indeterminable")
+  filter(if_any(everything(), ~ .x == "indeterminable")) %>%
+  # Remove three rows with scores that had indeterminable elements initially,
+  # but were identified in a second step and implemented in the multiverse,
+  # so they are no longer counted as indeterminable scores
+  filter(!monotonic_score_id %in% c(4016, 3005, 3025))
+
 
 number_of_indeterminable_scores <- nrow(indeterminable_scores)
 
