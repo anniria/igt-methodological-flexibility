@@ -157,4 +157,54 @@ The above results produce the results reported in the manuscript for the "Interr
 
 "We computed the interrater reliability for all variables in the procedure codebook, yielding a mean Cohen’s κ = .70 (SD = .10), with a range from .44 to .90."
 
+# How do the kappa values correspond to the indeterminability rates?
+```{r}
+
+# load data 
+data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_procedure_master.xlsx") 
+
+# create data frame with relevant variables
+data_ind <- data %>%
+  select(sample_size, variant, protocol,
+         goal, instructions, feedback, 
+         incentives, currency, starting_capital, 
+         contains("reward"), contains("1"), contains("2"), 
+         n_blocks, n_trials)
+
+# function: count and calculate percentages for certain values of a subset of variables
+value_counts <- function(data, value_to_count, columns = NULL) {
+  if (is.null(columns)) {
+    columns <- colnames(data)
+  } else {
+    columns <- intersect(columns, colnames(data))
+  }
+  results <- list()
+  for (col in columns) {
+    count <- sum(data[[col]] == value_to_count, na.rm = TRUE)
+    percentage <- round((count / nrow(data)) * 100)
+    results[[col]] <- c("count" = count, "percentage" = percentage)
+  }
+  summary_table <- do.call(rbind, results) %>%
+    as.data.frame(stringsAsFactors = FALSE) %>%
+    tibble::rownames_to_column("variable")
+  return(summary_table)
+}
+
+# count how often variable is set to indeterminable
+indeterminables <- value_counts(data_ind, "indeterminable") 
+
+# join data frame with kappa values
+joined <- kappa_results %>%
+  rename(variable = col_name) %>%
+  left_join(indeterminables, by = "variable") %>%
+  select(variable, count, percentage, kappa) %>%
+  arrange(desc(kappa)) %>%
+  mutate_if(is.numeric, round_half_up, digits = 2)
+
+# print data frame with frequency of indeterminable values 
+joined |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+```
 

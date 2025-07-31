@@ -9,11 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Annika Kuelpmann" />
+<meta name="author" content="Jan-Paul Ries" />
 
-<meta name="date" content="2025-07-29" />
 
-<title>Analyses of IGT Procedures</title>
+<title>Inter Rater Reliability for Procedural Variations</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1905,42 +1904,426 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">Analyses of IGT Procedures</h1>
-<h4 class="author">Annika Kuelpmann</h4>
-<h4 class="date">2025-07-29</h4>
+<h1 class="title toc-ignore">Inter Rater Reliability for Procedural
+Variations</h1>
+<h4 class="author">Jan-Paul Ries</h4>
+<h4 class="date">29 July, 2025</h4>
 
 </div>
 
 
-<div id="lack-of-reporting" class="section level2">
-<h2>Lack of Reporting</h2>
-<p>One of the objectives of this study was to ascertain the degree of
-transparency in the reporting of IGT procedures.</p>
-<div id="summary-of-indeterminables" class="section level3">
-<h3>Summary of Indeterminables</h3>
-<p>In order to achieve this, we demonstrate, for each variable, the
-frequency of instances where an indeterminable value was assigned. The
-variable “count” represents the number of tasks for which this
-occurred.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># create data frame with relevant variables</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>data_ind <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="fu">select</span>(goal, instructions, feedback, currency, starting_capital, </span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>         <span class="fu">contains</span>(<span class="st">&quot;reward&quot;</span>), <span class="fu">contains</span>(<span class="st">&quot;1&quot;</span>), <span class="fu">contains</span>(<span class="st">&quot;2&quot;</span>), </span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>         <span class="fu">contains</span>(<span class="st">&quot;aggr&quot;</span>), n_trials)</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># count how often variable is set to indeterminable</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>indeterminables <span class="ot">&lt;-</span> <span class="fu">value_counts</span>(data_ind, <span class="st">&quot;indeterminable&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(count))</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co"># print data frame with frequency of indeterminable values </span></span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>indeterminables <span class="sc">|&gt;</span></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<div id="load-packages" class="section level2">
+<h2>Load Packages</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(irr)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">library</span>(janitor)</span></code></pre></div>
+</div>
+<div id="read-data" class="section level1">
+<h1>Read data</h1>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>df_r1 <span class="ot">&lt;-</span> readxl<span class="sc">::</span><span class="fu">read_xlsx</span>(<span class="st">&quot;../../data/raw/interrater reliability/codebook - rater 1/r1_procedure_aligned.xlsx&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>df_r2 <span class="ot">&lt;-</span> readxl<span class="sc">::</span><span class="fu">read_xlsx</span>(<span class="st">&quot;../../data/raw/interrater reliability/codebook - rater 2/r2_procedure_aligned.xlsx&quot;</span>)</span></code></pre></div>
+</div>
+<div id="wrangle" class="section level1">
+<h1>Wrangle</h1>
+<p>Combine files with correct column order</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>df_combined <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  df_r1<span class="sc">$</span>article_id, df_r2<span class="sc">$</span>article_id,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  df_r1<span class="sc">$</span>authors, df_r2<span class="sc">$</span>authors,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  df_r1<span class="sc">$</span>year, df_r2<span class="sc">$</span>year,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  df_r1<span class="sc">$</span>order_number, df_r2<span class="sc">$</span>order_number,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  df_r1<span class="sc">$</span>sample_size, df_r2<span class="sc">$</span>sample_size,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  df_r1<span class="sc">$</span>variant, df_r2<span class="sc">$</span>variant,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  df_r1<span class="sc">$</span>protocol, df_r2<span class="sc">$</span>protocol,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  df_r1<span class="sc">$</span>goal, df_r2<span class="sc">$</span>goal,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  df_r1<span class="sc">$</span>instructions, df_r2<span class="sc">$</span>instructions,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  df_r1<span class="sc">$</span>feedback, df_r2<span class="sc">$</span>feedback,</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  df_r1<span class="sc">$</span>incentives, df_r2<span class="sc">$</span>incentives,</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  df_r1<span class="sc">$</span>currency, df_r2<span class="sc">$</span>currency,</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  df_r1<span class="sc">$</span>starting_capital, df_r2<span class="sc">$</span>starting_capital,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  df_r1<span class="sc">$</span>reward_adv, df_r2<span class="sc">$</span>reward_adv,</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  df_r1<span class="sc">$</span>reward_disadv, df_r2<span class="sc">$</span>reward_disadv,</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  df_r1<span class="sc">$</span>gain1, df_r2<span class="sc">$</span>gain1,</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  df_r1<span class="sc">$</span>gain2, df_r2<span class="sc">$</span>gain2,</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  df_r1<span class="sc">$</span>loss1, df_r2<span class="sc">$</span>loss1,</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  df_r1<span class="sc">$</span>loss2, df_r2<span class="sc">$</span>loss2,</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  df_r1<span class="sc">$</span>gain_int1, df_r2<span class="sc">$</span>gain_int1,</span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>  df_r1<span class="sc">$</span>gain_int2, df_r2<span class="sc">$</span>gain_int2,</span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  df_r1<span class="sc">$</span>loss_int1, df_r2<span class="sc">$</span>loss_int1,</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  df_r1<span class="sc">$</span>loss_int2, df_r2<span class="sc">$</span>loss_int2,</span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>  df_r1<span class="sc">$</span>freq_adv1, df_r2<span class="sc">$</span>freq_adv1,</span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>  df_r1<span class="sc">$</span>freq_adv2, df_r2<span class="sc">$</span>freq_adv2,</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>  df_r1<span class="sc">$</span>freq_disadv1, df_r2<span class="sc">$</span>freq_disadv1,</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a>  df_r1<span class="sc">$</span>freq_disadv2, df_r2<span class="sc">$</span>freq_disadv2,</span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a>  df_r1<span class="sc">$</span>n_blocks, df_r2<span class="sc">$</span>n_blocks,</span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a>  df_r1<span class="sc">$</span>n_trials, df_r2<span class="sc">$</span>n_trials,</span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a>  df_r1<span class="sc">$</span>notes_procedure, df_r2<span class="sc">$</span>notes_procedure,</span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a>  df_r1<span class="sc">$</span>rater_ID, df_r2<span class="sc">$</span>rater_ID</span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="calculate-cohens-kappa" class="section level1">
+<h1>Calculate Cohen’s Kappa</h1>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Create an empty data frame to store Kappa values</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>kappa_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Column1 =</span> <span class="fu">numeric</span>(),</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>                               <span class="at">Column2 =</span> <span class="fu">numeric</span>(),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>                               <span class="at">Kappa =</span> <span class="fu">numeric</span>(),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>                               <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co"># Loop through column pairs and calculate Cohen&#39;s Kappa</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq</span>(<span class="dv">1</span>, <span class="dv">61</span>, <span class="at">by =</span> <span class="dv">2</span>)) {</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  kappa_result <span class="ot">&lt;-</span> <span class="fu">kappa2</span>(df_combined[, <span class="fu">c</span>(i, i<span class="sc">+</span><span class="dv">1</span>)])</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  </span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="co"># Append results to the data frame</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  kappa_results <span class="ot">&lt;-</span> <span class="fu">rbind</span>(kappa_results, </span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>                            <span class="fu">c</span>(<span class="at">Column1 =</span> i, <span class="at">Column2 =</span> i<span class="sc">+</span><span class="dv">1</span>, <span class="at">Kappa =</span> kappa_result<span class="sc">$</span>value))</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>}</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co"># add column containing column names</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>colnames <span class="ot">&lt;-</span> <span class="fu">colnames</span>(df_r1)</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>kappa_results<span class="sc">$</span>col_name <span class="ot">&lt;-</span> colnames</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co"># rename column holding Kappa values</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>kappa_results <span class="ot">&lt;-</span> kappa_results <span class="sc">%&gt;%</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">kappa =</span> X1<span class="fl">.1</span>)</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co"># delete unnecessary columns </span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>kappa_results <span class="ot">&lt;-</span> kappa_results <span class="sc">%&gt;%</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(col_name, kappa)  </span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co"># delete unnecessary rows </span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>kappa_results <span class="ot">&lt;-</span> kappa_results <span class="sc">%&gt;%</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>  <span class="fu">filter</span>(col_name <span class="sc">!=</span> <span class="st">&quot;article_id&quot;</span>,</span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a>         col_name <span class="sc">!=</span> <span class="st">&quot;authors&quot;</span>,</span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a>         col_name <span class="sc">!=</span> <span class="st">&quot;year&quot;</span>,</span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a>         col_name <span class="sc">!=</span> <span class="st">&quot;order_number&quot;</span>,</span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a>         col_name <span class="sc">!=</span> <span class="st">&quot;notes_procedure&quot;</span>,</span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a>         col_name <span class="sc">!=</span> <span class="st">&quot;rater_ID&quot;</span>)</span></code></pre></div>
+</div>
+<div id="tables" class="section level1">
+<h1>Tables</h1>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>kappa_results <span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="fu">mutate_if</span>(is.numeric, round_half_up, <span class="at">digits =</span> <span class="dv">2</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
 <table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">
-Variable
+col_name
+</th>
+<th style="text-align:right;">
+kappa
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+sample_size
+</td>
+<td style="text-align:right;">
+0.76
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+variant
+</td>
+<td style="text-align:right;">
+0.88
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+protocol
+</td>
+<td style="text-align:right;">
+0.55
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+goal
+</td>
+<td style="text-align:right;">
+0.69
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+instructions
+</td>
+<td style="text-align:right;">
+0.44
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+feedback
+</td>
+<td style="text-align:right;">
+0.57
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+incentives
+</td>
+<td style="text-align:right;">
+0.53
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+currency
+</td>
+<td style="text-align:right;">
+0.75
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+starting_capital
+</td>
+<td style="text-align:right;">
+0.80
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+reward_adv
+</td>
+<td style="text-align:right;">
+0.65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+reward_disadv
+</td>
+<td style="text-align:right;">
+0.63
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gain1
+</td>
+<td style="text-align:right;">
+0.70
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gain2
+</td>
+<td style="text-align:right;">
+0.71
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss1
+</td>
+<td style="text-align:right;">
+0.69
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss2
+</td>
+<td style="text-align:right;">
+0.68
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gain_int1
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gain_int2
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss_int1
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss_int2
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+freq_adv1
+</td>
+<td style="text-align:right;">
+0.70
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+freq_adv2
+</td>
+<td style="text-align:right;">
+0.72
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+freq_disadv1
+</td>
+<td style="text-align:right;">
+0.69
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+freq_disadv2
+</td>
+<td style="text-align:right;">
+0.72
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+n_blocks
+</td>
+<td style="text-align:right;">
+0.80
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+n_trials
+</td>
+<td style="text-align:right;">
+0.90
+</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>kappa_results <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean_kappa =</span> <span class="fu">mean</span>(kappa),</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>            <span class="at">sd_kappa =</span> <span class="fu">sd</span>(kappa),</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>            <span class="at">min_kappa =</span> <span class="fu">min</span>(kappa),</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>            <span class="at">max_kappa =</span> <span class="fu">max</span>(kappa)) <span class="sc">|&gt;</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="fu">mutate_if</span>(is.numeric, round_half_up, <span class="at">digits =</span> <span class="dv">2</span>) <span class="sc">|&gt;</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+mean_kappa
+</th>
+<th style="text-align:right;">
+sd_kappa
+</th>
+<th style="text-align:right;">
+min_kappa
+</th>
+<th style="text-align:right;">
+max_kappa
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+0.7
+</td>
+<td style="text-align:right;">
+0.1
+</td>
+<td style="text-align:right;">
+0.44
+</td>
+<td style="text-align:right;">
+0.9
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="text-in-manuscript" class="section level1">
+<h1>Text in manuscript</h1>
+<p>The above results produce the results reported in the manuscript for
+the “Interrater reliabilty” heading. i.e.,</p>
+<p>“We computed the interrater reliability for all variables in the
+procedure codebook, yielding a mean Cohen’s κ = .70 (SD = .10), with a
+range from .44 to .90.”</p>
+</div>
+<div id="how-do-the-kappa-values-correspond-to-the-indeterminability-rates" class="section level1">
+<h1>How do the kappa values correspond to the indeterminability
+rates?</h1>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># load data </span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read_xlsx</span>(<span class="st">&quot;../../data/raw/metamethod review/master coding/codebook_procedure_master.xlsx&quot;</span>) </span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># create data frame with relevant variables</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>data_ind <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="fu">select</span>(sample_size, variant, protocol,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>         goal, instructions, feedback, </span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>         incentives, currency, starting_capital, </span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>         <span class="fu">contains</span>(<span class="st">&quot;reward&quot;</span>), <span class="fu">contains</span>(<span class="st">&quot;1&quot;</span>), <span class="fu">contains</span>(<span class="st">&quot;2&quot;</span>), </span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>         n_blocks, n_trials)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co"># function: count and calculate percentages for certain values of a subset of variables</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>value_counts <span class="ot">&lt;-</span> <span class="cf">function</span>(data, value_to_count, <span class="at">columns =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(columns)) {</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>    columns <span class="ot">&lt;-</span> <span class="fu">colnames</span>(data)</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>    columns <span class="ot">&lt;-</span> <span class="fu">intersect</span>(columns, <span class="fu">colnames</span>(data))</span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>  }</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>  <span class="cf">for</span> (col <span class="cf">in</span> columns) {</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>    count <span class="ot">&lt;-</span> <span class="fu">sum</span>(data[[col]] <span class="sc">==</span> value_to_count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>    percentage <span class="ot">&lt;-</span> <span class="fu">round</span>((count <span class="sc">/</span> <span class="fu">nrow</span>(data)) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>)</span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>    results[[col]] <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;count&quot;</span> <span class="ot">=</span> count, <span class="st">&quot;percentage&quot;</span> <span class="ot">=</span> percentage)</span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a>  }</span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a>  summary_table <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, results) <span class="sc">%&gt;%</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a>    <span class="fu">as.data.frame</span>(<span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a>    tibble<span class="sc">::</span><span class="fu">rownames_to_column</span>(<span class="st">&quot;variable&quot;</span>)</span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a>  <span class="fu">return</span>(summary_table)</span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a>}</span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co"># count how often variable is set to indeterminable</span></span>
+<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a>indeterminables <span class="ot">&lt;-</span> <span class="fu">value_counts</span>(data_ind, <span class="st">&quot;indeterminable&quot;</span>) </span>
+<span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a></span>
+<span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="co"># join data frame with kappa values</span></span>
+<span id="cb7-35"><a href="#cb7-35" tabindex="-1"></a>joined <span class="ot">&lt;-</span> kappa_results <span class="sc">%&gt;%</span></span>
+<span id="cb7-36"><a href="#cb7-36" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">variable =</span> col_name) <span class="sc">%&gt;%</span></span>
+<span id="cb7-37"><a href="#cb7-37" tabindex="-1"></a>  <span class="fu">left_join</span>(indeterminables, <span class="at">by =</span> <span class="st">&quot;variable&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb7-38"><a href="#cb7-38" tabindex="-1"></a>  <span class="fu">select</span>(variable, count, percentage, kappa) <span class="sc">%&gt;%</span></span>
+<span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(count))</span>
+<span id="cb7-40"><a href="#cb7-40" tabindex="-1"></a></span>
+<span id="cb7-41"><a href="#cb7-41" tabindex="-1"></a><span class="co"># print data frame with frequency of indeterminable values </span></span>
+<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a>joined <span class="sc">|&gt;</span></span>
+<span id="cb7-43"><a href="#cb7-43" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb7-44"><a href="#cb7-44" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+variable
 </th>
 <th style="text-align:right;">
 count
@@ -1948,9 +2331,26 @@ count
 <th style="text-align:right;">
 percentage
 </th>
+<th style="text-align:right;">
+kappa
+</th>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+protocol
+</td>
+<td style="text-align:right;">
+82
+</td>
+<td style="text-align:right;">
+77.36
+</td>
+<td style="text-align:right;">
+0.5495398
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 instructions
@@ -1960,6 +2360,9 @@ instructions
 </td>
 <td style="text-align:right;">
 72.64
+</td>
+<td style="text-align:right;">
+0.4356589
 </td>
 </tr>
 <tr>
@@ -1971,6 +2374,9 @@ feedback
 </td>
 <td style="text-align:right;">
 69.81
+</td>
+<td style="text-align:right;">
+0.5735208
 </td>
 </tr>
 <tr>
@@ -1983,6 +2389,9 @@ freq_adv1
 <td style="text-align:right;">
 65.09
 </td>
+<td style="text-align:right;">
+0.6950147
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1993,6 +2402,9 @@ freq_disadv1
 </td>
 <td style="text-align:right;">
 64.15
+</td>
+<td style="text-align:right;">
+0.6880734
 </td>
 </tr>
 <tr>
@@ -2005,6 +2417,9 @@ freq_adv2
 <td style="text-align:right;">
 63.21
 </td>
+<td style="text-align:right;">
+0.7193235
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2015,6 +2430,9 @@ freq_disadv2
 </td>
 <td style="text-align:right;">
 63.21
+</td>
+<td style="text-align:right;">
+0.7191719
 </td>
 </tr>
 <tr>
@@ -2027,6 +2445,9 @@ reward_adv
 <td style="text-align:right;">
 61.32
 </td>
+<td style="text-align:right;">
+0.6500459
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2037,6 +2458,9 @@ gain1
 </td>
 <td style="text-align:right;">
 61.32
+</td>
+<td style="text-align:right;">
+0.6950617
 </td>
 </tr>
 <tr>
@@ -2049,6 +2473,9 @@ loss1
 <td style="text-align:right;">
 61.32
 </td>
+<td style="text-align:right;">
+0.6941650
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2060,16 +2487,8 @@ gain_int1
 <td style="text-align:right;">
 61.32
 </td>
-</tr>
-<tr>
-<td style="text-align:left;">
-loss_int1
-</td>
 <td style="text-align:right;">
-65
-</td>
-<td style="text-align:right;">
-61.32
+0.7293680
 </td>
 </tr>
 <tr>
@@ -2082,6 +2501,23 @@ gain_int2
 <td style="text-align:right;">
 61.32
 </td>
+<td style="text-align:right;">
+0.7293680
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss_int1
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+61.32
+</td>
+<td style="text-align:right;">
+0.7293680
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2092,6 +2528,9 @@ loss_int2
 </td>
 <td style="text-align:right;">
 61.32
+</td>
+<td style="text-align:right;">
+0.7293680
 </td>
 </tr>
 <tr>
@@ -2104,6 +2543,9 @@ reward_disadv
 <td style="text-align:right;">
 60.38
 </td>
+<td style="text-align:right;">
+0.6342508
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2114,6 +2556,9 @@ gain2
 </td>
 <td style="text-align:right;">
 60.38
+</td>
+<td style="text-align:right;">
+0.7115562
 </td>
 </tr>
 <tr>
@@ -2126,6 +2571,9 @@ loss2
 <td style="text-align:right;">
 60.38
 </td>
+<td style="text-align:right;">
+0.6790619
+</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2137,1176 +2585,13 @@ starting_capital
 <td style="text-align:right;">
 58.49
 </td>
-</tr>
-<tr>
-<td style="text-align:left;">
-currency
-</td>
-<td style="text-align:right;">
-39
-</td>
-<td style="text-align:right;">
-36.79
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-goal
-</td>
-<td style="text-align:right;">
-37
-</td>
-<td style="text-align:right;">
-34.91
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-n_trials
-</td>
-<td style="text-align:right;">
-8
-</td>
-<td style="text-align:right;">
-7.55
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div id="modifications" class="section level2">
-<h2>Modifications</h2>
-<p>We conducted a descriptive analysis of the modifications that were
-made to the IGT with respect to different variables.</p>
-<div id="number-of-trials" class="section level3">
-<h3>Number of Trials</h3>
-<p>The frequency of alterations to the number of trials was examined.
-The variable “n” refers to the number of tasks with the corresponding
-number of trials, represented as “n_trials”.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># get an overview over number of trials  </span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>trials_n <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;n_trials&quot;</span>) </span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>trials_n<span class="sc">|&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-n_trials
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-100
-</td>
-<td style="text-align:right;">
-89
-</td>
-<td style="text-align:right;">
-83.96
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:right;">
-8
-</td>
-<td style="text-align:right;">
-7.55
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-60
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:right;">
-1.89
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-120
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-135
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-150
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-200
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-400
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-50
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-80
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-</tbody>
-</table>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># aggregate numbers of trials</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="fu">group_by</span>(task_id) <span class="sc">%&gt;%</span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">trials_aggr =</span> <span class="fu">case_when</span>(</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>    n_trials <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;100&quot;</span>, <span class="st">&quot;indeterminable&quot;</span>) <span class="sc">~</span> n_trials,</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;deviating&quot;</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co"># get an overview over aggregated number of trials  </span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>trials_aggr <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;trials_aggr&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a></span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co"># range of number of trials</span></span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>range_n_trials <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="fu">filter</span>(n_trials <span class="sc">!=</span> <span class="st">&quot;indeterminable&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>    <span class="at">min_trials =</span> <span class="fu">min</span>(<span class="fu">as.numeric</span>(n_trials), <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>    <span class="at">max_trials =</span> <span class="fu">max</span>(<span class="fu">as.numeric</span>(n_trials), <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>    <span class="at">valid_observations =</span> <span class="fu">n</span>()</span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  ) </span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>range_n_trials<span class="sc">|&gt;</span></span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:right;">
-min_trials
-</th>
-<th style="text-align:right;">
-max_trials
-</th>
-<th style="text-align:right;">
-valid_observations
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:right;">
-50
-</td>
-<td style="text-align:right;">
-400
-</td>
-<td style="text-align:right;">
-98
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div id="instructions-and-feedback" class="section level3">
-<h3>Instructions and Feedback</h3>
-<p>A descriptive analysis was conducted to determine whether the
-instructions, the primary goal of the task which can be considered a
-part of the instruction, and the feedback provided to the participants
-were consistent with the original task or modified. Additionally, we
-aimed to quantify the number of instances where these elements could not
-be determined (value “indeterminable”). The variable “n” represents the
-number of tasks for which this is the case.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># get an overview over IGT goal as a part of instruction  </span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>goal <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;goal&quot;</span>) </span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>goal<span class="sc">|&gt;</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-goal
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-standard goal
-</td>
-<td style="text-align:right;">
-68
-</td>
-<td style="text-align:right;">
-64.15
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:right;">
-37
-</td>
-<td style="text-align:right;">
-34.91
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-deviating from standard goal
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-</tbody>
-</table>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># get an overview over information on instructions</span></span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>instructions <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;instructions&quot;</span>) </span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>instructions<span class="sc">|&gt;</span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-instructions
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:right;">
-77
-</td>
-<td style="text-align:right;">
-72.64
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-deviating from standard instructions
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:right;">
-14.15
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-standard instructions
-</td>
-<td style="text-align:right;">
-14
-</td>
-<td style="text-align:right;">
-13.21
-</td>
-</tr>
-</tbody>
-</table>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># get an overview over information on feedback</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>feedback <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;feedback&quot;</span>) </span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>feedback<span class="sc">|&gt;</span></span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-feedback
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:right;">
-74
-</td>
-<td style="text-align:right;">
-69.81
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-deviating from standard feedback
-</td>
-<td style="text-align:right;">
-21
-</td>
-<td style="text-align:right;">
-19.81
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-standard feedback
-</td>
-<td style="text-align:right;">
-11
-</td>
-<td style="text-align:right;">
-10.38
-</td>
-</tr>
-</tbody>
-</table>
-<p>Here, the variables of goal, instructions, and feedback were combined
-into a single variable, named “characteristics”.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># add summary variable for general task characteristics (goal, instructions, feedback)</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">group_by</span>(task_id) <span class="sc">%&gt;%</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">characteristics =</span> <span class="fu">case_when</span>(</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="fu">all</span>(protocol <span class="sc">==</span> <span class="st">&quot;Bechara, 1994&quot;</span>) <span class="sc">~</span> <span class="st">&quot;standard characteristics&quot;</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="fu">all</span>(<span class="fu">c</span>(goal, instructions, feedback) <span class="sc">==</span> <span class="st">&quot;indeterminable&quot;</span>) <span class="sc">~</span> <span class="st">&quot;completely indeterminable characteristics&quot;</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>    <span class="fu">all</span>(<span class="fu">grepl</span>(<span class="st">&quot;deviating&quot;</span>, <span class="fu">c</span>(goal, instructions, feedback))) <span class="sc">~</span> <span class="st">&quot;deviating characteristics&quot;</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>    <span class="fu">any</span>(<span class="fu">grepl</span>(<span class="st">&quot;deviating&quot;</span>, goal) <span class="sc">|</span> <span class="fu">grepl</span>(<span class="st">&quot;deviating&quot;</span>, instructions) <span class="sc">|</span> <span class="fu">grepl</span>(<span class="st">&quot;deviating&quot;</span>, feedback)) <span class="sc">~</span> <span class="st">&quot;partly deviating characteristics&quot;</span>,</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>    <span class="fu">any</span>(goal <span class="sc">==</span> <span class="st">&quot;indeterminable&quot;</span> <span class="sc">|</span> instructions <span class="sc">==</span> <span class="st">&quot;indeterminable&quot;</span> <span class="sc">|</span> feedback <span class="sc">==</span> <span class="st">&quot;indeterminable&quot;</span>) <span class="sc">~</span> <span class="st">&quot;indeterminable characteristics&quot;</span>,</span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;standard characteristics&quot;</span></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co"># get an overview over information on general task characteristics</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>characteristics <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;characteristics&quot;</span>) </span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>characteristics<span class="sc">|&gt;</span></span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-characteristics
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-indeterminable characteristics
-</td>
-<td style="text-align:right;">
-42
-</td>
-<td style="text-align:right;">
-39.62
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-partly deviating characteristics
-</td>
-<td style="text-align:right;">
-28
-</td>
-<td style="text-align:right;">
-26.42
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-completely indeterminable characteristics
-</td>
-<td style="text-align:right;">
-27
-</td>
-<td style="text-align:right;">
-25.47
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-standard characteristics
-</td>
-<td style="text-align:right;">
-9
-</td>
-<td style="text-align:right;">
-8.49
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div id="loans-and-currencies" class="section level3">
-<h3>Loans and Currencies</h3>
-<p>Here, we present the currencies and capitals that were employed in
-our sample.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># get an overview over currencies </span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>currency <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;currency&quot;</span>) </span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>currency<span class="sc">|&gt;</span></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-currency
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-dollars
-</td>
-<td style="text-align:right;">
-41
-</td>
-<td style="text-align:right;">
-38.68
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:right;">
-39
-</td>
-<td style="text-align:right;">
-36.79
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-euros
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:right;">
-9.43
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-pounds
-</td>
-<td style="text-align:right;">
-5
-</td>
-<td style="text-align:right;">
-4.72
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-points
-</td>
-<td style="text-align:right;">
-3
-</td>
-<td style="text-align:right;">
-2.83
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-yen
-</td>
-<td style="text-align:right;">
-3
-</td>
-<td style="text-align:right;">
-2.83
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-(Tunisian) dinar
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Brazilian real
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Turkish liras
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-apples
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-yuan
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-</tbody>
-</table>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># get an overview over loans</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>loan <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;starting_capital&quot;</span>) </span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>loan<span class="sc">|&gt;</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-starting_capital
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:right;">
-62
-</td>
-<td style="text-align:right;">
-58.49
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2000
-</td>
-<td style="text-align:right;">
-39
-</td>
 <td style="text-align:right;">
-36.79
+0.8046782
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-200
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:right;">
-1.89
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1000
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-20
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-200000
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-</tbody>
-</table>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># create data frame with combination of loans and currencies</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>capital <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="fu">select</span>(task_id, starting_capital, currency) <span class="sc">%&gt;%</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="fu">group_by</span>(starting_capital, currency) <span class="sc">%&gt;%</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">&#39;drop&#39;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">percentage =</span> <span class="fu">round</span>(n <span class="sc">/</span> <span class="fu">sum</span>(n) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="fu">arrange</span>(currency) </span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>capital<span class="sc">|&gt;</span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-starting_capital
-</th>
-<th style="text-align:left;">
-currency
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-200
-</td>
-<td style="text-align:left;">
-(Tunisian) dinar
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:left;">
-Brazilian real
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2000
-</td>
-<td style="text-align:left;">
-Turkish liras
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:left;">
-apples
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-20
-</td>
-<td style="text-align:left;">
-dollars
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-200
-</td>
-<td style="text-align:left;">
-dollars
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2000
-</td>
-<td style="text-align:left;">
-dollars
-</td>
-<td style="text-align:right;">
-24
-</td>
-<td style="text-align:right;">
-22.64
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:left;">
-dollars
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:right;">
-14.15
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2000
-</td>
-<td style="text-align:left;">
-euros
-</td>
-<td style="text-align:right;">
-8
-</td>
-<td style="text-align:right;">
-7.55
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:left;">
-euros
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:right;">
-1.89
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:right;">
-39
-</td>
-<td style="text-align:right;">
-36.79
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1000
-</td>
-<td style="text-align:left;">
-points
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:left;">
-points
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:right;">
-1.89
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2000
-</td>
-<td style="text-align:left;">
-pounds
-</td>
-<td style="text-align:right;">
-4
-</td>
-<td style="text-align:right;">
-3.77
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:left;">
-pounds
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2000
-</td>
-<td style="text-align:left;">
-yen
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-200000
-</td>
-<td style="text-align:left;">
-yen
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-indeterminable
-</td>
-<td style="text-align:left;">
-yen
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2000
-</td>
-<td style="text-align:left;">
-yuan
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div id="gain-loss-schedules" class="section level3">
-<h3>Gain Loss Schedules</h3>
-<p>A number of variables were examined which reflect the gain-loss
-schedule of the tasks in use, including the fixed gains and losses for
-each deck and the frequencies of gains and losses for a given interval
-of trials. These variables were then aggregated to create a new variable
-which indicates whether the gain-loss schedule is similar to that of the
-original task, or whether it is deviating from it, and/or whether it
-contains elements which are indeterminable.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># add aggregated variable for gain loss schedule information to data</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="fu">group_by</span>(task_id) <span class="sc">%&gt;%</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">schedule =</span> <span class="fu">case_when</span>(</span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>    <span class="fu">all</span>(protocol <span class="sc">==</span> <span class="st">&quot;Bechara, 1994&quot;</span>) <span class="sc">~</span> <span class="st">&quot;standard schedule&quot;</span>,</span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>    <span class="fu">all</span>(</span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>      <span class="fu">c</span>(</span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>        reward_adv <span class="sc">==</span> <span class="dv">50</span>, reward_disadv <span class="sc">==</span> <span class="dv">100</span>, </span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>        gain1 <span class="sc">==</span> <span class="dv">250</span>, gain2 <span class="sc">==</span> <span class="dv">250</span>, loss1 <span class="sc">==</span> <span class="sc">-</span><span class="dv">250</span>, loss2 <span class="sc">==</span> <span class="sc">-</span><span class="dv">250</span>, </span>
-<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>        gain_int1 <span class="sc">==</span> <span class="dv">10</span>, gain_int2 <span class="sc">==</span> <span class="dv">10</span>, loss_int1 <span class="sc">==</span> <span class="dv">10</span>, loss_int2 <span class="sc">==</span> <span class="dv">10</span>,</span>
-<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>        freq_adv1 <span class="sc">==</span> <span class="fl">0.5</span>, freq_disadv1 <span class="sc">==</span> <span class="fl">0.5</span>, freq_adv2 <span class="sc">==</span> <span class="fl">0.1</span>, freq_disadv2 <span class="sc">==</span> <span class="fl">0.1</span></span>
-<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>      )</span>
-<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>    ) <span class="sc">~</span> <span class="st">&quot;standard schedule&quot;</span>,</span>
-<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>    <span class="fu">all</span>(</span>
-<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>      <span class="fu">c</span>(</span>
-<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>        reward_adv, reward_disadv, </span>
-<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>        gain1, gain2, loss1, loss2, </span>
-<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>        gain_int1, gain_int2, loss_int1, loss_int2,</span>
-<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>        freq_adv1, freq_adv2, freq_disadv1, freq_disadv2</span>
-<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>      ) <span class="sc">==</span> <span class="st">&quot;indeterminable&quot;</span></span>
-<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>    ) <span class="sc">~</span> <span class="st">&quot;completely indeterminable schedule&quot;</span>, </span>
-<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>    <span class="fu">any</span>(</span>
-<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>      <span class="fu">c</span>(</span>
-<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>        reward_adv, reward_disadv, </span>
-<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>        gain1, gain2, loss1, loss2, </span>
-<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a>        gain_int1, gain_int2, loss_int1, loss_int2,</span>
-<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a>        freq_adv1, freq_adv2, freq_disadv1, freq_disadv2</span>
-<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a>      ) <span class="sc">==</span> <span class="st">&quot;indeterminable&quot;</span></span>
-<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a>    ) <span class="sc">~</span> <span class="st">&quot;partly indeterminable schedule&quot;</span>, </span>
-<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">&quot;deviating schedule&quot;</span></span>
-<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
-<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
-<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a></span>
-<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co"># get an overview over schedules </span></span>
-<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a>schedules <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;schedule&quot;</span>) </span>
-<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a></span>
-<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a>schedules<span class="sc">|&gt;</span></span>
-<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-schedule
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-completely indeterminable schedule
-</td>
-<td style="text-align:right;">
-58
-</td>
-<td style="text-align:right;">
-54.72
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-standard schedule
-</td>
-<td style="text-align:right;">
-17
-</td>
-<td style="text-align:right;">
-16.04
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-deviating schedule
-</td>
-<td style="text-align:right;">
-16
-</td>
-<td style="text-align:right;">
-15.09
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-partly indeterminable schedule
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:right;">
-14.15
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div id="incentives" class="section level3">
-<h3>Incentives</h3>
-<p>Here, we sought to determine whether the incentives provided to
-participants were contingent upon their performance in the task or
-not.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># get an overview over incentives </span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>incentives <span class="ot">&lt;-</span> <span class="fu">overview_variable</span>(data, <span class="st">&quot;incentives&quot;</span>) </span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>incentives<span class="sc">|&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
 incentives
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-indeterminable
 </td>
 <td style="text-align:right;">
 50
@@ -3314,184 +2599,55 @@ indeterminable
 <td style="text-align:right;">
 47.17
 </td>
-</tr>
-<tr>
-<td style="text-align:left;">
-incentives independent on task performance
-</td>
 <td style="text-align:right;">
-33
-</td>
-<td style="text-align:right;">
-31.13
+0.5346397
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-incentives dependent on task performance
+currency
 </td>
 <td style="text-align:right;">
-20
+39
 </td>
 <td style="text-align:right;">
-18.87
+36.79
+</td>
+<td style="text-align:right;">
+0.7546848
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-no incentives
+goal
 </td>
 <td style="text-align:right;">
-3
+37
 </td>
 <td style="text-align:right;">
-2.83
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div id="summary" class="section level2">
-<h2>Summary</h2>
-<p>Here, we summarize how many IGTs can be considered the original IGT,
-modified IGT, or indeterminable whether deviating from the original IGT
-or not.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># defining the original IGT values</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>original_values <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">goal             =</span> <span class="st">&quot;standard goal&quot;</span>,</span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">instructions     =</span> <span class="st">&quot;standard instructions&quot;</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">feedback         =</span> <span class="st">&quot;standard feedback&quot;</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">starting_capital =</span> <span class="st">&quot;2000&quot;</span>,</span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">reward_adv       =</span> <span class="dv">50</span>,</span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="at">reward_disadv    =</span> <span class="dv">100</span>,</span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  <span class="at">gain1            =</span> <span class="dv">250</span>,</span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>  <span class="at">loss1            =</span> <span class="sc">-</span><span class="dv">250</span>,</span>
-<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  <span class="at">gain_int1        =</span> <span class="dv">10</span>,</span>
-<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>  <span class="at">loss_int1        =</span> <span class="dv">10</span>,</span>
-<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  <span class="at">freq_adv1        =</span> <span class="fl">0.5</span>,</span>
-<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  <span class="at">freq_disadv1     =</span> <span class="fl">0.5</span>,</span>
-<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  <span class="at">gain2            =</span> <span class="dv">250</span>,</span>
-<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>  <span class="at">loss2            =</span> <span class="sc">-</span><span class="dv">250</span>,</span>
-<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>  <span class="at">gain_int2        =</span> <span class="dv">10</span>,</span>
-<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>  <span class="at">loss_int2        =</span> <span class="dv">10</span>,</span>
-<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>  <span class="at">freq_adv2        =</span> <span class="fl">0.1</span>,</span>
-<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>  <span class="at">freq_disadv2     =</span> <span class="fl">0.1</span>,</span>
-<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>  <span class="at">n_trials         =</span> <span class="dv">100</span></span>
-<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>)</span>
-<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a></span>
-<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="co"># define a function to classify the IGT </span></span>
-<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>classify_igt <span class="ot">&lt;-</span> <span class="cf">function</span>(row) {</span>
-<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>  vals <span class="ot">&lt;-</span> <span class="fu">as.list</span>(row[<span class="fu">names</span>(original_values)])</span>
-<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>  <span class="co"># check whether all values match reference list </span></span>
-<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>  all_match <span class="ot">&lt;-</span> <span class="fu">all</span>(<span class="fu">mapply</span>(<span class="cf">function</span>(a, b) <span class="fu">isTRUE</span>(a <span class="sc">==</span> b), vals, original_values))</span>
-<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>  <span class="cf">if</span> (all_match) <span class="fu">return</span>(<span class="st">&quot;original IGT&quot;</span>)</span>
-<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>  <span class="co"># check whether values match either reference list or indeterminable </span></span>
-<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>  matches_or_indet <span class="ot">&lt;-</span> <span class="fu">mapply</span>(<span class="cf">function</span>(val, ref) {</span>
-<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>    <span class="fu">isTRUE</span>(val <span class="sc">==</span> ref) <span class="sc">||</span> <span class="fu">isTRUE</span>(val <span class="sc">==</span> <span class="st">&quot;indeterminable&quot;</span>)</span>
-<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>  }, vals, original_values)</span>
-<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>  <span class="co"># return modified for all other </span></span>
-<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">all</span>(matches_or_indet)) <span class="fu">return</span>(<span class="st">&quot;indeterminable&quot;</span>)</span>
-<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a>  <span class="fu">return</span>(<span class="st">&quot;modified IGT&quot;</span>)</span>
-<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a>}</span>
-<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a>  </span>
-<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a><span class="co"># apply function </span></span>
-<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a>data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb13-41"><a href="#cb13-41" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb13-42"><a href="#cb13-42" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">igt_version =</span> <span class="fu">classify_igt</span>(<span class="fu">pick</span>(<span class="fu">everything</span>()))) <span class="sc">%&gt;%</span></span>
-<span id="cb13-43"><a href="#cb13-43" tabindex="-1"></a>  <span class="fu">ungroup</span>() </span>
-<span id="cb13-44"><a href="#cb13-44" tabindex="-1"></a></span>
-<span id="cb13-45"><a href="#cb13-45" tabindex="-1"></a><span class="co"># create table</span></span>
-<span id="cb13-46"><a href="#cb13-46" tabindex="-1"></a>igt_classfication <span class="ot">&lt;-</span> <span class="fu">table</span>(data<span class="sc">$</span>igt_version) <span class="sc">%&gt;%</span></span>
-<span id="cb13-47"><a href="#cb13-47" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb13-48"><a href="#cb13-48" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
-<span id="cb13-49"><a href="#cb13-49" tabindex="-1"></a>    <span class="st">&quot;IGT Version&quot;</span> <span class="ot">=</span> Var1,</span>
-<span id="cb13-50"><a href="#cb13-50" tabindex="-1"></a>    <span class="st">&quot;n&quot;</span> <span class="ot">=</span> Freq</span>
-<span id="cb13-51"><a href="#cb13-51" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb13-52"><a href="#cb13-52" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">percentage =</span> <span class="fu">paste0</span>(<span class="fu">round</span>((n <span class="sc">/</span> <span class="fu">sum</span>(n)) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>), <span class="st">&quot; %&quot;</span>))</span>
-<span id="cb13-53"><a href="#cb13-53" tabindex="-1"></a></span>
-<span id="cb13-54"><a href="#cb13-54" tabindex="-1"></a><span class="co"># print table </span></span>
-<span id="cb13-55"><a href="#cb13-55" tabindex="-1"></a>igt_classfication <span class="sc">|&gt;</span></span>
-<span id="cb13-56"><a href="#cb13-56" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb13-57"><a href="#cb13-57" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-IGT Version
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:left;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-indeterminable
+34.91
 </td>
 <td style="text-align:right;">
-62
-</td>
-<td style="text-align:left;">
-58.49 %
+0.6859271
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-modified IGT
+n_trials
 </td>
 <td style="text-align:right;">
-40
-</td>
-<td style="text-align:left;">
-37.74 %
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-original IGT
+8
 </td>
 <td style="text-align:right;">
-4
+7.55
 </td>
-<td style="text-align:left;">
-3.77 %
+<td style="text-align:right;">
+0.9040295
 </td>
 </tr>
-</tbody>
-</table>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># how many of the modified IGTs are in fact the clinical IGT? </span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>clinical_igt <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="fu">filter</span>(igt_version <span class="sc">==</span> <span class="st">&quot;modified IGT&quot;</span>, protocol <span class="sc">==</span> <span class="st">&quot;Bechara, 2007&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="st">`</span><span class="at">modified task type</span><span class="st">`</span> <span class="ot">=</span> <span class="st">&quot;clinical IGT&quot;</span>, </span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>            <span class="at">n =</span> <span class="fu">n</span>(),</span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>            <span class="at">percentage =</span> <span class="fu">round</span>((<span class="fu">n</span>() <span class="sc">/</span> <span class="fu">nrow</span>(data)) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>)) </span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>clinical_igt <span class="sc">%&gt;%</span></span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-modified task type
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:right;">
-percentage
-</th>
-</tr>
-</thead>
-<tbody>
 <tr>
 <td style="text-align:left;">
-clinical IGT
+n_blocks
 </td>
 <td style="text-align:right;">
 2
@@ -3499,12 +2655,43 @@ clinical IGT
 <td style="text-align:right;">
 1.89
 </td>
+<td style="text-align:right;">
+0.8039893
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sample_size
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0.94
+</td>
+<td style="text-align:right;">
+0.7627284
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+variant
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0.00
+</td>
+<td style="text-align:right;">
+0.8843243
+</td>
 </tr>
 </tbody>
 </table>
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiQW5hbHlzZXMgb2YgSUdUIFByb2NlZHVyZXMiCmF1dGhvcjogIkFubmlrYSBLdWVscG1hbm4iCmRhdGU6ICJgciBTeXMuRGF0ZSgpYCIKb3V0cHV0OgogIGh0bWxfZG9jdW1lbnQ6CiAgICBjb2RlX2Rvd25sb2FkOiB0cnVlCiAgICBjb2RlX2ZvbGRpbmc6IHNob3cKICAgIGhpZ2hsaWdodDogaGFkZG9jawogICAgdGhlbWU6IGZsYXRseQogICAgdG9jOiB5ZXMKICAgIHRvY19mbG9hdDogeWVzCgotLS0KCmBgYHtyIHNldHVwfQojfCBpbmNsdWRlOiBmYWxzZQoKa25pdHI6Om9wdHNfY2h1bmskc2V0KGVjaG8gPSBUUlVFKQoKYGBgCgoKYGBge3IgcGFja2FnZXN9CiN8IGluY2x1ZGU6IGZhbHNlCgojIGxvYWQgUiBwYWNrYWdlcyAKbGlicmFyeShrbml0cikKbGlicmFyeSh0aWR5dmVyc2UpCmxpYnJhcnkocmVhZHhsKQpsaWJyYXJ5KGNvbmZsaWN0ZWQpCmxpYnJhcnkoa2FibGVFeHRyYSkKCiMgZGVjbGFyZSBwcmVmZXJlbmNlcyByZWdhcmRpbmcgY29uZmxpY3RzIApjb25mbGljdHNfcHJlZmVyKGRwbHlyOjpmaWx0ZXIpCgpgYGAKCgpgYGB7ciBob3VzZWtlZXBpbmd9CiN8IGluY2x1ZGU6IGZhbHNlCgojIHJlYWQgcHJvY2VkdXJlIGZpbGUKZGF0YSA8LSByZWFkX3hsc3goIi4uLy4uL2RhdGEvcmF3L21ldGFtZXRob2QgcmV2aWV3L21hc3RlciBjb2RpbmcvY29kZWJvb2tfcHJvY2VkdXJlX21hc3Rlci54bHN4IikgCgpgYGAKCgpgYGB7ciBmdW5jdGlvbnN9CiN8IGluY2x1ZGU6IGZhbHNlCgojIERlZmluaW5nIGZ1bmN0aW9ucyB1c2VkIGluIHRoaXMgc2NyaXB0CgojIGZ1bmN0aW9uIDE6IG92ZXJ2aWV3IG92ZXIgYSB2YXJpYWJsZQpvdmVydmlld192YXJpYWJsZSA8LSBmdW5jdGlvbihkYXRhLCB2YXJpYWJsZSkgewogIGRhdGEgJT4lCiAgICBzZWxlY3QoYWxsX29mKHZhcmlhYmxlKSkgJT4lCiAgICBncm91cF9ieShhY3Jvc3MoYWxsX29mKHZhcmlhYmxlKSkpICU+JQogICAgc3VtbWFyaXNlKG4gPSBuKCksIC5ncm91cHMgPSAiZHJvcCIpICU+JQogICAgbXV0YXRlKHBlcmNlbnRhZ2UgPSByb3VuZChuIC8gc3VtKG4pICogMTAwLCAyKSkgJT4lCiAgICBhcnJhbmdlKGRlc2MobikpCn0KCiMgZnVuY3Rpb24gMjogY291bnQgYW5kIGNhbGN1bGF0ZSBwZXJjZW50YWdlcyBmb3IgY2VydGFpbiB2YWx1ZXMgb2YgYSBzdWJzZXQgb2YgdmFyaWFibGVzCnZhbHVlX2NvdW50cyA8LSBmdW5jdGlvbihkYXRhLCB2YWx1ZV90b19jb3VudCwgY29sdW1ucyA9IE5VTEwpIHsKICBpZiAoaXMubnVsbChjb2x1bW5zKSkgewogICAgY29sdW1ucyA8LSBjb2xuYW1lcyhkYXRhKQogIH0gZWxzZSB7CiAgICBjb2x1bW5zIDwtIGludGVyc2VjdChjb2x1bW5zLCBjb2xuYW1lcyhkYXRhKSkKICB9CiAgcmVzdWx0cyA8LSBsaXN0KCkKICBmb3IgKGNvbCBpbiBjb2x1bW5zKSB7CiAgICBjb3VudCA8LSBzdW0oZGF0YVtbY29sXV0gPT0gdmFsdWVfdG9fY291bnQsIG5hLnJtID0gVFJVRSkKICAgIHBlcmNlbnRhZ2UgPC0gcm91bmQoKGNvdW50IC8gbnJvdyhkYXRhKSkgKiAxMDAsIDIpCiAgICByZXN1bHRzW1tjb2xdXSA8LSBjKCJjb3VudCIgPSBjb3VudCwgInBlcmNlbnRhZ2UiID0gcGVyY2VudGFnZSkKICB9CiAgc3VtbWFyeV90YWJsZSA8LSBkby5jYWxsKHJiaW5kLCByZXN1bHRzKSAlPiUKICAgIGFzLmRhdGEuZnJhbWUoc3RyaW5nc0FzRmFjdG9ycyA9IEZBTFNFKSAlPiUKICAgIHRpYmJsZTo6cm93bmFtZXNfdG9fY29sdW1uKCJWYXJpYWJsZSIpCiAgcmV0dXJuKHN1bW1hcnlfdGFibGUpCn0KCmBgYAoKCmBgYHtyIGRhdGEgcHJlcGFyYXRpb259CiN8IGluY2x1ZGU6IGZhbHNlCgojIyMgVGFzayBJRCAKIyBhZGQgaWQgZm9yIGVhY2ggdGFzayB0aGF0IHdhcyBjb2RlZApkYXRhIDwtIGRhdGEgJT4lCiAgbXV0YXRlKHRhc2tfaWQgPSBzcHJpbnRmKCIlMDNkIiwgcm93X251bWJlcigpKSkgCgpgYGAKCiMjIExhY2sgb2YgUmVwb3J0aW5nCk9uZSBvZiB0aGUgb2JqZWN0aXZlcyBvZiB0aGlzIHN0dWR5IHdhcyB0byBhc2NlcnRhaW4gdGhlIGRlZ3JlZSBvZiB0cmFuc3BhcmVuY3kgaW4gdGhlIHJlcG9ydGluZyBvZiBJR1QgcHJvY2VkdXJlcy4KCiMjIyBTdW1tYXJ5IG9mIEluZGV0ZXJtaW5hYmxlcwpJbiBvcmRlciB0byBhY2hpZXZlIHRoaXMsIHdlIGRlbW9uc3RyYXRlLCBmb3IgZWFjaCB2YXJpYWJsZSwgdGhlIGZyZXF1ZW5jeSBvZiBpbnN0YW5jZXMgd2hlcmUgYW4gaW5kZXRlcm1pbmFibGUgdmFsdWUgd2FzIGFzc2lnbmVkLiBUaGUgdmFyaWFibGUgImNvdW50IiByZXByZXNlbnRzIHRoZSBudW1iZXIgb2YgdGFza3MgZm9yIHdoaWNoIHRoaXMgb2NjdXJyZWQuIAoKYGBge3IgaW5kZXRlcm1pbmFibGVzfQoKIyBjcmVhdGUgZGF0YSBmcmFtZSB3aXRoIHJlbGV2YW50IHZhcmlhYmxlcwpkYXRhX2luZCA8LSBkYXRhICU+JQogIHNlbGVjdChnb2FsLCBpbnN0cnVjdGlvbnMsIGZlZWRiYWNrLCBjdXJyZW5jeSwgc3RhcnRpbmdfY2FwaXRhbCwgCiAgICAgICAgIGNvbnRhaW5zKCJyZXdhcmQiKSwgY29udGFpbnMoIjEiKSwgY29udGFpbnMoIjIiKSwgCiAgICAgICAgIGNvbnRhaW5zKCJhZ2dyIiksIG5fdHJpYWxzKQoKIyBjb3VudCBob3cgb2Z0ZW4gdmFyaWFibGUgaXMgc2V0IHRvIGluZGV0ZXJtaW5hYmxlCmluZGV0ZXJtaW5hYmxlcyA8LSB2YWx1ZV9jb3VudHMoZGF0YV9pbmQsICJpbmRldGVybWluYWJsZSIpICU+JQogIGFycmFuZ2UoZGVzYyhjb3VudCkpCgojIHByaW50IGRhdGEgZnJhbWUgd2l0aCBmcmVxdWVuY3kgb2YgaW5kZXRlcm1pbmFibGUgdmFsdWVzIAppbmRldGVybWluYWJsZXMgfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgpgYGAKCiMjIE1vZGlmaWNhdGlvbnMgCgpXZSBjb25kdWN0ZWQgYSBkZXNjcmlwdGl2ZSBhbmFseXNpcyBvZiB0aGUgbW9kaWZpY2F0aW9ucyB0aGF0IHdlcmUgbWFkZSB0byB0aGUgSUdUIHdpdGggcmVzcGVjdCB0byBkaWZmZXJlbnQgdmFyaWFibGVzLiAKCiMjIyBOdW1iZXIgb2YgVHJpYWxzCgpUaGUgZnJlcXVlbmN5IG9mIGFsdGVyYXRpb25zIHRvIHRoZSBudW1iZXIgb2YgdHJpYWxzIHdhcyBleGFtaW5lZC4gVGhlIHZhcmlhYmxlICJuIiByZWZlcnMgdG8gdGhlIG51bWJlciBvZiB0YXNrcyB3aXRoIHRoZSBjb3JyZXNwb25kaW5nIG51bWJlciBvZiB0cmlhbHMsIHJlcHJlc2VudGVkIGFzICJuX3RyaWFscyIuIApgYGB7ciB0cmlhbHN9CgojIGdldCBhbiBvdmVydmlldyBvdmVyIG51bWJlciBvZiB0cmlhbHMgIAp0cmlhbHNfbiA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAibl90cmlhbHMiKSAKCnRyaWFsc19ufD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgoKIyBhZ2dyZWdhdGUgbnVtYmVycyBvZiB0cmlhbHMKZGF0YSA8LSBkYXRhICU+JQogIGdyb3VwX2J5KHRhc2tfaWQpICU+JQogIG11dGF0ZSh0cmlhbHNfYWdnciA9IGNhc2Vfd2hlbigKICAgIG5fdHJpYWxzICVpbiUgYygiMTAwIiwgImluZGV0ZXJtaW5hYmxlIikgfiBuX3RyaWFscywKICAgIFRSVUUgfiAiZGV2aWF0aW5nIgogICkpICU+JQogIHVuZ3JvdXAoKQoKIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBhZ2dyZWdhdGVkIG51bWJlciBvZiB0cmlhbHMgIAp0cmlhbHNfYWdnciA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAidHJpYWxzX2FnZ3IiKSB8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCgojIHJhbmdlIG9mIG51bWJlciBvZiB0cmlhbHMKcmFuZ2Vfbl90cmlhbHMgPC0gZGF0YSAlPiUKICBmaWx0ZXIobl90cmlhbHMgIT0gImluZGV0ZXJtaW5hYmxlIikgJT4lCiAgc3VtbWFyaXNlKAogICAgbWluX3RyaWFscyA9IG1pbihhcy5udW1lcmljKG5fdHJpYWxzKSwgbmEucm0gPSBUUlVFKSwKICAgIG1heF90cmlhbHMgPSBtYXgoYXMubnVtZXJpYyhuX3RyaWFscyksIG5hLnJtID0gVFJVRSksCiAgICB2YWxpZF9vYnNlcnZhdGlvbnMgPSBuKCkKICApIAoKcmFuZ2Vfbl90cmlhbHN8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCgpgYGAKCiMjIyBJbnN0cnVjdGlvbnMgYW5kIEZlZWRiYWNrCgpBIGRlc2NyaXB0aXZlIGFuYWx5c2lzIHdhcyBjb25kdWN0ZWQgdG8gZGV0ZXJtaW5lIHdoZXRoZXIgdGhlIGluc3RydWN0aW9ucywgdGhlIHByaW1hcnkgZ29hbCBvZiB0aGUgdGFzayB3aGljaCBjYW4gYmUgY29uc2lkZXJlZCBhIHBhcnQgb2YgdGhlIGluc3RydWN0aW9uLCBhbmQgdGhlIGZlZWRiYWNrIHByb3ZpZGVkIHRvIHRoZSBwYXJ0aWNpcGFudHMgd2VyZSBjb25zaXN0ZW50IHdpdGggdGhlIG9yaWdpbmFsIHRhc2sgb3IgbW9kaWZpZWQuIEFkZGl0aW9uYWxseSwgd2UgYWltZWQgdG8gcXVhbnRpZnkgdGhlIG51bWJlciBvZiBpbnN0YW5jZXMgd2hlcmUgdGhlc2UgZWxlbWVudHMgY291bGQgbm90IGJlIGRldGVybWluZWQgKHZhbHVlICJpbmRldGVybWluYWJsZSIpLiBUaGUgdmFyaWFibGUgIm4iIHJlcHJlc2VudHMgdGhlIG51bWJlciBvZiB0YXNrcyBmb3Igd2hpY2ggdGhpcyBpcyB0aGUgY2FzZS4gCmBgYHtyIGluc3RydWN0aW9uc30KCiMgZ2V0IGFuIG92ZXJ2aWV3IG92ZXIgSUdUIGdvYWwgYXMgYSBwYXJ0IG9mIGluc3RydWN0aW9uICAKZ29hbCA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAiZ29hbCIpIAoKZ29hbHw+CiAga2FibGUoKSB8PgogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQoKCiMgZ2V0IGFuIG92ZXJ2aWV3IG92ZXIgaW5mb3JtYXRpb24gb24gaW5zdHJ1Y3Rpb25zCmluc3RydWN0aW9ucyA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAiaW5zdHJ1Y3Rpb25zIikgCgppbnN0cnVjdGlvbnN8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCgojIGdldCBhbiBvdmVydmlldyBvdmVyIGluZm9ybWF0aW9uIG9uIGZlZWRiYWNrCmZlZWRiYWNrIDwtIG92ZXJ2aWV3X3ZhcmlhYmxlKGRhdGEsICJmZWVkYmFjayIpIAoKZmVlZGJhY2t8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCgpgYGAKCkhlcmUsIHRoZSB2YXJpYWJsZXMgb2YgZ29hbCwgaW5zdHJ1Y3Rpb25zLCBhbmQgZmVlZGJhY2sgd2VyZSBjb21iaW5lZCBpbnRvIGEgc2luZ2xlIHZhcmlhYmxlLCBuYW1lZCAiY2hhcmFjdGVyaXN0aWNzIi4gCmBgYHtyIGNoYXJhY3RlcmlzdGljc30KCiMgYWRkIHN1bW1hcnkgdmFyaWFibGUgZm9yIGdlbmVyYWwgdGFzayBjaGFyYWN0ZXJpc3RpY3MgKGdvYWwsIGluc3RydWN0aW9ucywgZmVlZGJhY2spCmRhdGEgPC0gZGF0YSAlPiUKICBncm91cF9ieSh0YXNrX2lkKSAlPiUKICBtdXRhdGUoY2hhcmFjdGVyaXN0aWNzID0gY2FzZV93aGVuKAogICAgYWxsKHByb3RvY29sID09ICJCZWNoYXJhLCAxOTk0IikgfiAic3RhbmRhcmQgY2hhcmFjdGVyaXN0aWNzIiwKICAgIGFsbChjKGdvYWwsIGluc3RydWN0aW9ucywgZmVlZGJhY2spID09ICJpbmRldGVybWluYWJsZSIpIH4gImNvbXBsZXRlbHkgaW5kZXRlcm1pbmFibGUgY2hhcmFjdGVyaXN0aWNzIiwKICAgIGFsbChncmVwbCgiZGV2aWF0aW5nIiwgYyhnb2FsLCBpbnN0cnVjdGlvbnMsIGZlZWRiYWNrKSkpIH4gImRldmlhdGluZyBjaGFyYWN0ZXJpc3RpY3MiLAogICAgYW55KGdyZXBsKCJkZXZpYXRpbmciLCBnb2FsKSB8IGdyZXBsKCJkZXZpYXRpbmciLCBpbnN0cnVjdGlvbnMpIHwgZ3JlcGwoImRldmlhdGluZyIsIGZlZWRiYWNrKSkgfiAicGFydGx5IGRldmlhdGluZyBjaGFyYWN0ZXJpc3RpY3MiLAogICAgYW55KGdvYWwgPT0gImluZGV0ZXJtaW5hYmxlIiB8IGluc3RydWN0aW9ucyA9PSAiaW5kZXRlcm1pbmFibGUiIHwgZmVlZGJhY2sgPT0gImluZGV0ZXJtaW5hYmxlIikgfiAiaW5kZXRlcm1pbmFibGUgY2hhcmFjdGVyaXN0aWNzIiwKICAgIFRSVUUgfiAic3RhbmRhcmQgY2hhcmFjdGVyaXN0aWNzIgogICkpICU+JQogIHVuZ3JvdXAoKQoKIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBpbmZvcm1hdGlvbiBvbiBnZW5lcmFsIHRhc2sgY2hhcmFjdGVyaXN0aWNzCmNoYXJhY3RlcmlzdGljcyA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAiY2hhcmFjdGVyaXN0aWNzIikgCgpjaGFyYWN0ZXJpc3RpY3N8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCgpgYGAKCiMjIyBMb2FucyBhbmQgQ3VycmVuY2llcwoKSGVyZSwgd2UgcHJlc2VudCB0aGUgY3VycmVuY2llcyBhbmQgY2FwaXRhbHMgdGhhdCB3ZXJlIGVtcGxveWVkIGluIG91ciBzYW1wbGUuCmBgYHtyIGxvYW5zfQoKIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBjdXJyZW5jaWVzIApjdXJyZW5jeSA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAiY3VycmVuY3kiKSAKCmN1cnJlbmN5fD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgoKIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBsb2Fucwpsb2FuIDwtIG92ZXJ2aWV3X3ZhcmlhYmxlKGRhdGEsICJzdGFydGluZ19jYXBpdGFsIikgCgpsb2FufD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgoKIyBjcmVhdGUgZGF0YSBmcmFtZSB3aXRoIGNvbWJpbmF0aW9uIG9mIGxvYW5zIGFuZCBjdXJyZW5jaWVzCmNhcGl0YWwgPC0gZGF0YSAlPiUKICBzZWxlY3QodGFza19pZCwgc3RhcnRpbmdfY2FwaXRhbCwgY3VycmVuY3kpICU+JQogIGdyb3VwX2J5KHN0YXJ0aW5nX2NhcGl0YWwsIGN1cnJlbmN5KSAlPiUKICBzdW1tYXJpc2UobiA9IG4oKSwgLmdyb3VwcyA9ICdkcm9wJykgJT4lCiAgbXV0YXRlKHBlcmNlbnRhZ2UgPSByb3VuZChuIC8gc3VtKG4pICogMTAwLCAyKSkgJT4lCiAgYXJyYW5nZShjdXJyZW5jeSkgCgpjYXBpdGFsfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgoKYGBgCgojIyMgR2FpbiBMb3NzIFNjaGVkdWxlcwoKQSBudW1iZXIgb2YgdmFyaWFibGVzIHdlcmUgZXhhbWluZWQgd2hpY2ggcmVmbGVjdCB0aGUgZ2Fpbi1sb3NzIHNjaGVkdWxlIG9mIHRoZSB0YXNrcyBpbiB1c2UsIGluY2x1ZGluZyB0aGUgZml4ZWQgZ2FpbnMgYW5kIGxvc3NlcyBmb3IgZWFjaCBkZWNrIGFuZCB0aGUgZnJlcXVlbmNpZXMgb2YgZ2FpbnMgYW5kIGxvc3NlcyBmb3IgYSBnaXZlbiBpbnRlcnZhbCBvZiB0cmlhbHMuIFRoZXNlIHZhcmlhYmxlcyB3ZXJlIHRoZW4gYWdncmVnYXRlZCB0byBjcmVhdGUgYSBuZXcgdmFyaWFibGUgd2hpY2ggaW5kaWNhdGVzIHdoZXRoZXIgdGhlIGdhaW4tbG9zcyBzY2hlZHVsZSBpcyBzaW1pbGFyIHRvIHRoYXQgb2YgdGhlIG9yaWdpbmFsIHRhc2ssIG9yIHdoZXRoZXIgaXQgaXMgZGV2aWF0aW5nIGZyb20gaXQsIGFuZC9vciB3aGV0aGVyIGl0IGNvbnRhaW5zIGVsZW1lbnRzIHdoaWNoIGFyZSBpbmRldGVybWluYWJsZS4gCgpgYGB7ciBzY2hlZHVsZX0KCiMgYWRkIGFnZ3JlZ2F0ZWQgdmFyaWFibGUgZm9yIGdhaW4gbG9zcyBzY2hlZHVsZSBpbmZvcm1hdGlvbiB0byBkYXRhCmRhdGEgPC0gZGF0YSAlPiUKICBncm91cF9ieSh0YXNrX2lkKSAlPiUKICBtdXRhdGUoc2NoZWR1bGUgPSBjYXNlX3doZW4oCiAgICBhbGwocHJvdG9jb2wgPT0gIkJlY2hhcmEsIDE5OTQiKSB+ICJzdGFuZGFyZCBzY2hlZHVsZSIsCiAgICBhbGwoCiAgICAgIGMoCiAgICAgICAgcmV3YXJkX2FkdiA9PSA1MCwgcmV3YXJkX2Rpc2FkdiA9PSAxMDAsIAogICAgICAgIGdhaW4xID09IDI1MCwgZ2FpbjIgPT0gMjUwLCBsb3NzMSA9PSAtMjUwLCBsb3NzMiA9PSAtMjUwLCAKICAgICAgICBnYWluX2ludDEgPT0gMTAsIGdhaW5faW50MiA9PSAxMCwgbG9zc19pbnQxID09IDEwLCBsb3NzX2ludDIgPT0gMTAsCiAgICAgICAgZnJlcV9hZHYxID09IDAuNSwgZnJlcV9kaXNhZHYxID09IDAuNSwgZnJlcV9hZHYyID09IDAuMSwgZnJlcV9kaXNhZHYyID09IDAuMQogICAgICApCiAgICApIH4gInN0YW5kYXJkIHNjaGVkdWxlIiwKICAgIGFsbCgKICAgICAgYygKICAgICAgICByZXdhcmRfYWR2LCByZXdhcmRfZGlzYWR2LCAKICAgICAgICBnYWluMSwgZ2FpbjIsIGxvc3MxLCBsb3NzMiwgCiAgICAgICAgZ2Fpbl9pbnQxLCBnYWluX2ludDIsIGxvc3NfaW50MSwgbG9zc19pbnQyLAogICAgICAgIGZyZXFfYWR2MSwgZnJlcV9hZHYyLCBmcmVxX2Rpc2FkdjEsIGZyZXFfZGlzYWR2MgogICAgICApID09ICJpbmRldGVybWluYWJsZSIKICAgICkgfiAiY29tcGxldGVseSBpbmRldGVybWluYWJsZSBzY2hlZHVsZSIsIAogICAgYW55KAogICAgICBjKAogICAgICAgIHJld2FyZF9hZHYsIHJld2FyZF9kaXNhZHYsIAogICAgICAgIGdhaW4xLCBnYWluMiwgbG9zczEsIGxvc3MyLCAKICAgICAgICBnYWluX2ludDEsIGdhaW5faW50MiwgbG9zc19pbnQxLCBsb3NzX2ludDIsCiAgICAgICAgZnJlcV9hZHYxLCBmcmVxX2FkdjIsIGZyZXFfZGlzYWR2MSwgZnJlcV9kaXNhZHYyCiAgICAgICkgPT0gImluZGV0ZXJtaW5hYmxlIgogICAgKSB+ICJwYXJ0bHkgaW5kZXRlcm1pbmFibGUgc2NoZWR1bGUiLCAKICAgIFRSVUUgfiAiZGV2aWF0aW5nIHNjaGVkdWxlIgogICkpICU+JQogIHVuZ3JvdXAoKQoKIyBnZXQgYW4gb3ZlcnZpZXcgb3ZlciBzY2hlZHVsZXMgCnNjaGVkdWxlcyA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAic2NoZWR1bGUiKSAKCnNjaGVkdWxlc3w+CiAga2FibGUoKSB8PgogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQoKCmBgYAoKIyMjIEluY2VudGl2ZXMKCkhlcmUsIHdlIHNvdWdodCB0byBkZXRlcm1pbmUgd2hldGhlciB0aGUgaW5jZW50aXZlcyBwcm92aWRlZCB0byBwYXJ0aWNpcGFudHMgd2VyZSBjb250aW5nZW50IHVwb24gdGhlaXIgcGVyZm9ybWFuY2UgaW4gdGhlIHRhc2sgb3Igbm90LiAKYGBge3IgaW5jZW50aXZlc30KCiMgZ2V0IGFuIG92ZXJ2aWV3IG92ZXIgaW5jZW50aXZlcyAKaW5jZW50aXZlcyA8LSBvdmVydmlld192YXJpYWJsZShkYXRhLCAiaW5jZW50aXZlcyIpIAoKaW5jZW50aXZlc3w+CiAga2FibGUoKSB8PgogIGthYmxlX2NsYXNzaWMoZnVsbF93aWR0aCA9IEZBTFNFKQoKYGBgCgojIyBTdW1tYXJ5IAoKSGVyZSwgd2Ugc3VtbWFyaXplIGhvdyBtYW55IElHVHMgY2FuIGJlIGNvbnNpZGVyZWQgdGhlIG9yaWdpbmFsIElHVCwgbW9kaWZpZWQgSUdULCBvciBpbmRldGVybWluYWJsZSB3aGV0aGVyIGRldmlhdGluZyBmcm9tIHRoZSBvcmlnaW5hbCBJR1Qgb3Igbm90LiAKCmBgYHtyIHN1bW1hcnl9CgojIGRlZmluaW5nIHRoZSBvcmlnaW5hbCBJR1QgdmFsdWVzCm9yaWdpbmFsX3ZhbHVlcyA8LSBsaXN0KAogIGdvYWwgICAgICAgICAgICAgPSAic3RhbmRhcmQgZ29hbCIsCiAgaW5zdHJ1Y3Rpb25zICAgICA9ICJzdGFuZGFyZCBpbnN0cnVjdGlvbnMiLAogIGZlZWRiYWNrICAgICAgICAgPSAic3RhbmRhcmQgZmVlZGJhY2siLAogIHN0YXJ0aW5nX2NhcGl0YWwgPSAiMjAwMCIsCiAgcmV3YXJkX2FkdiAgICAgICA9IDUwLAogIHJld2FyZF9kaXNhZHYgICAgPSAxMDAsCiAgZ2FpbjEgICAgICAgICAgICA9IDI1MCwKICBsb3NzMSAgICAgICAgICAgID0gLTI1MCwKICBnYWluX2ludDEgICAgICAgID0gMTAsCiAgbG9zc19pbnQxICAgICAgICA9IDEwLAogIGZyZXFfYWR2MSAgICAgICAgPSAwLjUsCiAgZnJlcV9kaXNhZHYxICAgICA9IDAuNSwKICBnYWluMiAgICAgICAgICAgID0gMjUwLAogIGxvc3MyICAgICAgICAgICAgPSAtMjUwLAogIGdhaW5faW50MiAgICAgICAgPSAxMCwKICBsb3NzX2ludDIgICAgICAgID0gMTAsCiAgZnJlcV9hZHYyICAgICAgICA9IDAuMSwKICBmcmVxX2Rpc2FkdjIgICAgID0gMC4xLAogIG5fdHJpYWxzICAgICAgICAgPSAxMDAKKQoKIyBkZWZpbmUgYSBmdW5jdGlvbiB0byBjbGFzc2lmeSB0aGUgSUdUIApjbGFzc2lmeV9pZ3QgPC0gZnVuY3Rpb24ocm93KSB7CiAgdmFscyA8LSBhcy5saXN0KHJvd1tuYW1lcyhvcmlnaW5hbF92YWx1ZXMpXSkKICAjIGNoZWNrIHdoZXRoZXIgYWxsIHZhbHVlcyBtYXRjaCByZWZlcmVuY2UgbGlzdCAKICBhbGxfbWF0Y2ggPC0gYWxsKG1hcHBseShmdW5jdGlvbihhLCBiKSBpc1RSVUUoYSA9PSBiKSwgdmFscywgb3JpZ2luYWxfdmFsdWVzKSkKICBpZiAoYWxsX21hdGNoKSByZXR1cm4oIm9yaWdpbmFsIElHVCIpCiAgIyBjaGVjayB3aGV0aGVyIHZhbHVlcyBtYXRjaCBlaXRoZXIgcmVmZXJlbmNlIGxpc3Qgb3IgaW5kZXRlcm1pbmFibGUgCiAgbWF0Y2hlc19vcl9pbmRldCA8LSBtYXBwbHkoZnVuY3Rpb24odmFsLCByZWYpIHsKICAgIGlzVFJVRSh2YWwgPT0gcmVmKSB8fCBpc1RSVUUodmFsID09ICJpbmRldGVybWluYWJsZSIpCiAgfSwgdmFscywgb3JpZ2luYWxfdmFsdWVzKQogICMgcmV0dXJuIG1vZGlmaWVkIGZvciBhbGwgb3RoZXIgCiAgaWYgKGFsbChtYXRjaGVzX29yX2luZGV0KSkgcmV0dXJuKCJpbmRldGVybWluYWJsZSIpCiAgcmV0dXJuKCJtb2RpZmllZCBJR1QiKQp9CiAgCiMgYXBwbHkgZnVuY3Rpb24gCmRhdGEgPC0gZGF0YSAlPiUKICByb3d3aXNlKCkgJT4lCiAgbXV0YXRlKGlndF92ZXJzaW9uID0gY2xhc3NpZnlfaWd0KHBpY2soZXZlcnl0aGluZygpKSkpICU+JQogIHVuZ3JvdXAoKSAKCiMgY3JlYXRlIHRhYmxlCmlndF9jbGFzc2ZpY2F0aW9uIDwtIHRhYmxlKGRhdGEkaWd0X3ZlcnNpb24pICU+JQogIGFzLmRhdGEuZnJhbWUoKSAlPiUKICByZW5hbWUoCiAgICAiSUdUIFZlcnNpb24iID0gVmFyMSwKICAgICJuIiA9IEZyZXEKICApICU+JQogIG11dGF0ZShwZXJjZW50YWdlID0gcGFzdGUwKHJvdW5kKChuIC8gc3VtKG4pKSAqIDEwMCwgMiksICIgJSIpKQoKIyBwcmludCB0YWJsZSAKaWd0X2NsYXNzZmljYXRpb24gfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgojIGhvdyBtYW55IG9mIHRoZSBtb2RpZmllZCBJR1RzIGFyZSBpbiBmYWN0IHRoZSBjbGluaWNhbCBJR1Q/IApjbGluaWNhbF9pZ3QgPC0gZGF0YSAlPiUKICBmaWx0ZXIoaWd0X3ZlcnNpb24gPT0gIm1vZGlmaWVkIElHVCIsIHByb3RvY29sID09ICJCZWNoYXJhLCAyMDA3IikgJT4lCiAgc3VtbWFyaXNlKGBtb2RpZmllZCB0YXNrIHR5cGVgID0gImNsaW5pY2FsIElHVCIsIAogICAgICAgICAgICBuID0gbigpLAogICAgICAgICAgICBwZXJjZW50YWdlID0gcm91bmQoKG4oKSAvIG5yb3coZGF0YSkpICogMTAwLCAyKSkgCgpjbGluaWNhbF9pZ3QgJT4lCiAga2FibGUoKSAlPiUKICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCmBgYAoKCgo=</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiSW50ZXIgUmF0ZXIgUmVsaWFiaWxpdHkgZm9yIFByb2NlZHVyYWwgVmFyaWF0aW9ucyIKYXV0aG9yOiAiSmFuLVBhdWwgUmllcyIKZGF0ZTogImByIGZvcm1hdChTeXMudGltZSgpLCAnJWQgJUIsICVZJylgIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDoKICAgIGNvZGVfZG93bmxvYWQ6IHRydWUKICAgIGNvZGVfZm9sZGluZzogc2hvdwogICAgaGlnaGxpZ2h0OiBoYWRkb2NrCiAgICB0aGVtZTogZmxhdGx5CiAgICB0b2M6IHllcwogICAgdG9jX2Zsb2F0OiB5ZXMKLS0tCgpgYGB7ciBzZXR1cH0KI3wgaW5jbHVkZTogZmFsc2UKCiMgbG9hZCBrbml0ciAKbGlicmFyeShrbml0cikKCiMgc2V0IGtuaXRyIGNodW5rIG9wdGlvbnMgCm9wdHNfY2h1bmskc2V0KGVjaG8gPSBUUlVFLAogICAgICAgICAgICAgICAgbWVzc2FnZSA9IEZBTFNFLAogICAgICAgICAgICAgICAgd2FybmluZyA9IEZBTFNFKQpgYGAKCiMjIExvYWQgUGFja2FnZXMKCmBgYHtyfQoKbGlicmFyeShyZWFkeGwpCmxpYnJhcnkoZHBseXIpCmxpYnJhcnkoaXJyKQpsaWJyYXJ5KGtuaXRyKQpsaWJyYXJ5KGthYmxlRXh0cmEpCmxpYnJhcnkoamFuaXRvcikKCmBgYAoKIyBSZWFkIGRhdGEgCgpgYGB7cn0KCmRmX3IxIDwtIHJlYWR4bDo6cmVhZF94bHN4KCIuLi8uLi9kYXRhL3Jhdy9pbnRlcnJhdGVyIHJlbGlhYmlsaXR5L2NvZGVib29rIC0gcmF0ZXIgMS9yMV9wcm9jZWR1cmVfYWxpZ25lZC54bHN4IikKZGZfcjIgPC0gcmVhZHhsOjpyZWFkX3hsc3goIi4uLy4uL2RhdGEvcmF3L2ludGVycmF0ZXIgcmVsaWFiaWxpdHkvY29kZWJvb2sgLSByYXRlciAyL3IyX3Byb2NlZHVyZV9hbGlnbmVkLnhsc3giKQoKYGBgCgojIFdyYW5nbGUKCkNvbWJpbmUgZmlsZXMgd2l0aCBjb3JyZWN0IGNvbHVtbiBvcmRlcgoKYGBge3J9CgpkZl9jb21iaW5lZCA8LSBiaW5kX2NvbHMoCiAgZGZfcjEkYXJ0aWNsZV9pZCwgZGZfcjIkYXJ0aWNsZV9pZCwKICBkZl9yMSRhdXRob3JzLCBkZl9yMiRhdXRob3JzLAogIGRmX3IxJHllYXIsIGRmX3IyJHllYXIsCiAgZGZfcjEkb3JkZXJfbnVtYmVyLCBkZl9yMiRvcmRlcl9udW1iZXIsCiAgZGZfcjEkc2FtcGxlX3NpemUsIGRmX3IyJHNhbXBsZV9zaXplLAogIGRmX3IxJHZhcmlhbnQsIGRmX3IyJHZhcmlhbnQsCiAgZGZfcjEkcHJvdG9jb2wsIGRmX3IyJHByb3RvY29sLAogIGRmX3IxJGdvYWwsIGRmX3IyJGdvYWwsCiAgZGZfcjEkaW5zdHJ1Y3Rpb25zLCBkZl9yMiRpbnN0cnVjdGlvbnMsCiAgZGZfcjEkZmVlZGJhY2ssIGRmX3IyJGZlZWRiYWNrLAogIGRmX3IxJGluY2VudGl2ZXMsIGRmX3IyJGluY2VudGl2ZXMsCiAgZGZfcjEkY3VycmVuY3ksIGRmX3IyJGN1cnJlbmN5LAogIGRmX3IxJHN0YXJ0aW5nX2NhcGl0YWwsIGRmX3IyJHN0YXJ0aW5nX2NhcGl0YWwsCiAgZGZfcjEkcmV3YXJkX2FkdiwgZGZfcjIkcmV3YXJkX2FkdiwKICBkZl9yMSRyZXdhcmRfZGlzYWR2LCBkZl9yMiRyZXdhcmRfZGlzYWR2LAogIGRmX3IxJGdhaW4xLCBkZl9yMiRnYWluMSwKICBkZl9yMSRnYWluMiwgZGZfcjIkZ2FpbjIsCiAgZGZfcjEkbG9zczEsIGRmX3IyJGxvc3MxLAogIGRmX3IxJGxvc3MyLCBkZl9yMiRsb3NzMiwKICBkZl9yMSRnYWluX2ludDEsIGRmX3IyJGdhaW5faW50MSwKICBkZl9yMSRnYWluX2ludDIsIGRmX3IyJGdhaW5faW50MiwKICBkZl9yMSRsb3NzX2ludDEsIGRmX3IyJGxvc3NfaW50MSwKICBkZl9yMSRsb3NzX2ludDIsIGRmX3IyJGxvc3NfaW50MiwKICBkZl9yMSRmcmVxX2FkdjEsIGRmX3IyJGZyZXFfYWR2MSwKICBkZl9yMSRmcmVxX2FkdjIsIGRmX3IyJGZyZXFfYWR2MiwKICBkZl9yMSRmcmVxX2Rpc2FkdjEsIGRmX3IyJGZyZXFfZGlzYWR2MSwKICBkZl9yMSRmcmVxX2Rpc2FkdjIsIGRmX3IyJGZyZXFfZGlzYWR2MiwKICBkZl9yMSRuX2Jsb2NrcywgZGZfcjIkbl9ibG9ja3MsCiAgZGZfcjEkbl90cmlhbHMsIGRmX3IyJG5fdHJpYWxzLAogIGRmX3IxJG5vdGVzX3Byb2NlZHVyZSwgZGZfcjIkbm90ZXNfcHJvY2VkdXJlLAogIGRmX3IxJHJhdGVyX0lELCBkZl9yMiRyYXRlcl9JRAopCgpgYGAKCiMgQ2FsY3VsYXRlIENvaGVuJ3MgS2FwcGEKCmBgYHtyfQoKIyBDcmVhdGUgYW4gZW1wdHkgZGF0YSBmcmFtZSB0byBzdG9yZSBLYXBwYSB2YWx1ZXMKa2FwcGFfcmVzdWx0cyA8LSBkYXRhLmZyYW1lKENvbHVtbjEgPSBudW1lcmljKCksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBDb2x1bW4yID0gbnVtZXJpYygpLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgS2FwcGEgPSBudW1lcmljKCksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdHJpbmdzQXNGYWN0b3JzID0gRkFMU0UpCgojIExvb3AgdGhyb3VnaCBjb2x1bW4gcGFpcnMgYW5kIGNhbGN1bGF0ZSBDb2hlbidzIEthcHBhCmZvciAoaSBpbiBzZXEoMSwgNjEsIGJ5ID0gMikpIHsKICBrYXBwYV9yZXN1bHQgPC0ga2FwcGEyKGRmX2NvbWJpbmVkWywgYyhpLCBpKzEpXSkKICAKICAjIEFwcGVuZCByZXN1bHRzIHRvIHRoZSBkYXRhIGZyYW1lCiAga2FwcGFfcmVzdWx0cyA8LSByYmluZChrYXBwYV9yZXN1bHRzLCAKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGMoQ29sdW1uMSA9IGksIENvbHVtbjIgPSBpKzEsIEthcHBhID0ga2FwcGFfcmVzdWx0JHZhbHVlKSkKfQoKIyBhZGQgY29sdW1uIGNvbnRhaW5pbmcgY29sdW1uIG5hbWVzCmNvbG5hbWVzIDwtIGNvbG5hbWVzKGRmX3IxKQprYXBwYV9yZXN1bHRzJGNvbF9uYW1lIDwtIGNvbG5hbWVzCgojIHJlbmFtZSBjb2x1bW4gaG9sZGluZyBLYXBwYSB2YWx1ZXMKa2FwcGFfcmVzdWx0cyA8LSBrYXBwYV9yZXN1bHRzICU+JQogIHJlbmFtZShrYXBwYSA9IFgxLjEpCgojIGRlbGV0ZSB1bm5lY2Vzc2FyeSBjb2x1bW5zIAprYXBwYV9yZXN1bHRzIDwtIGthcHBhX3Jlc3VsdHMgJT4lCiAgZHBseXI6OnNlbGVjdChjb2xfbmFtZSwga2FwcGEpICAKCiMgZGVsZXRlIHVubmVjZXNzYXJ5IHJvd3MgCmthcHBhX3Jlc3VsdHMgPC0ga2FwcGFfcmVzdWx0cyAlPiUKICBmaWx0ZXIoY29sX25hbWUgIT0gImFydGljbGVfaWQiLAogICAgICAgICBjb2xfbmFtZSAhPSAiYXV0aG9ycyIsCiAgICAgICAgIGNvbF9uYW1lICE9ICJ5ZWFyIiwKICAgICAgICAgY29sX25hbWUgIT0gIm9yZGVyX251bWJlciIsCiAgICAgICAgIGNvbF9uYW1lICE9ICJub3Rlc19wcm9jZWR1cmUiLAogICAgICAgICBjb2xfbmFtZSAhPSAicmF0ZXJfSUQiKQoKCmBgYAoKIyBUYWJsZXMKCmBgYHtyfQoKa2FwcGFfcmVzdWx0cyB8PgogIG11dGF0ZV9pZihpcy5udW1lcmljLCByb3VuZF9oYWxmX3VwLCBkaWdpdHMgPSAyKSB8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCmthcHBhX3Jlc3VsdHMgfD4KICBzdW1tYXJpemUobWVhbl9rYXBwYSA9IG1lYW4oa2FwcGEpLAogICAgICAgICAgICBzZF9rYXBwYSA9IHNkKGthcHBhKSwKICAgICAgICAgICAgbWluX2thcHBhID0gbWluKGthcHBhKSwKICAgICAgICAgICAgbWF4X2thcHBhID0gbWF4KGthcHBhKSkgfD4KICBtdXRhdGVfaWYoaXMubnVtZXJpYywgcm91bmRfaGFsZl91cCwgZGlnaXRzID0gMikgfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgpgYGAKCiMgVGV4dCBpbiBtYW51c2NyaXB0CgpUaGUgYWJvdmUgcmVzdWx0cyBwcm9kdWNlIHRoZSByZXN1bHRzIHJlcG9ydGVkIGluIHRoZSBtYW51c2NyaXB0IGZvciB0aGUgIkludGVycmF0ZXIgcmVsaWFiaWx0eSIgaGVhZGluZy4gaS5lLiwgCgoiV2UgY29tcHV0ZWQgdGhlIGludGVycmF0ZXIgcmVsaWFiaWxpdHkgZm9yIGFsbCB2YXJpYWJsZXMgaW4gdGhlIHByb2NlZHVyZSBjb2RlYm9vaywgeWllbGRpbmcgYSBtZWFuIENvaGVu4oCZcyDOuiA9IC43MCAoU0QgPSAuMTApLCB3aXRoIGEgcmFuZ2UgZnJvbSAuNDQgdG8gLjkwLiIKCiMgSG93IGRvIHRoZSBrYXBwYSB2YWx1ZXMgY29ycmVzcG9uZCB0byB0aGUgaW5kZXRlcm1pbmFiaWxpdHkgcmF0ZXM/CmBgYHtyfQoKIyBsb2FkIGRhdGEgCmRhdGEgPC0gcmVhZF94bHN4KCIuLi8uLi9kYXRhL3Jhdy9tZXRhbWV0aG9kIHJldmlldy9tYXN0ZXIgY29kaW5nL2NvZGVib29rX3Byb2NlZHVyZV9tYXN0ZXIueGxzeCIpIAoKIyBjcmVhdGUgZGF0YSBmcmFtZSB3aXRoIHJlbGV2YW50IHZhcmlhYmxlcwpkYXRhX2luZCA8LSBkYXRhICU+JQogIHNlbGVjdChzYW1wbGVfc2l6ZSwgdmFyaWFudCwgcHJvdG9jb2wsCiAgICAgICAgIGdvYWwsIGluc3RydWN0aW9ucywgZmVlZGJhY2ssIAogICAgICAgICBpbmNlbnRpdmVzLCBjdXJyZW5jeSwgc3RhcnRpbmdfY2FwaXRhbCwgCiAgICAgICAgIGNvbnRhaW5zKCJyZXdhcmQiKSwgY29udGFpbnMoIjEiKSwgY29udGFpbnMoIjIiKSwgCiAgICAgICAgIG5fYmxvY2tzLCBuX3RyaWFscykKCiMgZnVuY3Rpb246IGNvdW50IGFuZCBjYWxjdWxhdGUgcGVyY2VudGFnZXMgZm9yIGNlcnRhaW4gdmFsdWVzIG9mIGEgc3Vic2V0IG9mIHZhcmlhYmxlcwp2YWx1ZV9jb3VudHMgPC0gZnVuY3Rpb24oZGF0YSwgdmFsdWVfdG9fY291bnQsIGNvbHVtbnMgPSBOVUxMKSB7CiAgaWYgKGlzLm51bGwoY29sdW1ucykpIHsKICAgIGNvbHVtbnMgPC0gY29sbmFtZXMoZGF0YSkKICB9IGVsc2UgewogICAgY29sdW1ucyA8LSBpbnRlcnNlY3QoY29sdW1ucywgY29sbmFtZXMoZGF0YSkpCiAgfQogIHJlc3VsdHMgPC0gbGlzdCgpCiAgZm9yIChjb2wgaW4gY29sdW1ucykgewogICAgY291bnQgPC0gc3VtKGRhdGFbW2NvbF1dID09IHZhbHVlX3RvX2NvdW50LCBuYS5ybSA9IFRSVUUpCiAgICBwZXJjZW50YWdlIDwtIHJvdW5kKChjb3VudCAvIG5yb3coZGF0YSkpICogMTAwLCAyKQogICAgcmVzdWx0c1tbY29sXV0gPC0gYygiY291bnQiID0gY291bnQsICJwZXJjZW50YWdlIiA9IHBlcmNlbnRhZ2UpCiAgfQogIHN1bW1hcnlfdGFibGUgPC0gZG8uY2FsbChyYmluZCwgcmVzdWx0cykgJT4lCiAgICBhcy5kYXRhLmZyYW1lKHN0cmluZ3NBc0ZhY3RvcnMgPSBGQUxTRSkgJT4lCiAgICB0aWJibGU6OnJvd25hbWVzX3RvX2NvbHVtbigidmFyaWFibGUiKQogIHJldHVybihzdW1tYXJ5X3RhYmxlKQp9CgojIGNvdW50IGhvdyBvZnRlbiB2YXJpYWJsZSBpcyBzZXQgdG8gaW5kZXRlcm1pbmFibGUKaW5kZXRlcm1pbmFibGVzIDwtIHZhbHVlX2NvdW50cyhkYXRhX2luZCwgImluZGV0ZXJtaW5hYmxlIikgCgojIGpvaW4gZGF0YSBmcmFtZSB3aXRoIGthcHBhIHZhbHVlcwpqb2luZWQgPC0ga2FwcGFfcmVzdWx0cyAlPiUKICByZW5hbWUodmFyaWFibGUgPSBjb2xfbmFtZSkgJT4lCiAgbGVmdF9qb2luKGluZGV0ZXJtaW5hYmxlcywgYnkgPSAidmFyaWFibGUiKSAlPiUKICBzZWxlY3QodmFyaWFibGUsIGNvdW50LCBwZXJjZW50YWdlLCBrYXBwYSkgJT4lCiAgYXJyYW5nZShkZXNjKGNvdW50KSkKCiMgcHJpbnQgZGF0YSBmcmFtZSB3aXRoIGZyZXF1ZW5jeSBvZiBpbmRldGVybWluYWJsZSB2YWx1ZXMgCmpvaW5lZCB8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCmBgYAoK</div>
 
 
 </div>
@@ -3542,7 +2729,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("procedures.Rmd");
+  window.initializeSourceEmbed("IRR_analysis_procedure.Rmd");
   window.initializeCodeFolding("show" === "show");
 });
 </script>

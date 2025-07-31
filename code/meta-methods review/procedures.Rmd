@@ -333,6 +333,7 @@ original_values <- list(
   goal             = "standard goal",
   instructions     = "standard instructions",
   feedback         = "standard feedback",
+  starting_capital = "2000",
   reward_adv       = 50,
   reward_disadv    = 100,
   gain1            = 250,
