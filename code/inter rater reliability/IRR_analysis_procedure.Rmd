@@ -35,6 +35,7 @@ library(knitr)
 library(kableExtra)
 library(janitor)
 library(tidyverse)
+library(boot)
 
 ```
 
@@ -156,7 +157,7 @@ kappa_results |>
 
 The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
 
-"We computed the interrater reliability for all variables in the procedure codebook, yielding a mean Cohen’s κ = .70 (SD = .10), with a range from .44 to .90."
+
 
 # How do the kappa values correspond to the indeterminability rates?
 ```{r}
@@ -225,4 +226,70 @@ print(avg_overall)
 print(avg_poor_irr)
 
 ```
+
+```{r}
+
+# set seed
+set.seed(42)
+
+# function to estimate SE and CI 
+boot_kappa <- function(data, R = 1000) {
+  # calculate kappa estimate
+  kappa_est <- kappa2(data)$value
+  # all values are equal or NA: return directly
+  if (is.na(kappa_est) || all(data[[1]] == data[[2]])) {
+    return(tibble(
+      kappa = round(kappa_est, 3),
+      se = 0,
+      ci_low = NA,
+      ci_high = NA
+    ))
+  }
+  # bootstrap function
+  kappa_fun <- function(d, idx) {
+    d_boot <- d[idx, ]
+    kappa2(d_boot)$value
+  }
+  # bootstrapping
+  boot_out <- boot(data = data, statistic = kappa_fun, R = R)
+  # calculate SE
+  se <- sd(boot_out$t)
+  # caculate CI
+  ci <- boot.ci(boot_out, type = "perc")$percent[4:5]
+  # create tibble with data 
+  tibble(
+    kappa = round(kappa_est, 3),
+    se = round(se, 3),
+    ci_low = round(ci[1], 3),
+    ci_high = round(ci[2], 3)
+  )
+}
+
+# apply function
+kappa_se_ci <- map_dfr(seq(1, 61, by = 2), function(i) {
+  result <- boot_kappa(df_combined[, c(i, i + 1)])
+  tibble(
+    col_name = colnames(df_r1)[(i + 1) / 2],  
+    se = result$se,
+    ci_low = result$ci_low,
+    ci_high = result$ci_high
+  )
+})
+
+# remove variables that we dont need
+kappa_se_ci <- kappa_se_ci %>%
+  filter(!col_name %in% c("article_id", "authors", "year", "order_number", 
+                          "notes_procedure", "rater_ID")) %>%
+  # join with kappa df 
+  left_join(kappa_results, by = "col_name") %>%
+  select(col_name, kappa, se, ci_low, ci_high)
+
+# print results into a table
+kappa_se_ci |>
+  mutate_if(is.numeric, round_half_up, digits = 2) |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+```
+
 

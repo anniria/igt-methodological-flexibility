@@ -36,6 +36,7 @@ library(tidyverse)
 library(irr)
 library(lpSolve)
 library(kableExtra)
+library(boot)
 
 # set preferred options 
 conflicts_prefer(dplyr::filter)
@@ -58,7 +59,9 @@ data_r1 <- data_r1 %>%
 data_r2 <- data_r2 %>%
   mutate(score_count = as.numeric(score_count)) %>%
   mutate(score_id_new = as.character(score_id_new)) 
+
 ```
+
 
 # Inter Rater Reliability: Number of Scores per Article
 
@@ -84,16 +87,43 @@ numbers_wide <- numbers %>%
   gather(key = "Variable", value = "Value", -article_id) %>%
   spread(key = "article_id", value = "Value") %>%
   select(-Variable)
+
 # compute Krippendorff's alpha 
 kripp_numbers <- numbers_wide %>%
   as.matrix
 kripp.alpha(kripp_numbers, "ratio")
+
+# function to compute mean alpha 
+alpha_fun <- function(data, indices) {
+  d <- data[indices, ]
+  d_transposed <- t(d)
+  return(kripp.alpha(d_transposed, "ratio")$value)
+}
+
+# seed 
+set.seed(42)
+
+# bootstrapping with 1000 iterations
+boot_alpha_numbers <- boot(
+  data = t(kripp_numbers),
+  statistic = alpha_fun,
+  R = 1000
+)
+
+# calculate SE and CI
+alpha_se_numbers <- sd(boot_alpha_numbers$t)  
+alpha_ci_numbers <- boot.ci(boot_alpha_numbers, type = "perc")$percent[4:5]  
+
+# print SE und CI 
+print(alpha_se_numbers)
+print(alpha_ci_numbers)
+
 ```
 
 ## Text in manuscript
 
 The above results produce the results reported in the manuscript for the "Interrater reliability" heading. i.e., 
-"1) We calculated Krippendorff's α to assess the interrater reliability of the score count per article (α = .90, high reliability)."
+
 
 # Inter Rater Reliability: Distinct Scores per Article
 
@@ -149,7 +179,32 @@ ratings_matrix <- paired_scores %>%
   as.matrix() 
 
 # compute kappa 
-kappa2(ratings_matrix)
+kappa_results <- kappa2(ratings_matrix)
+
+# print kappa
+print(kappa_results)
+
+# crate kappa with function 
+kappa_fun <- function(data, indices) {
+  d <- data[indices, ]
+  kappa2(as.matrix(d))$value
+}
+
+# bootstrapping with 1000 iterations
+boot_kappa <- boot(
+  data = ratings_matrix,
+  statistic = kappa_fun,
+  R = 1000
+)
+
+# calculate SE and CI
+kappa_est <- kappa2(ratings_matrix)$value
+kappa_se <- sd(boot_kappa$t)
+kappa_ci <- boot.ci(boot_kappa, type = "perc")$percent[4:5]
+
+# print SE und CI 
+print(kappa_se)
+print(kappa_ci)
 
 ```
 
@@ -157,7 +212,7 @@ kappa2(ratings_matrix)
 
 The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
 
-"2) xxx"
+
 
 # Inter Rater Reliability: Occurrence of Each Distinct Score in the Whole Sample
 
@@ -188,10 +243,26 @@ score_freq_wide <- score_freq %>%
   gather(key = "Variable", value = "Value", -score_id_new) %>%
   spread(key = "score_id_new", value = "Value") %>%
   select(-Variable)
+
 # compute Krippendorff's alpha 
 kripp_score_freq <- score_freq_wide %>%
   as.matrix
 kripp.alpha(kripp_score_freq, "ratio")
+
+# bootstrapping with 1000 iterations
+boot_alpha_freq <- boot(
+  data = t(kripp_score_freq),
+  statistic = alpha_fun,
+  R = 1000
+)
+
+# calculate SE and CI
+alpha_se_freq <- sd(boot_alpha_freq$t, na.rm = TRUE) # na.rm = TRUE für Sicherheit
+alpha_ci_freq <- boot.ci(boot_alpha_freq, type = "perc")$percent[4:5] 
+
+# print SE und CI 
+print(alpha_se_freq)
+print(alpha_ci_freq)
 
 ```
 
@@ -199,6 +270,6 @@ kripp.alpha(kripp_score_freq, "ratio")
 
 The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
 
-"3) We also calculated Krippendorff's α for the occurrence of each score in the entire sample (α = .92)."
+
 
 
