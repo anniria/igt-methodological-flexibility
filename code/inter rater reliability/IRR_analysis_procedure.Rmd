@@ -34,6 +34,7 @@ library(irr)
 library(knitr)
 library(kableExtra)
 library(janitor)
+library(tidyverse)
 
 ```
 
@@ -171,40 +172,57 @@ data_ind <- data %>%
          contains("reward"), contains("1"), contains("2"), 
          n_blocks, n_trials)
 
-# function: count and calculate percentages for certain values of a subset of variables
-value_counts <- function(data, value_to_count, columns = NULL) {
-  if (is.null(columns)) {
-    columns <- colnames(data)
-  } else {
-    columns <- intersect(columns, colnames(data))
-  }
-  results <- list()
-  for (col in columns) {
-    count <- sum(data[[col]] == value_to_count, na.rm = TRUE)
-    percentage <- round((count / nrow(data)) * 100)
-    results[[col]] <- c("count" = count, "percentage" = percentage)
-  }
-  summary_table <- do.call(rbind, results) %>%
-    as.data.frame(stringsAsFactors = FALSE) %>%
-    tibble::rownames_to_column("variable")
-  return(summary_table)
-}
+# count number of studies
+total_studies <- nrow(data_ind)
 
-# count how often variable is set to indeterminable
-indeterminables <- value_counts(data_ind, "indeterminable") 
+# create indeterminables df
+indeterminables <- data_ind %>%
+  # create long format
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "value") %>%
+  # filter for indeterminable values
+  filter(value == "indeterminable") %>%
+  # group per variable
+  group_by(variable) %>%
+  # count the number of distinct indeterminable values per article_id  
+  summarise(count_total = n(), .groups = 'drop') %>%
+  # calculate percentages 
+  mutate(
+    pct_total = round((count_total / total_studies * 100), 2)
+  ) 
 
 # join data frame with kappa values
 joined <- kappa_results %>%
   rename(variable = col_name) %>%
   left_join(indeterminables, by = "variable") %>%
-  select(variable, count, percentage, kappa) %>%
-  arrange(desc(kappa)) %>%
-  mutate_if(is.numeric, round_half_up, digits = 2)
+  mutate(
+    count_total = replace_na(count_total, 0),
+    pct_total = replace_na(pct_total, 0)
+  ) %>%
+  select(variable, 
+         count = count_total, 
+         percentage = pct_total, 
+         kappa) %>%
+  arrange(desc(percentage)) %>%
+  mutate(across(where(is.numeric), ~ round(., digits = 2)))
 
 # print data frame with frequency of indeterminable values 
 joined |>
   kable() |>
   kable_classic(full_width = FALSE)
+
+# filter the table to get the subset of poor reliability variables
+poor_reliability_subset <- joined %>%
+  filter(kappa < 0.60)
+
+# mean percentage of indeterminables for the subset
+avg_poor_irr <- mean(poor_reliability_subset$percentage)
+
+# mean percentage of indeterminables for all variables
+avg_overall <- mean(joined$percentage)
+
+# print
+print(avg_overall)
+print(avg_poor_irr)
 
 ```
 

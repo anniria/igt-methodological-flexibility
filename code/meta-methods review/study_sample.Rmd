@@ -29,7 +29,6 @@ library(tidyverse)
 library(readxl)
 library(conflicted)
 library(psych)
-library(knitr)
 library(kableExtra)
 
 # declare preferences regarding conflicts 

@@ -40,26 +40,24 @@ conflicts_prefer(readxl::read_excel)
 ```{r housekeeping}
 #| include: false
 
-# set working directory
-setwd("C:/Users/annik/OneDrive/Documents/SOBER/IGT Projekt/r code/igt metamethods review")
-
 # read procedure file
-procedures_data <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/codebook_procedure_master.xlsx") 
+procedures_data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_procedure_master.xlsx") 
 # read scoring master file
-scoring_data <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/codebook_scoring_master.xlsx") 
+scoring_data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_scoring_master.xlsx") 
 # read scores overview file
 # this is a file with one row per distinct score 
-scores_overview <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/all_scores_overview.xlsx")
+scores_overview <- read_xlsx("../../data/processed/meta-methods review/scores_overview.xlsx")
 # read monotonic scores file
 # this is a file where we identified scores that can be linear transformed into each other
-monotonic_scores <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/monotonic_scores.xlsx")
+monotonic_scores <- read_xlsx("../../data/raw/metamethod review/master coding/monotonic_scores.xlsx")
 # read sample categorization file
 # this is a file that categorizes the study samples into clinical and non-clinical samples
-sample_categories <- read_xlsx("C:/Users/annik/OneDrive/Documents/GitHub/igt-project/data/raw/metamethod review/master coding/codebook_categorizations.xlsx")
+sample_categories <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_categorizations.xlsx")
 
 ```
 
-## Indeterminable Values by Variable and Sample Type
+## Indeterminable Values by Variable and Study Type
+
 ```{r proc1}
 
 # select relevant variables from data frame sample_categories
@@ -85,7 +83,7 @@ indeterminables_by_cat <- procedures_by_category %>%
   filter(value == "indeterminable") %>%
   count(clinical, variable) %>%
   pivot_wider(names_from = clinical, values_from = n, values_fill = 0) %>%
-  rename(`count_clinical` = `TRUE`, `count_non_clinical` = `FALSE`) %>%
+  rename(count_clinical = `TRUE`, count_non_clinical = `FALSE`) %>%
   mutate(
     pct_clinical = (count_clinical / 53 * 100),
     pct_non_clinical = (count_non_clinical / 53 * 100)
@@ -109,13 +107,59 @@ indeterminables_by_cat |>
   kable() |>
   kable_classic(full_width = FALSE)
 
+# in a next step, we want to collapse some of the variables
+# determine the total number of studies
+total_clinical <- row_counts$n[row_counts$clinical == TRUE]
+total_non_clinical <- row_counts$n[row_counts$clinical == FALSE]
+
+# generate the grouped table with the correct count of unique studies
+indeterminables_grouped <- procedures_by_category %>%
+  select(article_id, 7:29, clinical) %>%
+  # rename some variables
+  rename(`starting capital` = starting_capital, 
+       `number of trials` = n_trials) %>%
+  pivot_longer(cols = -c(article_id, clinical), names_to = "variable", values_to = "value") %>%
+  filter(value == "indeterminable", variable != "protocol", variable != "n_blocks") %>%
+  # group variables 
+  mutate(variable = case_when(
+    variable %in% c("reward_disadv", "reward_adv") ~ "reward per card",
+    variable %in% c("loss1", "loss2", "gain1", "gain2") ~ "gain/loss per 10 cards",
+    variable %in% c("loss_int1", "loss_int2", "gain_int1", "gain_int2") ~ "gain/loss interval",
+    str_detect(variable, "freq") ~ "loss frequency",
+    TRUE ~ variable
+  )) %>%
+  # count studies per group
+  group_by(clinical, variable) %>%
+  summarise(n = n_distinct(article_id), .groups = 'drop') %>%
+  # wide format
+  pivot_wider(names_from = clinical, values_from = n, values_fill = 0) %>%
+  rename(count_clinical = `TRUE`, count_non_clinical = `FALSE`) %>%
+  # calculate percentages
+  mutate(
+    pct_clinical = round((count_clinical / total_clinical * 100), 2),
+    pct_non_clinical = round((count_non_clinical / total_non_clinical * 100), 2)
+  ) %>%
+  select(variable, count_clinical, pct_clinical, count_non_clinical, pct_non_clinical) %>%
+  arrange(pmax(pct_clinical, pct_non_clinical))
+
+# bind rows
+# select relevant variables
+indeterminables_grouped_final <- indeterminables_grouped %>%
+  select(variable, pct_clinical, pct_non_clinical)
+
+# print table 
+indeterminables_grouped_final |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
 ```
 
 ### Plot 1
+
 ```{r proc2}
 
 # Filter out the "total" row for better visualization
-indeterminables_dot_data <- indeterminables_by_cat %>%
+indeterminables_dot_data <- indeterminables_grouped_final %>%
   filter(variable != "total") %>%
   pivot_longer(
     cols = starts_with("pct_"), 
@@ -144,7 +188,7 @@ plot1 <- ggplot(indeterminables_dot_data,
     values = c("Clinical" = "#31688E", "Non-Clinical" = "#35B779")
   ) +
   labs(
-    title = "Indeterminable Values by Variable and Sample Type",
+    title = "Indeterminable Values by Variable and Study Type",
     x = "Percentage of Indeterminable Values",
     y = "Variable"
   )  +
@@ -155,11 +199,49 @@ print(plot1)
 
 ```
 
+### Plot 1 with Modified Design for Paper
+
+```{r plots for paper}
+
+plot1_grey <- ggplot(indeterminables_dot_data, 
+                aes(x = percentage, y = variable, color = sample_type)) +
+  geom_point(size = 3, alpha = 0.8) +
+  scale_color_grey(name = "Study Type", start = 0.2, end = 0.6) + 
+  labs(
+    x = "Percentage of indeterminable values",
+    y = "Variable"
+  )  +
+  theme_bw() + 
+  scale_x_continuous(labels = percent_format(scale = 1)) +
+  theme(legend.position = "bottom")
+
+
+print(plot1_grey)
+
+ggsave(
+  "figure1_indeterminables_by_variable.pdf", 
+  plot = plot1_grey,                         
+  width = 8,                                 
+  height = 6                                 
+)
+
+ggsave(
+  "figure1_indeterminables_by_variable.png",
+  plot = plot1_grey,                         
+  width = 8,                                 
+  height = 6,                                
+  dpi = 600                                  
+)
+
+
+```
+
 ### Plot 2
+
 ```{r proc3}
 
 # Prepare the data for plotting
-indeterminables_dot_data <- indeterminables_by_cat %>%
+indeterminables_dot_data <- indeterminables_grouped %>%
   filter(variable != "total") %>%
   pivot_longer(
     cols = starts_with("pct_"), 
@@ -178,7 +260,7 @@ plot2 <- ggplot(indeterminables_dot_data,
   geom_point(size = 3, alpha = 0.8, position = position_jitter(width = 0.2)) +
   scale_color_viridis_d(name = "Variable") +
   labs(
-    title = "Indeterminable Values by Variable and Sample Type",
+    title = "Indeterminable Values by Variable and Study Type",
     x = "Sample Type",
     y = "Percentage of Indeterminable Values"
   ) +
@@ -188,3 +270,6 @@ plot2 <- ggplot(indeterminables_dot_data,
 print(plot2)
 
 ```
+
+
+

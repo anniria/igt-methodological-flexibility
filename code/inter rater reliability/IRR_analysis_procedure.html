@@ -1629,8 +1629,9 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -1641,7 +1642,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -1907,7 +1908,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">Inter Rater Reliability for Procedural
 Variations</h1>
 <h4 class="author">Jan-Paul Ries</h4>
-<h4 class="date">29 July, 2025</h4>
+<h4 class="date">14 January, 2026</h4>
 
 </div>
 
@@ -2296,7 +2297,7 @@ rates?</h1>
 <span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
 <span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>  <span class="cf">for</span> (col <span class="cf">in</span> columns) {</span>
 <span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>    count <span class="ot">&lt;-</span> <span class="fu">sum</span>(data[[col]] <span class="sc">==</span> value_to_count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>    percentage <span class="ot">&lt;-</span> <span class="fu">round</span>((count <span class="sc">/</span> <span class="fu">nrow</span>(data)) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>    percentage <span class="ot">&lt;-</span> <span class="fu">round</span>((count <span class="sc">/</span> <span class="fu">nrow</span>(data)) <span class="sc">*</span> <span class="dv">100</span>)</span>
 <span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>    results[[col]] <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;count&quot;</span> <span class="ot">=</span> count, <span class="st">&quot;percentage&quot;</span> <span class="ot">=</span> percentage)</span>
 <span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a>  }</span>
 <span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a>  summary_table <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, results) <span class="sc">%&gt;%</span></span>
@@ -2313,12 +2314,13 @@ rates?</h1>
 <span id="cb7-36"><a href="#cb7-36" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">variable =</span> col_name) <span class="sc">%&gt;%</span></span>
 <span id="cb7-37"><a href="#cb7-37" tabindex="-1"></a>  <span class="fu">left_join</span>(indeterminables, <span class="at">by =</span> <span class="st">&quot;variable&quot;</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb7-38"><a href="#cb7-38" tabindex="-1"></a>  <span class="fu">select</span>(variable, count, percentage, kappa) <span class="sc">%&gt;%</span></span>
-<span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(count))</span>
-<span id="cb7-40"><a href="#cb7-40" tabindex="-1"></a></span>
-<span id="cb7-41"><a href="#cb7-41" tabindex="-1"></a><span class="co"># print data frame with frequency of indeterminable values </span></span>
-<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a>joined <span class="sc">|&gt;</span></span>
-<span id="cb7-43"><a href="#cb7-43" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
-<span id="cb7-44"><a href="#cb7-44" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(kappa)) <span class="sc">%&gt;%</span></span>
+<span id="cb7-40"><a href="#cb7-40" tabindex="-1"></a>  <span class="fu">mutate_if</span>(is.numeric, round_half_up, <span class="at">digits =</span> <span class="dv">2</span>)</span>
+<span id="cb7-41"><a href="#cb7-41" tabindex="-1"></a></span>
+<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co"># print data frame with frequency of indeterminable values </span></span>
+<span id="cb7-43"><a href="#cb7-43" tabindex="-1"></a>joined <span class="sc">|&gt;</span></span>
+<span id="cb7-44"><a href="#cb7-44" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">|&gt;</span></span>
+<span id="cb7-45"><a href="#cb7-45" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
 <table class=" lightable-classic" style="color: black; font-family: &quot;Arial Narrow&quot;, &quot;Source Sans Pro&quot;, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -2339,338 +2341,16 @@ kappa
 <tbody>
 <tr>
 <td style="text-align:left;">
-protocol
-</td>
-<td style="text-align:right;">
-82
-</td>
-<td style="text-align:right;">
-77.36
-</td>
-<td style="text-align:right;">
-0.5495398
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-instructions
-</td>
-<td style="text-align:right;">
-77
-</td>
-<td style="text-align:right;">
-72.64
-</td>
-<td style="text-align:right;">
-0.4356589
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-feedback
-</td>
-<td style="text-align:right;">
-74
-</td>
-<td style="text-align:right;">
-69.81
-</td>
-<td style="text-align:right;">
-0.5735208
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-freq_adv1
-</td>
-<td style="text-align:right;">
-69
-</td>
-<td style="text-align:right;">
-65.09
-</td>
-<td style="text-align:right;">
-0.6950147
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-freq_disadv1
-</td>
-<td style="text-align:right;">
-68
-</td>
-<td style="text-align:right;">
-64.15
-</td>
-<td style="text-align:right;">
-0.6880734
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-freq_adv2
-</td>
-<td style="text-align:right;">
-67
-</td>
-<td style="text-align:right;">
-63.21
-</td>
-<td style="text-align:right;">
-0.7193235
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-freq_disadv2
-</td>
-<td style="text-align:right;">
-67
-</td>
-<td style="text-align:right;">
-63.21
-</td>
-<td style="text-align:right;">
-0.7191719
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-reward_adv
-</td>
-<td style="text-align:right;">
-65
-</td>
-<td style="text-align:right;">
-61.32
-</td>
-<td style="text-align:right;">
-0.6500459
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-gain1
-</td>
-<td style="text-align:right;">
-65
-</td>
-<td style="text-align:right;">
-61.32
-</td>
-<td style="text-align:right;">
-0.6950617
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-loss1
-</td>
-<td style="text-align:right;">
-65
-</td>
-<td style="text-align:right;">
-61.32
-</td>
-<td style="text-align:right;">
-0.6941650
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-gain_int1
-</td>
-<td style="text-align:right;">
-65
-</td>
-<td style="text-align:right;">
-61.32
-</td>
-<td style="text-align:right;">
-0.7293680
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-gain_int2
-</td>
-<td style="text-align:right;">
-65
-</td>
-<td style="text-align:right;">
-61.32
-</td>
-<td style="text-align:right;">
-0.7293680
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-loss_int1
-</td>
-<td style="text-align:right;">
-65
-</td>
-<td style="text-align:right;">
-61.32
-</td>
-<td style="text-align:right;">
-0.7293680
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-loss_int2
-</td>
-<td style="text-align:right;">
-65
-</td>
-<td style="text-align:right;">
-61.32
-</td>
-<td style="text-align:right;">
-0.7293680
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-reward_disadv
-</td>
-<td style="text-align:right;">
-64
-</td>
-<td style="text-align:right;">
-60.38
-</td>
-<td style="text-align:right;">
-0.6342508
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-gain2
-</td>
-<td style="text-align:right;">
-64
-</td>
-<td style="text-align:right;">
-60.38
-</td>
-<td style="text-align:right;">
-0.7115562
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-loss2
-</td>
-<td style="text-align:right;">
-64
-</td>
-<td style="text-align:right;">
-60.38
-</td>
-<td style="text-align:right;">
-0.6790619
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-starting_capital
-</td>
-<td style="text-align:right;">
-62
-</td>
-<td style="text-align:right;">
-58.49
-</td>
-<td style="text-align:right;">
-0.8046782
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-incentives
-</td>
-<td style="text-align:right;">
-50
-</td>
-<td style="text-align:right;">
-47.17
-</td>
-<td style="text-align:right;">
-0.5346397
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-currency
-</td>
-<td style="text-align:right;">
-39
-</td>
-<td style="text-align:right;">
-36.79
-</td>
-<td style="text-align:right;">
-0.7546848
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-goal
-</td>
-<td style="text-align:right;">
-37
-</td>
-<td style="text-align:right;">
-34.91
-</td>
-<td style="text-align:right;">
-0.6859271
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 n_trials
 </td>
 <td style="text-align:right;">
 8
 </td>
 <td style="text-align:right;">
-7.55
+8
 </td>
 <td style="text-align:right;">
-0.9040295
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-n_blocks
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:right;">
-1.89
-</td>
-<td style="text-align:right;">
-0.8039893
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-sample_size
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:right;">
-0.94
-</td>
-<td style="text-align:right;">
-0.7627284
+0.90
 </td>
 </tr>
 <tr>
@@ -2681,17 +2361,339 @@ variant
 0
 </td>
 <td style="text-align:right;">
-0.00
+0
 </td>
 <td style="text-align:right;">
-0.8843243
+0.88
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+starting_capital
+</td>
+<td style="text-align:right;">
+62
+</td>
+<td style="text-align:right;">
+58
+</td>
+<td style="text-align:right;">
+0.80
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+n_blocks
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.80
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sample_size
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0.76
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+currency
+</td>
+<td style="text-align:right;">
+39
+</td>
+<td style="text-align:right;">
+37
+</td>
+<td style="text-align:right;">
+0.75
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gain_int1
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gain_int2
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss_int1
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss_int2
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+0.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+freq_adv2
+</td>
+<td style="text-align:right;">
+67
+</td>
+<td style="text-align:right;">
+63
+</td>
+<td style="text-align:right;">
+0.72
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+freq_disadv2
+</td>
+<td style="text-align:right;">
+67
+</td>
+<td style="text-align:right;">
+63
+</td>
+<td style="text-align:right;">
+0.72
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gain2
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+60
+</td>
+<td style="text-align:right;">
+0.71
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+gain1
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+0.70
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+freq_adv1
+</td>
+<td style="text-align:right;">
+69
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+0.70
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss1
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+0.69
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+freq_disadv1
+</td>
+<td style="text-align:right;">
+68
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+0.69
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+goal
+</td>
+<td style="text-align:right;">
+37
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+0.69
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+loss2
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+60
+</td>
+<td style="text-align:right;">
+0.68
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+reward_adv
+</td>
+<td style="text-align:right;">
+65
+</td>
+<td style="text-align:right;">
+61
+</td>
+<td style="text-align:right;">
+0.65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+reward_disadv
+</td>
+<td style="text-align:right;">
+64
+</td>
+<td style="text-align:right;">
+60
+</td>
+<td style="text-align:right;">
+0.63
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+feedback
+</td>
+<td style="text-align:right;">
+74
+</td>
+<td style="text-align:right;">
+70
+</td>
+<td style="text-align:right;">
+0.57
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+protocol
+</td>
+<td style="text-align:right;">
+82
+</td>
+<td style="text-align:right;">
+77
+</td>
+<td style="text-align:right;">
+0.55
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+incentives
+</td>
+<td style="text-align:right;">
+50
+</td>
+<td style="text-align:right;">
+47
+</td>
+<td style="text-align:right;">
+0.53
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+instructions
+</td>
+<td style="text-align:right;">
+77
+</td>
+<td style="text-align:right;">
+73
+</td>
+<td style="text-align:right;">
+0.44
 </td>
 </tr>
 </tbody>
 </table>
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiSW50ZXIgUmF0ZXIgUmVsaWFiaWxpdHkgZm9yIFByb2NlZHVyYWwgVmFyaWF0aW9ucyIKYXV0aG9yOiAiSmFuLVBhdWwgUmllcyIKZGF0ZTogImByIGZvcm1hdChTeXMudGltZSgpLCAnJWQgJUIsICVZJylgIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDoKICAgIGNvZGVfZG93bmxvYWQ6IHRydWUKICAgIGNvZGVfZm9sZGluZzogc2hvdwogICAgaGlnaGxpZ2h0OiBoYWRkb2NrCiAgICB0aGVtZTogZmxhdGx5CiAgICB0b2M6IHllcwogICAgdG9jX2Zsb2F0OiB5ZXMKLS0tCgpgYGB7ciBzZXR1cH0KI3wgaW5jbHVkZTogZmFsc2UKCiMgbG9hZCBrbml0ciAKbGlicmFyeShrbml0cikKCiMgc2V0IGtuaXRyIGNodW5rIG9wdGlvbnMgCm9wdHNfY2h1bmskc2V0KGVjaG8gPSBUUlVFLAogICAgICAgICAgICAgICAgbWVzc2FnZSA9IEZBTFNFLAogICAgICAgICAgICAgICAgd2FybmluZyA9IEZBTFNFKQpgYGAKCiMjIExvYWQgUGFja2FnZXMKCmBgYHtyfQoKbGlicmFyeShyZWFkeGwpCmxpYnJhcnkoZHBseXIpCmxpYnJhcnkoaXJyKQpsaWJyYXJ5KGtuaXRyKQpsaWJyYXJ5KGthYmxlRXh0cmEpCmxpYnJhcnkoamFuaXRvcikKCmBgYAoKIyBSZWFkIGRhdGEgCgpgYGB7cn0KCmRmX3IxIDwtIHJlYWR4bDo6cmVhZF94bHN4KCIuLi8uLi9kYXRhL3Jhdy9pbnRlcnJhdGVyIHJlbGlhYmlsaXR5L2NvZGVib29rIC0gcmF0ZXIgMS9yMV9wcm9jZWR1cmVfYWxpZ25lZC54bHN4IikKZGZfcjIgPC0gcmVhZHhsOjpyZWFkX3hsc3goIi4uLy4uL2RhdGEvcmF3L2ludGVycmF0ZXIgcmVsaWFiaWxpdHkvY29kZWJvb2sgLSByYXRlciAyL3IyX3Byb2NlZHVyZV9hbGlnbmVkLnhsc3giKQoKYGBgCgojIFdyYW5nbGUKCkNvbWJpbmUgZmlsZXMgd2l0aCBjb3JyZWN0IGNvbHVtbiBvcmRlcgoKYGBge3J9CgpkZl9jb21iaW5lZCA8LSBiaW5kX2NvbHMoCiAgZGZfcjEkYXJ0aWNsZV9pZCwgZGZfcjIkYXJ0aWNsZV9pZCwKICBkZl9yMSRhdXRob3JzLCBkZl9yMiRhdXRob3JzLAogIGRmX3IxJHllYXIsIGRmX3IyJHllYXIsCiAgZGZfcjEkb3JkZXJfbnVtYmVyLCBkZl9yMiRvcmRlcl9udW1iZXIsCiAgZGZfcjEkc2FtcGxlX3NpemUsIGRmX3IyJHNhbXBsZV9zaXplLAogIGRmX3IxJHZhcmlhbnQsIGRmX3IyJHZhcmlhbnQsCiAgZGZfcjEkcHJvdG9jb2wsIGRmX3IyJHByb3RvY29sLAogIGRmX3IxJGdvYWwsIGRmX3IyJGdvYWwsCiAgZGZfcjEkaW5zdHJ1Y3Rpb25zLCBkZl9yMiRpbnN0cnVjdGlvbnMsCiAgZGZfcjEkZmVlZGJhY2ssIGRmX3IyJGZlZWRiYWNrLAogIGRmX3IxJGluY2VudGl2ZXMsIGRmX3IyJGluY2VudGl2ZXMsCiAgZGZfcjEkY3VycmVuY3ksIGRmX3IyJGN1cnJlbmN5LAogIGRmX3IxJHN0YXJ0aW5nX2NhcGl0YWwsIGRmX3IyJHN0YXJ0aW5nX2NhcGl0YWwsCiAgZGZfcjEkcmV3YXJkX2FkdiwgZGZfcjIkcmV3YXJkX2FkdiwKICBkZl9yMSRyZXdhcmRfZGlzYWR2LCBkZl9yMiRyZXdhcmRfZGlzYWR2LAogIGRmX3IxJGdhaW4xLCBkZl9yMiRnYWluMSwKICBkZl9yMSRnYWluMiwgZGZfcjIkZ2FpbjIsCiAgZGZfcjEkbG9zczEsIGRmX3IyJGxvc3MxLAogIGRmX3IxJGxvc3MyLCBkZl9yMiRsb3NzMiwKICBkZl9yMSRnYWluX2ludDEsIGRmX3IyJGdhaW5faW50MSwKICBkZl9yMSRnYWluX2ludDIsIGRmX3IyJGdhaW5faW50MiwKICBkZl9yMSRsb3NzX2ludDEsIGRmX3IyJGxvc3NfaW50MSwKICBkZl9yMSRsb3NzX2ludDIsIGRmX3IyJGxvc3NfaW50MiwKICBkZl9yMSRmcmVxX2FkdjEsIGRmX3IyJGZyZXFfYWR2MSwKICBkZl9yMSRmcmVxX2FkdjIsIGRmX3IyJGZyZXFfYWR2MiwKICBkZl9yMSRmcmVxX2Rpc2FkdjEsIGRmX3IyJGZyZXFfZGlzYWR2MSwKICBkZl9yMSRmcmVxX2Rpc2FkdjIsIGRmX3IyJGZyZXFfZGlzYWR2MiwKICBkZl9yMSRuX2Jsb2NrcywgZGZfcjIkbl9ibG9ja3MsCiAgZGZfcjEkbl90cmlhbHMsIGRmX3IyJG5fdHJpYWxzLAogIGRmX3IxJG5vdGVzX3Byb2NlZHVyZSwgZGZfcjIkbm90ZXNfcHJvY2VkdXJlLAogIGRmX3IxJHJhdGVyX0lELCBkZl9yMiRyYXRlcl9JRAopCgpgYGAKCiMgQ2FsY3VsYXRlIENvaGVuJ3MgS2FwcGEKCmBgYHtyfQoKIyBDcmVhdGUgYW4gZW1wdHkgZGF0YSBmcmFtZSB0byBzdG9yZSBLYXBwYSB2YWx1ZXMKa2FwcGFfcmVzdWx0cyA8LSBkYXRhLmZyYW1lKENvbHVtbjEgPSBudW1lcmljKCksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBDb2x1bW4yID0gbnVtZXJpYygpLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgS2FwcGEgPSBudW1lcmljKCksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdHJpbmdzQXNGYWN0b3JzID0gRkFMU0UpCgojIExvb3AgdGhyb3VnaCBjb2x1bW4gcGFpcnMgYW5kIGNhbGN1bGF0ZSBDb2hlbidzIEthcHBhCmZvciAoaSBpbiBzZXEoMSwgNjEsIGJ5ID0gMikpIHsKICBrYXBwYV9yZXN1bHQgPC0ga2FwcGEyKGRmX2NvbWJpbmVkWywgYyhpLCBpKzEpXSkKICAKICAjIEFwcGVuZCByZXN1bHRzIHRvIHRoZSBkYXRhIGZyYW1lCiAga2FwcGFfcmVzdWx0cyA8LSByYmluZChrYXBwYV9yZXN1bHRzLCAKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGMoQ29sdW1uMSA9IGksIENvbHVtbjIgPSBpKzEsIEthcHBhID0ga2FwcGFfcmVzdWx0JHZhbHVlKSkKfQoKIyBhZGQgY29sdW1uIGNvbnRhaW5pbmcgY29sdW1uIG5hbWVzCmNvbG5hbWVzIDwtIGNvbG5hbWVzKGRmX3IxKQprYXBwYV9yZXN1bHRzJGNvbF9uYW1lIDwtIGNvbG5hbWVzCgojIHJlbmFtZSBjb2x1bW4gaG9sZGluZyBLYXBwYSB2YWx1ZXMKa2FwcGFfcmVzdWx0cyA8LSBrYXBwYV9yZXN1bHRzICU+JQogIHJlbmFtZShrYXBwYSA9IFgxLjEpCgojIGRlbGV0ZSB1bm5lY2Vzc2FyeSBjb2x1bW5zIAprYXBwYV9yZXN1bHRzIDwtIGthcHBhX3Jlc3VsdHMgJT4lCiAgZHBseXI6OnNlbGVjdChjb2xfbmFtZSwga2FwcGEpICAKCiMgZGVsZXRlIHVubmVjZXNzYXJ5IHJvd3MgCmthcHBhX3Jlc3VsdHMgPC0ga2FwcGFfcmVzdWx0cyAlPiUKICBmaWx0ZXIoY29sX25hbWUgIT0gImFydGljbGVfaWQiLAogICAgICAgICBjb2xfbmFtZSAhPSAiYXV0aG9ycyIsCiAgICAgICAgIGNvbF9uYW1lICE9ICJ5ZWFyIiwKICAgICAgICAgY29sX25hbWUgIT0gIm9yZGVyX251bWJlciIsCiAgICAgICAgIGNvbF9uYW1lICE9ICJub3Rlc19wcm9jZWR1cmUiLAogICAgICAgICBjb2xfbmFtZSAhPSAicmF0ZXJfSUQiKQoKCmBgYAoKIyBUYWJsZXMKCmBgYHtyfQoKa2FwcGFfcmVzdWx0cyB8PgogIG11dGF0ZV9pZihpcy5udW1lcmljLCByb3VuZF9oYWxmX3VwLCBkaWdpdHMgPSAyKSB8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCmthcHBhX3Jlc3VsdHMgfD4KICBzdW1tYXJpemUobWVhbl9rYXBwYSA9IG1lYW4oa2FwcGEpLAogICAgICAgICAgICBzZF9rYXBwYSA9IHNkKGthcHBhKSwKICAgICAgICAgICAgbWluX2thcHBhID0gbWluKGthcHBhKSwKICAgICAgICAgICAgbWF4X2thcHBhID0gbWF4KGthcHBhKSkgfD4KICBtdXRhdGVfaWYoaXMubnVtZXJpYywgcm91bmRfaGFsZl91cCwgZGlnaXRzID0gMikgfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgpgYGAKCiMgVGV4dCBpbiBtYW51c2NyaXB0CgpUaGUgYWJvdmUgcmVzdWx0cyBwcm9kdWNlIHRoZSByZXN1bHRzIHJlcG9ydGVkIGluIHRoZSBtYW51c2NyaXB0IGZvciB0aGUgIkludGVycmF0ZXIgcmVsaWFiaWx0eSIgaGVhZGluZy4gaS5lLiwgCgoiV2UgY29tcHV0ZWQgdGhlIGludGVycmF0ZXIgcmVsaWFiaWxpdHkgZm9yIGFsbCB2YXJpYWJsZXMgaW4gdGhlIHByb2NlZHVyZSBjb2RlYm9vaywgeWllbGRpbmcgYSBtZWFuIENvaGVu4oCZcyDOuiA9IC43MCAoU0QgPSAuMTApLCB3aXRoIGEgcmFuZ2UgZnJvbSAuNDQgdG8gLjkwLiIKCiMgSG93IGRvIHRoZSBrYXBwYSB2YWx1ZXMgY29ycmVzcG9uZCB0byB0aGUgaW5kZXRlcm1pbmFiaWxpdHkgcmF0ZXM/CmBgYHtyfQoKIyBsb2FkIGRhdGEgCmRhdGEgPC0gcmVhZF94bHN4KCIuLi8uLi9kYXRhL3Jhdy9tZXRhbWV0aG9kIHJldmlldy9tYXN0ZXIgY29kaW5nL2NvZGVib29rX3Byb2NlZHVyZV9tYXN0ZXIueGxzeCIpIAoKIyBjcmVhdGUgZGF0YSBmcmFtZSB3aXRoIHJlbGV2YW50IHZhcmlhYmxlcwpkYXRhX2luZCA8LSBkYXRhICU+JQogIHNlbGVjdChzYW1wbGVfc2l6ZSwgdmFyaWFudCwgcHJvdG9jb2wsCiAgICAgICAgIGdvYWwsIGluc3RydWN0aW9ucywgZmVlZGJhY2ssIAogICAgICAgICBpbmNlbnRpdmVzLCBjdXJyZW5jeSwgc3RhcnRpbmdfY2FwaXRhbCwgCiAgICAgICAgIGNvbnRhaW5zKCJyZXdhcmQiKSwgY29udGFpbnMoIjEiKSwgY29udGFpbnMoIjIiKSwgCiAgICAgICAgIG5fYmxvY2tzLCBuX3RyaWFscykKCiMgZnVuY3Rpb246IGNvdW50IGFuZCBjYWxjdWxhdGUgcGVyY2VudGFnZXMgZm9yIGNlcnRhaW4gdmFsdWVzIG9mIGEgc3Vic2V0IG9mIHZhcmlhYmxlcwp2YWx1ZV9jb3VudHMgPC0gZnVuY3Rpb24oZGF0YSwgdmFsdWVfdG9fY291bnQsIGNvbHVtbnMgPSBOVUxMKSB7CiAgaWYgKGlzLm51bGwoY29sdW1ucykpIHsKICAgIGNvbHVtbnMgPC0gY29sbmFtZXMoZGF0YSkKICB9IGVsc2UgewogICAgY29sdW1ucyA8LSBpbnRlcnNlY3QoY29sdW1ucywgY29sbmFtZXMoZGF0YSkpCiAgfQogIHJlc3VsdHMgPC0gbGlzdCgpCiAgZm9yIChjb2wgaW4gY29sdW1ucykgewogICAgY291bnQgPC0gc3VtKGRhdGFbW2NvbF1dID09IHZhbHVlX3RvX2NvdW50LCBuYS5ybSA9IFRSVUUpCiAgICBwZXJjZW50YWdlIDwtIHJvdW5kKChjb3VudCAvIG5yb3coZGF0YSkpICogMTAwLCAyKQogICAgcmVzdWx0c1tbY29sXV0gPC0gYygiY291bnQiID0gY291bnQsICJwZXJjZW50YWdlIiA9IHBlcmNlbnRhZ2UpCiAgfQogIHN1bW1hcnlfdGFibGUgPC0gZG8uY2FsbChyYmluZCwgcmVzdWx0cykgJT4lCiAgICBhcy5kYXRhLmZyYW1lKHN0cmluZ3NBc0ZhY3RvcnMgPSBGQUxTRSkgJT4lCiAgICB0aWJibGU6OnJvd25hbWVzX3RvX2NvbHVtbigidmFyaWFibGUiKQogIHJldHVybihzdW1tYXJ5X3RhYmxlKQp9CgojIGNvdW50IGhvdyBvZnRlbiB2YXJpYWJsZSBpcyBzZXQgdG8gaW5kZXRlcm1pbmFibGUKaW5kZXRlcm1pbmFibGVzIDwtIHZhbHVlX2NvdW50cyhkYXRhX2luZCwgImluZGV0ZXJtaW5hYmxlIikgCgojIGpvaW4gZGF0YSBmcmFtZSB3aXRoIGthcHBhIHZhbHVlcwpqb2luZWQgPC0ga2FwcGFfcmVzdWx0cyAlPiUKICByZW5hbWUodmFyaWFibGUgPSBjb2xfbmFtZSkgJT4lCiAgbGVmdF9qb2luKGluZGV0ZXJtaW5hYmxlcywgYnkgPSAidmFyaWFibGUiKSAlPiUKICBzZWxlY3QodmFyaWFibGUsIGNvdW50LCBwZXJjZW50YWdlLCBrYXBwYSkgJT4lCiAgYXJyYW5nZShkZXNjKGNvdW50KSkKCiMgcHJpbnQgZGF0YSBmcmFtZSB3aXRoIGZyZXF1ZW5jeSBvZiBpbmRldGVybWluYWJsZSB2YWx1ZXMgCmpvaW5lZCB8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCmBgYAoK</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiSW50ZXIgUmF0ZXIgUmVsaWFiaWxpdHkgZm9yIFByb2NlZHVyYWwgVmFyaWF0aW9ucyIKYXV0aG9yOiAiSmFuLVBhdWwgUmllcyIKZGF0ZTogImByIGZvcm1hdChTeXMudGltZSgpLCAnJWQgJUIsICVZJylgIgpvdXRwdXQ6CiAgaHRtbF9kb2N1bWVudDoKICAgIGNvZGVfZG93bmxvYWQ6IHRydWUKICAgIGNvZGVfZm9sZGluZzogc2hvdwogICAgaGlnaGxpZ2h0OiBoYWRkb2NrCiAgICB0aGVtZTogZmxhdGx5CiAgICB0b2M6IHllcwogICAgdG9jX2Zsb2F0OiB5ZXMKLS0tCgpgYGB7ciBzZXR1cH0KI3wgaW5jbHVkZTogZmFsc2UKCiMgbG9hZCBrbml0ciAKbGlicmFyeShrbml0cikKCiMgc2V0IGtuaXRyIGNodW5rIG9wdGlvbnMgCm9wdHNfY2h1bmskc2V0KGVjaG8gPSBUUlVFLAogICAgICAgICAgICAgICAgbWVzc2FnZSA9IEZBTFNFLAogICAgICAgICAgICAgICAgd2FybmluZyA9IEZBTFNFKQpgYGAKCiMjIExvYWQgUGFja2FnZXMKCmBgYHtyfQoKbGlicmFyeShyZWFkeGwpCmxpYnJhcnkoZHBseXIpCmxpYnJhcnkoaXJyKQpsaWJyYXJ5KGtuaXRyKQpsaWJyYXJ5KGthYmxlRXh0cmEpCmxpYnJhcnkoamFuaXRvcikKCmBgYAoKIyBSZWFkIGRhdGEgCgpgYGB7cn0KCmRmX3IxIDwtIHJlYWR4bDo6cmVhZF94bHN4KCIuLi8uLi9kYXRhL3Jhdy9pbnRlcnJhdGVyIHJlbGlhYmlsaXR5L2NvZGVib29rIC0gcmF0ZXIgMS9yMV9wcm9jZWR1cmVfYWxpZ25lZC54bHN4IikKZGZfcjIgPC0gcmVhZHhsOjpyZWFkX3hsc3goIi4uLy4uL2RhdGEvcmF3L2ludGVycmF0ZXIgcmVsaWFiaWxpdHkvY29kZWJvb2sgLSByYXRlciAyL3IyX3Byb2NlZHVyZV9hbGlnbmVkLnhsc3giKQoKYGBgCgojIFdyYW5nbGUKCkNvbWJpbmUgZmlsZXMgd2l0aCBjb3JyZWN0IGNvbHVtbiBvcmRlcgoKYGBge3J9CgpkZl9jb21iaW5lZCA8LSBiaW5kX2NvbHMoCiAgZGZfcjEkYXJ0aWNsZV9pZCwgZGZfcjIkYXJ0aWNsZV9pZCwKICBkZl9yMSRhdXRob3JzLCBkZl9yMiRhdXRob3JzLAogIGRmX3IxJHllYXIsIGRmX3IyJHllYXIsCiAgZGZfcjEkb3JkZXJfbnVtYmVyLCBkZl9yMiRvcmRlcl9udW1iZXIsCiAgZGZfcjEkc2FtcGxlX3NpemUsIGRmX3IyJHNhbXBsZV9zaXplLAogIGRmX3IxJHZhcmlhbnQsIGRmX3IyJHZhcmlhbnQsCiAgZGZfcjEkcHJvdG9jb2wsIGRmX3IyJHByb3RvY29sLAogIGRmX3IxJGdvYWwsIGRmX3IyJGdvYWwsCiAgZGZfcjEkaW5zdHJ1Y3Rpb25zLCBkZl9yMiRpbnN0cnVjdGlvbnMsCiAgZGZfcjEkZmVlZGJhY2ssIGRmX3IyJGZlZWRiYWNrLAogIGRmX3IxJGluY2VudGl2ZXMsIGRmX3IyJGluY2VudGl2ZXMsCiAgZGZfcjEkY3VycmVuY3ksIGRmX3IyJGN1cnJlbmN5LAogIGRmX3IxJHN0YXJ0aW5nX2NhcGl0YWwsIGRmX3IyJHN0YXJ0aW5nX2NhcGl0YWwsCiAgZGZfcjEkcmV3YXJkX2FkdiwgZGZfcjIkcmV3YXJkX2FkdiwKICBkZl9yMSRyZXdhcmRfZGlzYWR2LCBkZl9yMiRyZXdhcmRfZGlzYWR2LAogIGRmX3IxJGdhaW4xLCBkZl9yMiRnYWluMSwKICBkZl9yMSRnYWluMiwgZGZfcjIkZ2FpbjIsCiAgZGZfcjEkbG9zczEsIGRmX3IyJGxvc3MxLAogIGRmX3IxJGxvc3MyLCBkZl9yMiRsb3NzMiwKICBkZl9yMSRnYWluX2ludDEsIGRmX3IyJGdhaW5faW50MSwKICBkZl9yMSRnYWluX2ludDIsIGRmX3IyJGdhaW5faW50MiwKICBkZl9yMSRsb3NzX2ludDEsIGRmX3IyJGxvc3NfaW50MSwKICBkZl9yMSRsb3NzX2ludDIsIGRmX3IyJGxvc3NfaW50MiwKICBkZl9yMSRmcmVxX2FkdjEsIGRmX3IyJGZyZXFfYWR2MSwKICBkZl9yMSRmcmVxX2FkdjIsIGRmX3IyJGZyZXFfYWR2MiwKICBkZl9yMSRmcmVxX2Rpc2FkdjEsIGRmX3IyJGZyZXFfZGlzYWR2MSwKICBkZl9yMSRmcmVxX2Rpc2FkdjIsIGRmX3IyJGZyZXFfZGlzYWR2MiwKICBkZl9yMSRuX2Jsb2NrcywgZGZfcjIkbl9ibG9ja3MsCiAgZGZfcjEkbl90cmlhbHMsIGRmX3IyJG5fdHJpYWxzLAogIGRmX3IxJG5vdGVzX3Byb2NlZHVyZSwgZGZfcjIkbm90ZXNfcHJvY2VkdXJlLAogIGRmX3IxJHJhdGVyX0lELCBkZl9yMiRyYXRlcl9JRAopCgpgYGAKCiMgQ2FsY3VsYXRlIENvaGVuJ3MgS2FwcGEKCmBgYHtyfQoKIyBDcmVhdGUgYW4gZW1wdHkgZGF0YSBmcmFtZSB0byBzdG9yZSBLYXBwYSB2YWx1ZXMKa2FwcGFfcmVzdWx0cyA8LSBkYXRhLmZyYW1lKENvbHVtbjEgPSBudW1lcmljKCksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBDb2x1bW4yID0gbnVtZXJpYygpLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgS2FwcGEgPSBudW1lcmljKCksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdHJpbmdzQXNGYWN0b3JzID0gRkFMU0UpCgojIExvb3AgdGhyb3VnaCBjb2x1bW4gcGFpcnMgYW5kIGNhbGN1bGF0ZSBDb2hlbidzIEthcHBhCmZvciAoaSBpbiBzZXEoMSwgNjEsIGJ5ID0gMikpIHsKICBrYXBwYV9yZXN1bHQgPC0ga2FwcGEyKGRmX2NvbWJpbmVkWywgYyhpLCBpKzEpXSkKICAKICAjIEFwcGVuZCByZXN1bHRzIHRvIHRoZSBkYXRhIGZyYW1lCiAga2FwcGFfcmVzdWx0cyA8LSByYmluZChrYXBwYV9yZXN1bHRzLCAKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGMoQ29sdW1uMSA9IGksIENvbHVtbjIgPSBpKzEsIEthcHBhID0ga2FwcGFfcmVzdWx0JHZhbHVlKSkKfQoKIyBhZGQgY29sdW1uIGNvbnRhaW5pbmcgY29sdW1uIG5hbWVzCmNvbG5hbWVzIDwtIGNvbG5hbWVzKGRmX3IxKQprYXBwYV9yZXN1bHRzJGNvbF9uYW1lIDwtIGNvbG5hbWVzCgojIHJlbmFtZSBjb2x1bW4gaG9sZGluZyBLYXBwYSB2YWx1ZXMKa2FwcGFfcmVzdWx0cyA8LSBrYXBwYV9yZXN1bHRzICU+JQogIHJlbmFtZShrYXBwYSA9IFgxLjEpCgojIGRlbGV0ZSB1bm5lY2Vzc2FyeSBjb2x1bW5zIAprYXBwYV9yZXN1bHRzIDwtIGthcHBhX3Jlc3VsdHMgJT4lCiAgZHBseXI6OnNlbGVjdChjb2xfbmFtZSwga2FwcGEpICAKCiMgZGVsZXRlIHVubmVjZXNzYXJ5IHJvd3MgCmthcHBhX3Jlc3VsdHMgPC0ga2FwcGFfcmVzdWx0cyAlPiUKICBmaWx0ZXIoY29sX25hbWUgIT0gImFydGljbGVfaWQiLAogICAgICAgICBjb2xfbmFtZSAhPSAiYXV0aG9ycyIsCiAgICAgICAgIGNvbF9uYW1lICE9ICJ5ZWFyIiwKICAgICAgICAgY29sX25hbWUgIT0gIm9yZGVyX251bWJlciIsCiAgICAgICAgIGNvbF9uYW1lICE9ICJub3Rlc19wcm9jZWR1cmUiLAogICAgICAgICBjb2xfbmFtZSAhPSAicmF0ZXJfSUQiKQoKCmBgYAoKIyBUYWJsZXMKCmBgYHtyfQoKa2FwcGFfcmVzdWx0cyB8PgogIG11dGF0ZV9pZihpcy5udW1lcmljLCByb3VuZF9oYWxmX3VwLCBkaWdpdHMgPSAyKSB8PgogIGthYmxlKCkgfD4KICBrYWJsZV9jbGFzc2ljKGZ1bGxfd2lkdGggPSBGQUxTRSkKCmthcHBhX3Jlc3VsdHMgfD4KICBzdW1tYXJpemUobWVhbl9rYXBwYSA9IG1lYW4oa2FwcGEpLAogICAgICAgICAgICBzZF9rYXBwYSA9IHNkKGthcHBhKSwKICAgICAgICAgICAgbWluX2thcHBhID0gbWluKGthcHBhKSwKICAgICAgICAgICAgbWF4X2thcHBhID0gbWF4KGthcHBhKSkgfD4KICBtdXRhdGVfaWYoaXMubnVtZXJpYywgcm91bmRfaGFsZl91cCwgZGlnaXRzID0gMikgfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgpgYGAKCiMgVGV4dCBpbiBtYW51c2NyaXB0CgpUaGUgYWJvdmUgcmVzdWx0cyBwcm9kdWNlIHRoZSByZXN1bHRzIHJlcG9ydGVkIGluIHRoZSBtYW51c2NyaXB0IGZvciB0aGUgIkludGVycmF0ZXIgcmVsaWFiaWx0eSIgaGVhZGluZy4gaS5lLiwgCgoiV2UgY29tcHV0ZWQgdGhlIGludGVycmF0ZXIgcmVsaWFiaWxpdHkgZm9yIGFsbCB2YXJpYWJsZXMgaW4gdGhlIHByb2NlZHVyZSBjb2RlYm9vaywgeWllbGRpbmcgYSBtZWFuIENvaGVu4oCZcyDOuiA9IC43MCAoU0QgPSAuMTApLCB3aXRoIGEgcmFuZ2UgZnJvbSAuNDQgdG8gLjkwLiIKCiMgSG93IGRvIHRoZSBrYXBwYSB2YWx1ZXMgY29ycmVzcG9uZCB0byB0aGUgaW5kZXRlcm1pbmFiaWxpdHkgcmF0ZXM/CmBgYHtyfQoKIyBsb2FkIGRhdGEgCmRhdGEgPC0gcmVhZF94bHN4KCIuLi8uLi9kYXRhL3Jhdy9tZXRhbWV0aG9kIHJldmlldy9tYXN0ZXIgY29kaW5nL2NvZGVib29rX3Byb2NlZHVyZV9tYXN0ZXIueGxzeCIpIAoKIyBjcmVhdGUgZGF0YSBmcmFtZSB3aXRoIHJlbGV2YW50IHZhcmlhYmxlcwpkYXRhX2luZCA8LSBkYXRhICU+JQogIHNlbGVjdChzYW1wbGVfc2l6ZSwgdmFyaWFudCwgcHJvdG9jb2wsCiAgICAgICAgIGdvYWwsIGluc3RydWN0aW9ucywgZmVlZGJhY2ssIAogICAgICAgICBpbmNlbnRpdmVzLCBjdXJyZW5jeSwgc3RhcnRpbmdfY2FwaXRhbCwgCiAgICAgICAgIGNvbnRhaW5zKCJyZXdhcmQiKSwgY29udGFpbnMoIjEiKSwgY29udGFpbnMoIjIiKSwgCiAgICAgICAgIG5fYmxvY2tzLCBuX3RyaWFscykKCiMgZnVuY3Rpb246IGNvdW50IGFuZCBjYWxjdWxhdGUgcGVyY2VudGFnZXMgZm9yIGNlcnRhaW4gdmFsdWVzIG9mIGEgc3Vic2V0IG9mIHZhcmlhYmxlcwp2YWx1ZV9jb3VudHMgPC0gZnVuY3Rpb24oZGF0YSwgdmFsdWVfdG9fY291bnQsIGNvbHVtbnMgPSBOVUxMKSB7CiAgaWYgKGlzLm51bGwoY29sdW1ucykpIHsKICAgIGNvbHVtbnMgPC0gY29sbmFtZXMoZGF0YSkKICB9IGVsc2UgewogICAgY29sdW1ucyA8LSBpbnRlcnNlY3QoY29sdW1ucywgY29sbmFtZXMoZGF0YSkpCiAgfQogIHJlc3VsdHMgPC0gbGlzdCgpCiAgZm9yIChjb2wgaW4gY29sdW1ucykgewogICAgY291bnQgPC0gc3VtKGRhdGFbW2NvbF1dID09IHZhbHVlX3RvX2NvdW50LCBuYS5ybSA9IFRSVUUpCiAgICBwZXJjZW50YWdlIDwtIHJvdW5kKChjb3VudCAvIG5yb3coZGF0YSkpICogMTAwKQogICAgcmVzdWx0c1tbY29sXV0gPC0gYygiY291bnQiID0gY291bnQsICJwZXJjZW50YWdlIiA9IHBlcmNlbnRhZ2UpCiAgfQogIHN1bW1hcnlfdGFibGUgPC0gZG8uY2FsbChyYmluZCwgcmVzdWx0cykgJT4lCiAgICBhcy5kYXRhLmZyYW1lKHN0cmluZ3NBc0ZhY3RvcnMgPSBGQUxTRSkgJT4lCiAgICB0aWJibGU6OnJvd25hbWVzX3RvX2NvbHVtbigidmFyaWFibGUiKQogIHJldHVybihzdW1tYXJ5X3RhYmxlKQp9CgojIGNvdW50IGhvdyBvZnRlbiB2YXJpYWJsZSBpcyBzZXQgdG8gaW5kZXRlcm1pbmFibGUKaW5kZXRlcm1pbmFibGVzIDwtIHZhbHVlX2NvdW50cyhkYXRhX2luZCwgImluZGV0ZXJtaW5hYmxlIikgCgojIGpvaW4gZGF0YSBmcmFtZSB3aXRoIGthcHBhIHZhbHVlcwpqb2luZWQgPC0ga2FwcGFfcmVzdWx0cyAlPiUKICByZW5hbWUodmFyaWFibGUgPSBjb2xfbmFtZSkgJT4lCiAgbGVmdF9qb2luKGluZGV0ZXJtaW5hYmxlcywgYnkgPSAidmFyaWFibGUiKSAlPiUKICBzZWxlY3QodmFyaWFibGUsIGNvdW50LCBwZXJjZW50YWdlLCBrYXBwYSkgJT4lCiAgYXJyYW5nZShkZXNjKGthcHBhKSkgJT4lCiAgbXV0YXRlX2lmKGlzLm51bWVyaWMsIHJvdW5kX2hhbGZfdXAsIGRpZ2l0cyA9IDIpCgojIHByaW50IGRhdGEgZnJhbWUgd2l0aCBmcmVxdWVuY3kgb2YgaW5kZXRlcm1pbmFibGUgdmFsdWVzIApqb2luZWQgfD4KICBrYWJsZSgpIHw+CiAga2FibGVfY2xhc3NpYyhmdWxsX3dpZHRoID0gRkFMU0UpCgpgYGAKCg==</div>
 
 
 </div>
