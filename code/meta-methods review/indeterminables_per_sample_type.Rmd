@@ -184,18 +184,33 @@ plot1 <- ggplot(indeterminables_dot_data,
                 aes(x = percentage, y = variable, color = sample_type)) +
   geom_point(size = 3, alpha = 0.8) +
   scale_color_manual(
-    name = "Sample Type",
+    name = "Study Type",
     values = c("Clinical" = "#31688E", "Non-Clinical" = "#35B779")
   ) +
   labs(
-    title = "Indeterminable Values by Variable and Study Type",
     x = "Percentage of Indeterminable Values",
     y = "Variable"
   )  +
-  theme_minimal() +
-  scale_x_continuous(labels = percent_format(scale = 1))  # Show x-axis as percentages
+  theme_bw() + 
+  scale_x_continuous(labels = percent_format(scale = 1)) +
+  theme(legend.position = "bottom")
 
 print(plot1)
+
+ggsave(
+  "figure1_indeterminables_by_variable_colors.pdf", 
+  plot = plot1,                         
+  width = 8,                                 
+  height = 6                                 
+)
+
+ggsave(
+  "figure1_indeterminables_by_variable_colors.png",
+  plot = plot1,                         
+  width = 8,                                 
+  height = 6,                                
+  dpi = 600                                  
+)
 
 ```
 

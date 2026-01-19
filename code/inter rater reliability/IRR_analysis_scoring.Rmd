@@ -213,7 +213,6 @@ print(kappa_ci)
 The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
 
 
-
 # Inter Rater Reliability: Occurrence of Each Distinct Score in the Whole Sample
 
 ```{r irr2}
@@ -225,6 +224,7 @@ score_freq_r1 <- data_r1 %>%
   mutate(frequency_r1 = n()) %>%
   distinct(score_id_new, .keep_all = TRUE) %>%
   select(score_id_new, frequency_r1)
+
 # for data_r2
 score_freq_r2 <- data_r2 %>% 
   group_by(score_id_new) %>%
@@ -257,7 +257,7 @@ boot_alpha_freq <- boot(
 )
 
 # calculate SE and CI
-alpha_se_freq <- sd(boot_alpha_freq$t, na.rm = TRUE) # na.rm = TRUE für Sicherheit
+alpha_se_freq <- sd(boot_alpha_freq$t, na.rm = TRUE) 
 alpha_ci_freq <- boot.ci(boot_alpha_freq, type = "perc")$percent[4:5] 
 
 # print SE und CI 

@@ -25,6 +25,8 @@ Annika Külpmann, Jan-Paul Ries, Ian Hussey, Malte Elson.
 
 **/methods** contains some files to make the procedure of our study transparent and reproducible. They are not needed to execute the code but can be used to understand what we did and how the data files were created in the first place. 
 
+**/supplementary materials** contains pdf files with supplementary materials that we are enclosing with our preprint (coming soon!).
+
 ## How To Reproduce This Study
 
 + Start with the folder /code/sampling, here you can first scramble the population, this will reproduce the corresponding file in /data/sampling.
