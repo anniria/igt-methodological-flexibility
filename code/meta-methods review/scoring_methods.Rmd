@@ -198,47 +198,39 @@ percent_scores_per_task_minor |>
 
 ### Estimate population value of number of scores
 
-In order to estimate the total number of scoring strategies in the population from our sample of the counts of scoring strategies observed in 100 articles, we can use a statistical method borrowed from ecology called Richness Estimation. There, it is used to answer questions such as "I have observed XX species in my sample, so how many are likely to exist in this habitat?", thereby making inferences about total (species) richness from observed (species) richness. 
-
-This analysis assumes `score_id` is correct and aligned with `score_description`.  
-
 ```{r}
 
-# library(vegan)
-# 
-# data_reshaped <- data |>
-#   select(article_id, score_id) |>
-#   # remove duplicates
-#   distinct(article_id, score_id, .keep_all = TRUE) |>
-#   mutate(score_used = 1) |>
-#   pivot_wider(names_from = "score_id",
-#               names_prefix = "scoring_",
-#               values_from = "score_used",
-#               values_fill = 0) |>
-#   column_to_rownames("article_id") |>
-#   as.matrix()
-# 
-# chao2_estimate <- vegan::specpool(data_reshaped)
-# 
-# chao2_estimate |>
-#   as_tibble() |>
-#   select(scoring_strategies_observed = Species,
-#          chao2_estimate = chao,
-#          chao2_se = chao.se,
-#          boot_estimate = boot,
-#          boot_se = boot.se) |>
-#   mutate(chao2_estimate = round_half_up(chao2_estimate, digits = 0),
-#          chao2_se = round_half_up(chao2_se, digits = 2),
-#          boot_estimate = round_half_up(boot_estimate, digits = 0),
-#          boot_se = round_half_up(boot_se, digits = 2))
+library(vegan)
+
+data_reshaped <- data |>
+  select(article_id, score_id) |>
+  # remove duplicates
+  distinct(article_id, score_id, .keep_all = TRUE) |>
+  mutate(score_used = 1) |>
+  pivot_wider(names_from = "score_id",
+              names_prefix = "scoring_",
+              values_from = "score_used",
+              values_fill = 0) |>
+  column_to_rownames("article_id") |>
+  as.matrix()
+
+chao2_estimate <- vegan::specpool(data_reshaped)
+
+res <- chao2_estimate |>
+  as_tibble() |>
+  select(scoring_strategies_observed = Species,
+         chao2_estimate = chao,
+         chao2_se = chao.se) |>
+  mutate(chao2_estimate = janitor::round_half_up(chao2_estimate, digits = 0),
+         chao2_se = janitor::round_half_up(chao2_se, digits = 2))
+
 
 ```
 
+If additional articles were examined, the number of scoring strategies observed can only increase. This raises the question of what the total population of scoring strategies is. Our results in Table 3 imply at least 414 possible scoring strategies (23 columns by 18 rows) among the already observed features. It is possible that other features exist. Another approach to estimating the total population of scores from our observed sample comes from the use of Richness Estimation, a statistical approach used in ecology. There, it is used to answer questions such as "I have observed X number of species in my sample, so how many are likely to exist in this habitat?", thereby making inferences about population (species) richness from observed (species) richness. Using this approach, we estimate that the IGT literature may include approximately `r res$chao2_estimate` scoring methods (Chao$_2$ = `r res$chao2_estimate`, SE = `r res$chao2_se`). 
+
 NB Chao$_2$ estimate of richness is non-linear and so it's more appropriate to report SE than CIs.
 
-Bootstrap estimate of richness is not merely the bootstrapped Chao$_2$ estimate's SE, etc, but rather a direct bootstrapped estimate of richness. 
-
-Reporting example: "Using the Chao$_2$ estimator on presence/absence data, we estimated a total of XX scoring methods (SE = YY). Using a bootstrapping approach, "
 
 
 ## Distinct Scores
