@@ -34,3 +34,9 @@ Annika Külpmann, Jan-Paul Ries, Ian Hussey, Malte Elson.
 + Next you can calculate the interrater reliability, for this you can use the code in /interrater reliability. There is one file for the IRR on procedure and one for scoring since these were two differently structured codebooks. 
 + You can then run the analyses of the meta-methods review. All the scripts are in the folder /code/metamethod review. There is no order that you need to follow for this step. 
 + Next up is the multiverse analysis, which builds partly on the code in meta-methods review. Run processing.Rmd first, then analyses.Rmd.
+
+## License
+
+(c) Annika Külpmann 2022-2026
+
+Released under a CCBY 4.0 licence
