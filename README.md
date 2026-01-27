@@ -23,7 +23,9 @@ Annika Külpmann, Jan-Paul Ries, Ian Hussey, Malte Elson.
 
 **/meta-analyses** contains additional data used to provide context for our study which is presented in a part of the introduction but not in our own study results. 
 
-**/methods** contains some files to make the procedure of our study transparent and reproducible. They are not needed to execute the code but can be used to understand what we did and how the data files were created in the first place. 
+**/methods** contains some files to make the procedure of our study transparent and reproducible, i. e. the codebooks and instructions how to use them. These materials are not needed to execute the code but can be used to understand what we did and how the data files were created in the first place. 
+
++ **/method_development** contains an earlier version of the codebook and files created during the development of the final codebooks. 
 
 **/supplementary materials** contains pdf files with supplementary materials that we are enclosing with our preprint (coming soon!).
 
