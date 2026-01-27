@@ -80,7 +80,7 @@ cors |>
 
 ## native 
 p_native_all <- ggplot(cors |> filter(x < y), aes(r)) +
-  geom_histogram(binwidth = .1, boundary = 0) +
+  geom_histogram(binwidth = .1, boundary = 0, fill = "#31688E") +
   scale_x_continuous(breaks = breaks_pretty(n = 10)) +
   scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
   ggtitle("Correlations among all scoring strategies") +
@@ -91,7 +91,7 @@ p_native_all <- ggplot(cors |> filter(x < y), aes(r)) +
 
 ## absolute
 p_absolute_all <- ggplot(cors |> filter(x < y), aes(abs(r))) +
-  geom_histogram(binwidth = .1, boundary = 0) +
+  geom_histogram(binwidth = .1, boundary = 0, fill = "#31688E") +
   scale_x_continuous(breaks = breaks_pretty(n = 10)) +
   scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
   #ggtitle("Absolute correlation between modal scoring strategy and all others") +
@@ -126,7 +126,7 @@ cors |>
 
 ## native 
 p_native_modal <- ggplot(cors |> filter(x == "C_plus_D_minus_A_plus_B"), aes(r)) +
-  geom_histogram(binwidth = .1, boundary = 0) +
+  geom_histogram(binwidth = .1, boundary = 0, fill = "#35B779") +
   scale_x_continuous(breaks = breaks_pretty(n = 10)) +
   scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
   ggtitle("Correlations with modal scoring strategy") +
@@ -137,7 +137,7 @@ p_native_modal <- ggplot(cors |> filter(x == "C_plus_D_minus_A_plus_B"), aes(r))
 
 ## absolute
 p_absolute_modal <- ggplot(cors |> filter(x == "C_plus_D_minus_A_plus_B"), aes(abs(r))) +
-  geom_histogram(binwidth = .1, boundary = 0) +
+  geom_histogram(binwidth = .1, boundary = 0, fill = "#35B779") +
   scale_x_continuous(breaks = breaks_pretty(n = 10)) +
   scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
   #ggtitle("Absolute correlation between all scoring strategies") +
