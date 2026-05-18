@@ -147,10 +147,15 @@ indeterminables_grouped <- procedures_by_category %>%
 indeterminables_grouped_final <- indeterminables_grouped %>%
   select(variable, pct_clinical, pct_non_clinical)
 
-# print table 
+# print table
 indeterminables_grouped_final |>
   kable() |>
   kable_classic(full_width = FALSE)
+
+# among clinical studies, count how many used the clinical IGT variant (Bechara, 2007)
+procedures_by_category %>%
+  filter(clinical == TRUE) %>%
+  count(variant)
 
 ```
 
@@ -218,10 +223,15 @@ ggsave(
 
 ```{r plots for paper}
 
-plot1_grey <- ggplot(indeterminables_dot_data, 
-                aes(x = percentage, y = variable, color = sample_type)) +
+# okabe-ito orange and blue: distinguishable in colour, greyscale, and for common colourblindness types
+# shape is added so clinical vs. non-clinical remain separable in black-and-white print
+plot1_grey <- ggplot(indeterminables_dot_data,
+                aes(x = percentage, y = variable, color = sample_type, shape = sample_type)) +
   geom_point(size = 3, alpha = 0.8) +
-  scale_color_grey(name = "Study Type", start = 0.2, end = 0.6) + 
+  scale_color_manual(name = "Study Type",
+                     values = c("Clinical" = "#E69F00", "Non-Clinical" = "#0072B2")) +
+  scale_shape_manual(name = "Study Type",
+                     values = c("Clinical" = 16, "Non-Clinical" = 17)) +
   labs(
     x = "Percentage of indeterminable values",
     y = "Variable"
