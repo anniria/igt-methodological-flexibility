@@ -6,3 +6,4 @@
 *.RData
 /code/factor-analysis
 /data/processed/factor-analysis
+*.html
