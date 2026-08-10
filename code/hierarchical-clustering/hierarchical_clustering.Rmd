@@ -1,0 +1,491 @@
+---
+title: "Hierarchical Clustering of IGT Scoring Methods"
+author: "Annika Kuelpmann"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_download: true
+    code_folding: show
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r packages, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+library(dynamicTreeCut)
+library(dendextend)
+library(paletteer)
+```
+
+## Data
+
+```{r data, message=FALSE}
+# all implemented scoring methods (197 columns, minus id and zero-variance A_60_cutoff)
+data_whole <- read_csv(here("data", "processed", "multiverse",
+                            "data_processed_participant_level.csv")) %>%
+  select(-id, -A_60_cutoff)
+
+cat("Scoring methods:", ncol(data_whole), "| participants:", nrow(data_whole), "\n")
+```
+
+---
+
+## Correlation matrix
+
+```{r cor-whole}
+cor_whole <- cor(data_whole, use = "pairwise.complete.obs")
+cat("Correlation matrix dimensions:", nrow(cor_whole), "×", ncol(cor_whole), "\n")
+```
+
+```{r cor-long}
+# long-form upper triangle (no self-pairs) — reused in both clustering sections
+cor_long <- cor_whole %>%
+  as_tibble(rownames = "method_x") %>%
+  pivot_longer(-method_x, names_to = "method_y", values_to = "r") %>%
+  filter(method_x < method_y)
+```
+
+```{r thresholds}
+# correlation thresholds for dendrogram cut lines — shared by both sections
+r_cuts <- c(0.9, 0.7, 0.5, 0.3, 0.1, 0.0)
+```
+
+```{r cuts-helper}
+# returns a list (one element per r threshold), each element containing:
+#   $summary  — one-row tibble: r_threshold, n_clusters, min_within_mean_r, max_between_mean_r
+#   $clusters — per-cluster tibble: cluster, n_methods, within_mean_r, centroid
+cuts_summary <- function(hc, cor_long, r_cuts) {
+  map(r_cuts, function(r_thresh) {
+    clusters   <- cutree(hc, h = 1 - r_thresh)
+    n_clusters <- length(unique(clusters))
+    labels     <- tibble(method = names(clusters), cluster = clusters)
+
+    cor_cl <- cor_long %>%
+      left_join(labels %>% rename(method_x = method, cluster_x = cluster),
+                by = "method_x") %>%
+      left_join(labels %>% rename(method_y = method, cluster_y = cluster),
+                by = "method_y")
+
+    # within-cluster mean r (signed; NA for singletons)
+    within <- cor_cl %>%
+      filter(cluster_x == cluster_y) %>%
+      group_by(cluster = cluster_x) %>%
+      summarise(within_mean_r = mean(r, na.rm = TRUE), .groups = "drop")
+
+    # centroid: method with highest mean r to all others in its cluster
+    centroid_tbl <- bind_rows(
+      cor_cl %>%
+        filter(cluster_x == cluster_y) %>%
+        select(cluster = cluster_x, method = method_x, r),
+      cor_cl %>%
+        filter(cluster_x == cluster_y) %>%
+        select(cluster = cluster_y, method = method_y, r)
+    ) %>%
+      group_by(cluster, method) %>%
+      summarise(mean_r = mean(r, na.rm = TRUE), .groups = "drop") %>%
+      group_by(cluster) %>%
+      slice_max(mean_r, n = 1, with_ties = FALSE) %>%
+      ungroup() %>%
+      select(cluster, centroid = method)
+
+    # singletons have no within-cluster pairs, so centroid is just the method name
+    singleton_clusters <- setdiff(unique(clusters), centroid_tbl$cluster)
+    if (length(singleton_clusters) > 0) {
+      centroid_tbl <- bind_rows(
+        centroid_tbl,
+        labels %>% filter(cluster %in% singleton_clusters) %>% rename(centroid = method)
+      )
+    }
+
+    # per-cluster table
+    cluster_tbl <- labels %>%
+      count(cluster, name = "n_methods") %>%
+      left_join(within,       by = "cluster") %>%
+      left_join(centroid_tbl, by = "cluster") %>%
+      mutate(within_mean_r = round(within_mean_r, 3)) %>%
+      arrange(cluster)
+
+    # max between-cluster mean r (NA if only one cluster)
+    if (n_clusters > 1) {
+      max_between <- cor_cl %>%
+        filter(cluster_x != cluster_y) %>%
+        mutate(
+          pair_lo = pmin(cluster_x, cluster_y),
+          pair_hi = pmax(cluster_x, cluster_y)
+        ) %>%
+        group_by(pair_lo, pair_hi) %>%
+        summarise(mean_r = mean(r, na.rm = TRUE), .groups = "drop") %>%
+        pull(mean_r) %>%
+        max(na.rm = TRUE)
+    } else {
+      max_between <- NA_real_
+    }
+
+    list(
+      summary = tibble(
+        r_threshold        = r_thresh,
+        n_clusters         = n_clusters,
+        min_within_mean_r  = round(min(within$within_mean_r, na.rm = TRUE), 3),
+        max_between_mean_r = round(max_between, 3)
+      ),
+      clusters = cluster_tbl
+    )
+  })
+}
+```
+
+```{r dyncut-helper}
+# returns a list containing:
+#   $summary  — tibble: n_clusters, n_unassigned, min_within_mean_r, max_between_mean_r
+#   $clusters — per-cluster tibble: cluster, n_methods, within_mean_r, centroid
+# cluster == 0 from cutreeDynamic() means unassigned; excluded from stats
+dyncut_summary <- function(clusters_vec, labels_vec, cor_long) {
+  labels <- tibble(method = labels_vec, cluster = clusters_vec)
+
+  n_unassigned <- sum(clusters_vec == 0)
+  assigned     <- labels %>% filter(cluster != 0)
+  n_clusters   <- length(unique(assigned$cluster))
+
+  cor_cl <- cor_long %>%
+    left_join(assigned %>% rename(method_x = method, cluster_x = cluster),
+              by = "method_x") %>%
+    left_join(assigned %>% rename(method_y = method, cluster_y = cluster),
+              by = "method_y") %>%
+    filter(!is.na(cluster_x), !is.na(cluster_y))
+
+  # within-cluster mean r (signed; NA for singletons)
+  within <- cor_cl %>%
+    filter(cluster_x == cluster_y) %>%
+    group_by(cluster = cluster_x) %>%
+    summarise(within_mean_r = mean(r, na.rm = TRUE), .groups = "drop")
+
+  # centroid: method with highest mean r to all others in its cluster
+  centroid_tbl <- bind_rows(
+    cor_cl %>%
+      filter(cluster_x == cluster_y) %>%
+      select(cluster = cluster_x, method = method_x, r),
+    cor_cl %>%
+      filter(cluster_x == cluster_y) %>%
+      select(cluster = cluster_y, method = method_y, r)
+  ) %>%
+    group_by(cluster, method) %>%
+    summarise(mean_r = mean(r, na.rm = TRUE), .groups = "drop") %>%
+    group_by(cluster) %>%
+    slice_max(mean_r, n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    select(cluster, centroid = method)
+
+  # singletons have no within-cluster pairs, so centroid is just the method name
+  singleton_clusters <- setdiff(unique(assigned$cluster), centroid_tbl$cluster)
+  if (length(singleton_clusters) > 0) {
+    centroid_tbl <- bind_rows(
+      centroid_tbl,
+      assigned %>% filter(cluster %in% singleton_clusters) %>% rename(centroid = method)
+    )
+  }
+
+  cluster_tbl <- assigned %>%
+    count(cluster, name = "n_methods") %>%
+    left_join(within,       by = "cluster") %>%
+    left_join(centroid_tbl, by = "cluster") %>%
+    mutate(within_mean_r = round(within_mean_r, 3)) %>%
+    arrange(cluster)
+
+  # max between-cluster mean r (NA if only one cluster)
+  if (n_clusters > 1) {
+    max_between <- cor_cl %>%
+      filter(cluster_x != cluster_y) %>%
+      mutate(
+        pair_lo = pmin(cluster_x, cluster_y),
+        pair_hi = pmax(cluster_x, cluster_y)
+      ) %>%
+      group_by(pair_lo, pair_hi) %>%
+      summarise(mean_r = mean(r, na.rm = TRUE), .groups = "drop") %>%
+      pull(mean_r) %>%
+      max(na.rm = TRUE)
+  } else {
+    max_between <- NA_real_
+  }
+
+  list(
+    summary = tibble(
+      n_clusters         = n_clusters,
+      n_unassigned       = n_unassigned,
+      min_within_mean_r  = round(min(within$within_mean_r, na.rm = TRUE), 3),
+      max_between_mean_r = round(max_between, 3)
+    ),
+    clusters = cluster_tbl
+  )
+}
+```
+
+---
+
+## Primary analysis — average linkage, 1 − r
+
+With average linkage the merge height equals the average pairwise distance between the
+joined groups. Because distance = `1 − r`, height = `1 − r_avg`, so the y-axis can be
+read directly as a Pearson *r* value (−1 to +1). Negatively correlated methods appear
+in separate branches.
+
+```{r hclust-avg, fig.width=18, fig.height=8}
+dist_avg <- as.dist(1 - cor_whole)
+hc_avg   <- hclust(dist_avg, method = "average")
+
+at_h   <- seq(0, 2, by = 0.25)
+at_lbl <- 1 - at_h
+
+par(mar = c(2, 4.5, 3, 4))
+plot(hc_avg,
+     main = "Hierarchical clustering — full correlations",
+     xlab = "",
+     sub  = paste0("Distance: 1 − r  |  Linkage: average  |  n = ", ncol(data_whole)),
+     ylab = "",
+     yaxt = "n",
+     cex  = 0.25,
+     hang = -1)
+axis(2, at = at_h, labels = at_lbl, las = 1)
+mtext("Average inter-cluster r", side = 2, line = 3.5, cex = 0.85)
+abline(h = 1 - r_cuts, col = "gray40", lty = 2, lwd = 0.8)
+text(x = par("usr")[2], y = 1 - r_cuts,
+     labels = paste0(" r = ", r_cuts),
+     adj = c(0, 0.5), cex = 0.65, col = "gray40", xpd = TRUE)
+```
+
+```{r export-hclust-avg, include=FALSE}
+jpeg("supplement_fig_hclust_avg.jpg",
+     width = 18, height = 8, units = "in", res = 300, quality = 95)
+par(mar = c(2, 4.5, 3, 4))
+plot(hc_avg,
+     main = "",
+     xlab = "",
+     sub  = paste0("Distance: 1 − r  |  Linkage: average  |  n = ", ncol(data_whole)),
+     ylab = "",
+     yaxt = "n",
+     cex  = 0.25,
+     hang = -1)
+axis(2, at = at_h, labels = at_lbl, las = 1)
+mtext("Average inter-cluster r", side = 2, line = 3.5, cex = 0.85)
+abline(h = 1 - r_cuts, col = "gray40", lty = 2, lwd = 0.8)
+text(x = par("usr")[2], y = 1 - r_cuts,
+     labels = paste0(" r = ", r_cuts),
+     adj = c(0, 0.5), cex = 0.65, col = "gray40", xpd = TRUE)
+dev.off()
+```
+
+### Cophenetic correlation
+
+```{r cophenetic-avg}
+coph_r_avg <- cor(dist_avg, cophenetic(hc_avg))
+cat("Cophenetic correlation:", round(coph_r_avg, 3), "\n")
+```
+
+### Cluster structure at each threshold
+
+```{r cuts-primary, results='asis'}
+results_avg <- cuts_summary(hc_avg, cor_long, r_cuts)
+
+for (res in results_avg) {
+  s <- res$summary
+  cat("\n\n#### Cut at r =", s$r_threshold, "→", s$n_clusters, "clusters\n\n")
+  cat("min within-cluster mean r =", s$min_within_mean_r,
+      " | max between-cluster mean r =", s$max_between_mean_r, "\n\n")
+  cat("\n")
+}
+```
+
+---
+
+## Dynamic Hybrid Cut — 1 − r
+
+The Dynamic Hybrid Cut Algorithm (`cutreeDynamic`, `DynamicTreeCut`) combines dendrogram
+topology with PAM-based refinement to select cluster boundaries automatically, without
+requiring a fixed height threshold. `deepSplit` (0–4) controls sensitivity: higher values
+produce more, smaller clusters. Methods assigned to cluster 0 were not placed in any cluster
+by the algorithm.
+
+```{r dyncut-avg}
+dyn_avg <- cutreeDynamic(
+  dendro            = hc_avg,
+  distM             = as.matrix(dist_avg),
+  method            = "hybrid",
+  deepSplit         = 2,
+  minClusterSize    = 5,
+  pamRespectsDendro = TRUE
+)
+```
+
+### Cluster structure
+
+```{r dyncut-avg-results, results='asis'}
+res_dyn_avg <- dyncut_summary(dyn_avg, colnames(cor_whole), cor_long)
+s <- res_dyn_avg$summary
+
+cat("Clusters found:", s$n_clusters, " | Unassigned:", s$n_unassigned, "\n\n")
+cat("min within-cluster mean r =", s$min_within_mean_r,
+    " | max between-cluster mean r =", s$max_between_mean_r, "\n\n")
+print(knitr::kable(res_dyn_avg$clusters))
+```
+
+```{r dyncut-avg-plot, fig.width=18, fig.height=8}
+clust_avg <- setNames(dyn_avg, colnames(cor_whole))
+unique_cl <- sort(unique(clust_avg))
+n_real    <- sum(unique_cl != 0)
+pal_avg   <- c(if (0L %in% unique_cl) "gray70",
+               rep_len(as.character(paletteer_d("ggthemes::Tableau_20")), n_real))
+
+dend_avg_col <- as.dendrogram(hc_avg) %>%
+  color_branches(clusters = clust_avg, col = pal_avg) %>%
+  set("labels_cex", 0.25) %>%
+  set("leaves_pch", NA)
+
+par(mar = c(5, 4.5, 3, 4))
+plot(dend_avg_col,
+     main = paste0("Hierarchical clustering — full correlations",
+                   " (Dynamic Hybrid Cut: ", res_dyn_avg$summary$n_clusters, " clusters)"),
+     xlab = "",
+     sub  = "",
+     ylab = "",
+     yaxt = "n")
+axis(2, at = at_h, labels = at_lbl, las = 1)
+mtext("Average inter-cluster r", side = 2, line = 3.5, cex = 0.85)
+```
+
+```{r export-dyncut-avg, include=FALSE}
+jpeg("supplement_fig_dyncut_avg.jpg",
+     width = 18, height = 8, units = "in", res = 300, quality = 95)
+par(mar = c(5, 4.5, 3, 4))
+plot(dend_avg_col,
+     main = "",
+     xlab = "",
+     sub  = "",
+     ylab = "",
+     yaxt = "n")
+axis(2, at = at_h, labels = at_lbl, las = 1)
+mtext("Average inter-cluster r", side = 2, line = 3.5, cex = 0.85)
+dev.off()
+```
+
+---
+
+## Sensitivity check — absolute correlation distance
+
+Distance = `1 − |r|`: two methods are treated as similar whenever they move in lock-step,
+regardless of sign. Methods that are directional opposites (e.g. proportion of good-deck
+vs. bad-deck choices) now cluster together. The y-axis shows the average |r| at which
+groups merged. Comparing with the primary dendrogram above reveals which methods are
+"mirror images" of one another — same cluster here, different cluster above.
+
+Note: within-cluster mean r in this section uses the original signed r. A cluster formed
+because two methods share high |r| but opposite sign will show a negative within-cluster mean r.
+
+```{r hclust-abs, fig.width=18, fig.height=8}
+dist_abs <- as.dist(1 - abs(cor_whole))
+hc_abs   <- hclust(dist_abs, method = "average")
+
+at_h_abs   <- seq(0, 1, by = 0.1)
+at_lbl_abs <- 1 - at_h_abs
+
+par(mar = c(2, 4.5, 3, 4))
+plot(hc_abs,
+     main = "Hierarchical clustering — absolute correlations",
+     xlab = "",
+     sub  = paste0("Distance: 1 − |r|  |  Linkage: average  |  n = ", ncol(data_whole)),
+     ylab = "",
+     yaxt = "n",
+     cex  = 0.25,
+     hang = -1)
+axis(2, at = at_h_abs, labels = at_lbl_abs, las = 1)
+mtext("Average inter-cluster |r|", side = 2, line = 3.5, cex = 0.85)
+abline(h = 1 - r_cuts, col = "gray40", lty = 2, lwd = 0.8)
+text(x = par("usr")[2], y = 1 - r_cuts,
+     labels = paste0(" |r| = ", r_cuts),
+     adj = c(0, 0.5), cex = 0.65, col = "gray40", xpd = TRUE)
+```
+
+### Cophenetic correlation
+
+```{r cophenetic-abs}
+coph_r_abs <- cor(dist_abs, cophenetic(hc_abs))
+cat("Cophenetic correlation:", round(coph_r_abs, 3), "\n")
+```
+
+### Cluster structure at each threshold
+
+```{r cuts-sens, results='asis'}
+results_abs <- cuts_summary(hc_abs, cor_long, r_cuts)
+
+for (res in results_abs) {
+  s <- res$summary
+  cat("\n\n#### Cut at |r| =", s$r_threshold, "→", s$n_clusters, "clusters\n\n")
+  cat("min within-cluster mean r =", s$min_within_mean_r,
+      " | max between-cluster mean r =", s$max_between_mean_r, "\n\n")
+  cat("\n")
+}
+```
+
+---
+
+## Dynamic Hybrid Cut — 1 − |r|
+
+Same algorithm as above, but applied to the absolute-correlation distance matrix so that
+directional opposites (high |r|, opposite sign) can cluster together.
+
+```{r dyncut-abs}
+dyn_abs <- cutreeDynamic(
+  dendro            = hc_abs,
+  distM             = as.matrix(dist_abs),
+  method            = "hybrid",
+  deepSplit         = 2,
+  minClusterSize    = 5,
+  pamRespectsDendro = TRUE
+)
+```
+
+### Cluster structure
+
+```{r dyncut-abs-results, results='asis'}
+res_dyn_abs <- dyncut_summary(dyn_abs, colnames(cor_whole), cor_long)
+s <- res_dyn_abs$summary
+
+cat("Clusters found:", s$n_clusters, " | Unassigned:", s$n_unassigned, "\n\n")
+cat("min within-cluster mean r =", s$min_within_mean_r,
+    " | max between-cluster mean r =", s$max_between_mean_r, "\n\n")
+print(knitr::kable(res_dyn_abs$clusters))
+```
+
+```{r dyncut-abs-plot, fig.width=18, fig.height=8}
+clust_abs     <- setNames(dyn_abs, colnames(cor_whole))
+unique_cl_abs <- sort(unique(clust_abs))
+n_real_abs    <- sum(unique_cl_abs != 0)
+pal_abs       <- c(if (0L %in% unique_cl_abs) "gray70",
+                   rep_len(as.character(paletteer_d("ggthemes::Tableau_20")), n_real_abs))
+
+dend_abs_col <- as.dendrogram(hc_abs) %>%
+  color_branches(clusters = clust_abs, col = pal_abs) %>%
+  set("labels_cex", 0.25) %>%
+  set("leaves_pch", NA)
+
+par(mar = c(5, 4.5, 3, 4))
+plot(dend_abs_col,
+     main = paste0("Hierarchical clustering — absolute correlations",
+                   " (Dynamic Hybrid Cut: ", res_dyn_abs$summary$n_clusters, " clusters)"),
+     xlab = "",
+     sub  = paste0("Distance: 1 − |r|  |  Linkage: average  |  deepSplit = 2  |  n = ",
+                   ncol(data_whole)),
+     ylab = "",
+     yaxt = "n")
+axis(2, at = at_h_abs, labels = at_lbl_abs, las = 1)
+mtext("Average inter-cluster |r|", side = 2, line = 3.5, cex = 0.85)
+```
+
+---
+
+## Session info
+
+```{r session-info}
+sessionInfo()
+```
