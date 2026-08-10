@@ -12,9 +12,9 @@ Annika Külpmann, Jan-Paul Ries, Ian Hussey, Malte Elson.
 
 **/code** is split into different folders with subprojects of our study and contains R scripts and thereby generated HTML files with the results of the meta-methods review, the multiverse analysis, as well as the sampling process and the inter-rater reliability. Each code draws on the corresponding folder in **/data**.
 
-**/code/example hayes2020** applies our IGT scoring multiverse to an openly available external dataset (Hayes et al., 2020) and correlates the resulting scores with skin conductance response (SCR), as a worked example on data outside our own study sample.
++ **/code/example hayes2020** applies our IGT scoring multiverse to an openly available external dataset (Hayes et al., 2020) and correlates the resulting scores with skin conductance response (SCR), as a worked example on data outside our own study sample.
 
-**/code/hierarchical-clustering** clusters the IGT scoring methods from the multiverse by their pairwise correlations, to explore how the different scores group together.
++ **/code/hierarchical-clustering** clusters the IGT scoring methods from the multiverse by their pairwise correlations, to explore how the different scores group together.
 
 **/data/raw** contains the manually generated raw data of our study, broken down by subprojects. 
 
@@ -32,7 +32,7 @@ Annika Külpmann, Jan-Paul Ries, Ian Hussey, Malte Elson.
 
 + **/method_development** contains an earlier version of the codebook and files created during the development of the final codebooks. 
 
-**/supplementary materials** contains pdf files with supplementary materials that we are enclosing with our preprint (coming soon!).
+**/supplementary materials** contains pdf files with supplementary materials that we are enclosing with our preprint.
 
 ## How To Reproduce This Study
 
