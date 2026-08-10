@@ -202,9 +202,94 @@ percent_scores_per_task_minor |>
 
 library(vegan)
 
+# incidence matrix on COLLAPSED scoring methods (monotonic_score_id), i.e.
+# after merging score_ids that are linear transformations of one another
+# (see `data preparation` chunk above, and the "Number of Distinct Scores"
+# section below, which reports the same collapsed count via
+# nrow(monotonic_scores))
+# rows = articles, columns = collapsed scoring methods
+# a method counts as "present" in an article if it occurs in at least one
+# task/administration within that article
 data_reshaped <- data |>
-  select(article_id, score_id) |>
+  select(article_id, monotonic_score_id) |>
   # remove duplicates
+  distinct(article_id, monotonic_score_id, .keep_all = TRUE) |>
+  mutate(score_used = 1) |>
+  pivot_wider(names_from = "monotonic_score_id",
+              names_prefix = "scoring_",
+              values_from = "score_used",
+              values_fill = 0) |>
+  column_to_rownames("article_id") |>
+  as.matrix()
+
+# sanity check: S_obs must match the collapsed score count reported under
+# "Number of Distinct Scores" (nrow(monotonic_scores)). if this fails, the
+# monotonic_id collapsing used here and the count reported elsewhere in the
+# manuscript have diverged, and the Chao2 estimate below would extrapolate a
+# different estimand than the one described in the text -- stop rather than
+# silently report a mismatched number
+stopifnot(
+  "S_obs (collapsed) does not match nrow(monotonic_scores) -- check monotonic_id mapping" =
+    ncol(data_reshaped) == nrow(monotonic_scores)
+)
+
+# vegan::specpool() default (smallsample = TRUE) computes the bias-corrected
+# Chao2 estimator: S_hat = S_obs + ((n-1)/n) * Q1^2 / (2*Q2)
+# the classical formula without the (n-1)/n small-sample correction gives a
+# slightly different value (see sensitivity analysis below for a worked
+# comparison on the raw, non-collapsed score_ids)
+chao2_estimate <- vegan::specpool(data_reshaped)
+
+# incidence frequency per scoring method (number of articles it occurs in)
+# needed to report Q1 and Q2, since specpool() does not return them
+score_incidence <- colSums(data_reshaped > 0)
+q1_uniques <- sum(score_incidence == 1)
+q2_duplicates <- sum(score_incidence == 2)
+
+# 95% CI following Chao (1987): log-normal and asymmetric around the point
+# estimate, appropriate for a non-linear estimator (symmetric +/- 1.96*SE
+# is not, since it can extend below S_obs)
+# T = estimated number of undetected methods, K = log-normal multiplier
+chao2_t <- chao2_estimate$chao - chao2_estimate$Species
+chao2_k <- exp(1.96 * sqrt(log(1 + chao2_estimate$chao.se^2 / chao2_t^2)))
+chao2_ci_low  <- chao2_estimate$Species + chao2_t / chao2_k
+chao2_ci_high <- chao2_estimate$Species + chao2_t * chao2_k
+
+res <- chao2_estimate |>
+  as_tibble() |>
+  select(scoring_strategies_observed = Species,
+         chao2_estimate = chao,
+         chao2_se = chao.se) |>
+  mutate(q1_uniques = q1_uniques,
+         q2_duplicates = q2_duplicates,
+         chao2_ci_low = chao2_ci_low,
+         chao2_ci_high = chao2_ci_high) |>
+  mutate(chao2_estimate = janitor::round_half_up(chao2_estimate, digits = 0),
+         chao2_se = janitor::round_half_up(chao2_se, digits = 2),
+         chao2_ci_low = janitor::round_half_up(chao2_ci_low, digits = 1),
+         chao2_ci_high = janitor::round_half_up(chao2_ci_high, digits = 1))
+
+res |>
+  kable() |>
+  kable_classic(full_width = FALSE)
+
+```
+
+If additional articles were examined, the number of scoring strategies observed can only increase. This raises the question of what the total population of scoring strategies is. Our results in Table 3 imply at least 414 possible scoring strategies (23 columns by 18 rows) among the already observed features. It is possible that other features exist. Another approach to estimating the total population of scores from our observed sample comes from the use of Richness Estimation, a statistical approach used in ecology. There, it is used to answer questions such as "I have observed X number of species in my sample, so how many are likely to exist in this habitat?", thereby making inferences about population (species) richness from observed (species) richness. Using this approach, we estimate that the IGT literature may include approximately `r res$chao2_estimate` scoring methods (Chao$_2$ = `r res$chao2_estimate`, SE = `r res$chao2_se`).
+
+NB Chao$_2$ estimate of richness is non-linear and so it's more appropriate to report SE than CIs.
+
+#### Sensitivity analysis: raw (non-collapsed) score IDs
+
+The table below reproduces the Chao$_2$ estimate computed on raw, non-collapsed `score_id`s, kept here for reproducibility of the originally reported estimate (Chao$_2$ = 911, SE = 139.55). This is **not** the estimate used in the main text above: it treats linear-transform variants of the same scoring principle as distinct methods, which is inconsistent with the collapsed count of 244 reported under "Number of Distinct Scores".
+
+```{r}
+
+# sensitivity analysis: same procedure as above, but on raw score_id instead
+# of the collapsed monotonic_score_id -- object names suffixed `_raw` to
+# avoid overwriting the primary results (`res`) used in the text above
+data_reshaped_raw <- data |>
+  select(article_id, score_id) |>
   distinct(article_id, score_id, .keep_all = TRUE) |>
   mutate(score_used = 1) |>
   pivot_wider(names_from = "score_id",
@@ -214,22 +299,36 @@ data_reshaped <- data |>
   column_to_rownames("article_id") |>
   as.matrix()
 
-chao2_estimate <- vegan::specpool(data_reshaped)
+chao2_estimate_raw <- vegan::specpool(data_reshaped_raw)
 
-res <- chao2_estimate |>
+score_incidence_raw <- colSums(data_reshaped_raw > 0)
+q1_uniques_raw <- sum(score_incidence_raw == 1)
+q2_duplicates_raw <- sum(score_incidence_raw == 2)
+
+chao2_t_raw <- chao2_estimate_raw$chao - chao2_estimate_raw$Species
+chao2_k_raw <- exp(1.96 * sqrt(log(1 + chao2_estimate_raw$chao.se^2 / chao2_t_raw^2)))
+chao2_ci_low_raw  <- chao2_estimate_raw$Species + chao2_t_raw / chao2_k_raw
+chao2_ci_high_raw <- chao2_estimate_raw$Species + chao2_t_raw * chao2_k_raw
+
+res_raw_sensitivity <- chao2_estimate_raw |>
   as_tibble() |>
   select(scoring_strategies_observed = Species,
          chao2_estimate = chao,
          chao2_se = chao.se) |>
+  mutate(q1_uniques = q1_uniques_raw,
+         q2_duplicates = q2_duplicates_raw,
+         chao2_ci_low = chao2_ci_low_raw,
+         chao2_ci_high = chao2_ci_high_raw) |>
   mutate(chao2_estimate = janitor::round_half_up(chao2_estimate, digits = 0),
-         chao2_se = janitor::round_half_up(chao2_se, digits = 2))
+         chao2_se = janitor::round_half_up(chao2_se, digits = 2),
+         chao2_ci_low = janitor::round_half_up(chao2_ci_low, digits = 1),
+         chao2_ci_high = janitor::round_half_up(chao2_ci_high, digits = 1))
 
+res_raw_sensitivity |>
+  kable() |>
+  kable_classic(full_width = FALSE)
 
 ```
-
-If additional articles were examined, the number of scoring strategies observed can only increase. This raises the question of what the total population of scoring strategies is. Our results in Table 3 imply at least 414 possible scoring strategies (23 columns by 18 rows) among the already observed features. It is possible that other features exist. Another approach to estimating the total population of scores from our observed sample comes from the use of Richness Estimation, a statistical approach used in ecology. There, it is used to answer questions such as "I have observed X number of species in my sample, so how many are likely to exist in this habitat?", thereby making inferences about population (species) richness from observed (species) richness. Using this approach, we estimate that the IGT literature may include approximately `r res$chao2_estimate` scoring methods (Chao$_2$ = `r res$chao2_estimate`, SE = `r res$chao2_se`). 
-
-NB Chao$_2$ estimate of richness is non-linear and so it's more appropriate to report SE than CIs.
 
 
 

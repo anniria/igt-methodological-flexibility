@@ -152,10 +152,10 @@ indeterminables_grouped_final |>
   kable() |>
   kable_classic(full_width = FALSE)
 
-# among clinical studies, count how many used the clinical IGT variant (Bechara, 2007)
+# cross-tabulate clinical IGT protocol (Bechara, 2007) with clinical vs. non-clinical sample
 procedures_by_category %>%
-  filter(clinical == TRUE) %>%
-  count(variant)
+  filter(protocol == "Bechara, 2007") %>%
+  count(clinical)
 
 ```
 
