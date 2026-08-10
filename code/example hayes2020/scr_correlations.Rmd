@@ -1,0 +1,302 @@
+---
+title: "IGT scoring sensitivity — SCR correlations"
+subtitle: "Hayes & Wedell (2020) reanalysis across all multiverse metrics"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+# Packages
+
+```{r packages}
+
+library(tidyverse)
+library(ggrepel)
+library(knitr)
+library(kableExtra)
+
+```
+
+# Data
+
+```{r data}
+
+# all multiverse performance metrics, one row per participant
+metrics_wide <- read_csv(
+  "../../data/processed/example hayes2020/data_processed_participant_level.csv",
+  show_col_types = FALSE
+)
+
+# scr predictor 1: bad (A+B) minus good (C+D) deck scr difference
+scr_deck <- read_csv(
+  "../../data/raw/example hayes2020/scr_deck_diffs.csv",
+  show_col_types = FALSE
+) %>%
+  rename(scr_deck_diff = log_fSCR_Z) %>%
+  select(id, scr_deck_diff)
+
+# scr predictor 2: mixed-outcome minus gain-only outcome scr difference
+scr_outcome <- read_csv(
+  "../../data/raw/example hayes2020/scr_outcome_diffs.csv",
+  show_col_types = FALSE
+) %>%
+  rename(scr_outcome_diff = log_fSCR_Z) %>%
+  select(id, scr_outcome_diff)
+
+analysis_data <- metrics_wide %>%
+  left_join(scr_deck,    by = "id") %>%
+  left_join(scr_outcome, by = "id")
+
+```
+
+## Data overview
+
+```{r data-overview}
+
+cat("Participants:", nrow(analysis_data), "\n")
+cat("Metric columns (before filtering):", ncol(metrics_wide) - 1, "\n")
+
+# drop id column and zero-variance columns
+zero_var_cols <- metrics_wide %>%
+  select(-id) %>%
+  summarise(across(everything(), ~ sd(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "col", values_to = "sd") %>%
+  filter(sd == 0 | is.na(sd)) %>%
+  pull(col)
+
+metric_cols <- setdiff(names(metrics_wide), c("id", zero_var_cols))
+
+cat("Zero-variance columns excluded:", length(zero_var_cols),
+    paste0("(", paste(zero_var_cols, collapse = ", "), ")"), "\n")
+cat("Metrics entering correlations:", length(metric_cols), "\n")
+
+```
+
+# Correlations
+
+```{r correlations}
+
+run_cor <- function(x, y) {
+  test <- cor.test(x, y, method = "pearson")
+  tibble(r = test$estimate, p = test$p.value)
+}
+
+cor_results <- map_dfr(metric_cols, function(col) {
+  d <- run_cor(analysis_data[[col]], analysis_data$scr_deck_diff)
+  o <- run_cor(analysis_data[[col]], analysis_data$scr_outcome_diff)
+  tibble(
+    metric    = col,
+    r_deck    = d$r,
+    p_deck    = d$p,
+    r_outcome = o$r,
+    p_outcome = o$p
+  )
+})
+
+```
+
+# Results
+
+## Summary
+
+```{r summary}
+
+n_metrics   <- nrow(cor_results)
+sig_deck    <- sum(cor_results$p_deck    < .05, na.rm = TRUE)
+sig_outcome <- sum(cor_results$p_outcome < .05, na.rm = TRUE)
+sig_both    <- sum(cor_results$p_deck < .05 & cor_results$p_outcome < .05, na.rm = TRUE)
+sig_neither <- sum(cor_results$p_deck >= .05 & cor_results$p_outcome >= .05, na.rm = TRUE)
+sign_flip   <- sum(sign(cor_results$r_deck) != sign(cor_results$r_outcome), na.rm = TRUE)
+
+tibble(
+  `Total metrics`                           = n_metrics,
+  `SCR deck: p < .05`                       = sig_deck,
+  `SCR outcome: p < .05`                    = sig_outcome,
+  `Both significant`                        = sig_both,
+  `Neither significant`                     = sig_neither,
+  `Sign differs between predictors`         = sign_flip
+) %>%
+  kable(caption = "Summary of correlation results across all multiverse metrics") %>%
+  kable_classic(full_width = FALSE)
+
+```
+
+## Rank of the originally reported scoring strategy
+
+```{r original-metric-rank}
+
+# hayes & wedell (2020) scored the igt as the logit of the c+d choice proportion
+original_metric <- "C_plus_D_log_transform"
+
+ranked_results <- cor_results %>%
+  mutate(
+    rank_deck    = rank(-abs(r_deck),    ties.method = "min"),
+    rank_outcome = rank(-abs(r_outcome), ties.method = "min")
+  )
+
+original_rank <- ranked_results %>%
+  filter(metric == original_metric)
+
+rank_deck           <- original_rank$rank_deck
+rank_outcome        <- original_rank$rank_outcome
+n_stronger_deck     <- rank_deck    - 1
+n_stronger_outcome  <- rank_outcome - 1
+
+cat(sprintf(
+  paste(
+    "The originally reported scoring strategy reproduced Hayes and Wedell's",
+    "correlations exactly. It ranked %dth of %d metrics for the deck contrast",
+    "and %dth for the outcome contrast, so only %d and %d alternative scoring",
+    "strategies would have yielded a stronger association (see Fig. 3).\n"
+  ),
+  rank_deck, n_metrics, rank_outcome, n_stronger_deck, n_stronger_outcome
+))
+
+```
+
+## Distributions of r values
+
+```{r r-distributions, fig.height=4, fig.width=9}
+
+# r values for Hayes & Wedell's metric, shaped to match the facet variable
+authors_r <- cor_results %>%
+  filter(metric == "C_plus_D_log_transform") %>%
+  select(r_deck, r_outcome) %>%
+  pivot_longer(everything(), names_to = "r_var", values_to = "r") %>%
+  mutate(predictor = recode(r_var,
+    r_deck    = "SCR bad vs. good decks contrast",
+    r_outcome = "SCR mixed vs. gains contrast"
+  ))
+
+cor_results %>%
+  select(metric, r_deck, r_outcome) %>%
+  pivot_longer(c(r_deck, r_outcome), names_to = "predictor", values_to = "r") %>%
+  mutate(predictor = recode(predictor,
+    r_deck    = "SCR bad vs. good decks contrast",
+    r_outcome = "SCR mixed vs. gains contrast"
+  )) %>%
+  ggplot(aes(r, fill = predictor)) +
+  geom_histogram(binwidth = 0.05, boundary = 0, alpha = 0.8, colour = NA) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "grey40") +
+  geom_vline(data = authors_r, aes(xintercept = r),
+             colour = "#D55E00", linewidth = 0.9) +
+  facet_wrap(~ predictor) +
+  scale_fill_manual(values = c("#0072B2", "#E69F00"), guide = "none") +
+  scale_x_continuous(breaks = seq(-1, 1, 0.25)) +
+  labs(
+    title = "Distribution of r values across all multiverse metrics",
+    x = "Pearson r",
+    y = "Number of metrics"
+  ) +
+  theme_bw()
+
+```
+
+## Full results table
+
+Sorted by SCR bad-good deck |r|, largest first.
+
+```{r results-table}
+
+cor_results %>%
+  arrange(desc(abs(r_deck))) %>%
+  mutate(
+    r_deck_fmt    = sprintf("%.3f%s", r_deck,    if_else(p_deck    < .05, "*", "")),
+    p_deck_fmt    = sprintf("%.3f",   p_deck),
+    r_outcome_fmt = sprintf("%.3f%s", r_outcome, if_else(p_outcome < .05, "*", "")),
+    p_outcome_fmt = sprintf("%.3f",   p_outcome)
+  ) %>%
+  select(metric, r_deck_fmt, p_deck_fmt, r_outcome_fmt, p_outcome_fmt) %>%
+  kable(
+    col.names = c("Metric", "r", "p", "r", "p"),
+    caption   = paste0(
+      "Pearson correlations between all multiverse IGT metrics and SCR predictors (N = 64). ",
+      "* p < .05. Sorted by |r| for SCR bad-good deck predictor."
+    )
+  ) %>%
+  kable_classic(full_width = FALSE) %>%
+  add_header_above(c(" " = 1, "SCR bad-good decks" = 2, "SCR mixed-gains" = 2))
+
+```
+
+## Scatter: r values across predictors
+
+```{r scatter, fig.height=7, fig.width=7}
+
+author_row <- cor_results %>% filter(metric == "C_plus_D_log_transform")
+
+p_scatter <- cor_results %>%
+  mutate(
+    sig = case_when(
+      p_deck < .05 & p_outcome < .05 ~ "both",
+      p_deck < .05                   ~ "disadvantageous-advantageous only",
+      p_outcome < .05                ~ "mixed-gains only",
+      TRUE                           ~ "neither"
+    ),
+    sig = factor(sig, levels = c("both", "disadvantageous-advantageous only", "mixed-gains only", "neither"))
+  ) %>%
+  ggplot(aes(r_deck, r_outcome, colour = sig)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey60") +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "grey60") +
+  geom_point(alpha = 0.7, size = 1.5) +
+  geom_point(data = author_row, aes(x = r_deck, y = r_outcome),
+             shape = 21, size = 1.5, fill = "#0072B2", colour = "black",
+             stroke = 1.2, inherit.aes = FALSE) +
+  geom_text_repel(data = author_row, aes(x = r_deck, y = r_outcome,
+                  label = "C+D logit\n(Hayes & Wedell 2020)"),
+                  colour = "black", size = 3,
+                  segment.colour = "black", segment.size = 0.4,
+                  point.padding = 0.6,
+                  min.segment.length = 0,
+                  nudge_x = 0.15, nudge_y = 0.4,
+                  force = 0,
+                  inherit.aes = FALSE) +
+  scale_colour_manual(values = c(
+    "both"             = "#0072B2",
+    "disadvantageous-advantageous only"    = "#D55E00",
+    "mixed-gains only" = "#E69F00",
+    "neither"          = "grey60"
+  )) +
+  labs(
+    x      = "r with SCR disadvantageous vs. advantageous decks contrast",
+    y      = "r with SCR mixed vs. gains outcomes contrast",
+    colour = "significant at p < 0.05"
+  ) +
+  coord_fixed(ratio = 1, xlim = c(-1, 1), ylim = c(-1, 1)) +
+  theme_bw()
+
+p_scatter
+
+ggsave("scr_correlations_scatter.jpeg", plot = p_scatter,
+       width = 7, height = 7, units = "in", dpi = 300)
+
+```
+
+# Save output
+
+```{r save}
+
+write_csv(cor_results,
+          "../../data/processed/example hayes2020/scr_correlations.csv")
+
+cat("Saved", nrow(cor_results), "rows to",
+    "data/processed/example hayes2020/scr_correlations.csv\n")
+
+```
+
+# Session info
+
+```{r session-info}
+
+sessionInfo()
+
+```

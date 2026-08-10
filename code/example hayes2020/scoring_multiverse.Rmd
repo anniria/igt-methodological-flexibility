@@ -1,0 +1,218 @@
+---
+title: "IGT scoring multiverse"
+subtitle: "Analysis — Hayes et al. (2020) example dataset"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    highlight: haddock
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+# Packages
+
+```{r packages}
+
+library(tidyverse)
+library(scales)
+library(knitr)
+library(kableExtra)
+library(janitor)
+library(patchwork)
+library(corrr)
+
+```
+
+# Get data
+
+```{r data}
+
+data_processed_participant_level <- read_csv(
+  "../../data/processed/example hayes2020/data_processed_participant_level.csv",
+  show_col_types = FALSE
+) %>%
+  select(-id)
+
+# identify and drop columns with no variance — correlate() fails on constants
+zero_variance_cols <- data_processed_participant_level %>%
+  summarise(across(everything(), ~ sd(.x, na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "col", values_to = "sd") %>%
+  filter(sd == 0 | is.na(sd)) %>%
+  pull(col)
+
+data_for_cors <- data_processed_participant_level %>%
+  select(-all_of(zero_variance_cols))
+
+```
+
+# Summary stats
+
+Number of unique scoring methods implemented = `r ncol(data_processed_participant_level)`.
+
+Number of scoring methods with sufficient variance for correlation = `r ncol(data_for_cors)`.
+
+Zero-variance columns excluded from correlations: `r paste(zero_variance_cols, collapse = ", ")`.
+
+Number of participants = `r nrow(data_processed_participant_level)`.
+
+# Correlate scores
+
+```{r correlate}
+
+cors <- data_for_cors %>%
+  correlate() %>%
+  stretch() %>%
+  filter(y != x) %>%  # remove diagonal
+  arrange(desc(r))
+
+```
+
+## Perfect correlations (r = ±1)
+
+In the original multiverse (Steingroever data), no pairs reached r = ±1 after removing redundant linear transforms during processing. This dataset may differ because of structural features of the Hayes 2020 task (e.g., fixed win amounts per deck: A/B always win 100, C/D always win 50 — which makes `total_won` a perfect linear function of choice proportion).
+
+```{r perfect-cors}
+
+# identify any pairs with |r| effectively equal to 1
+perfect_cors <- cors %>%
+  filter(x < y, abs(r) > 0.9999) %>%
+  arrange(r)
+
+if (nrow(perfect_cors) > 0) {
+  perfect_cors %>%
+    kable(digits = 4, caption = "Pairs with |r| = 1 (perfect linear dependence)") %>%
+    kable_classic(full_width = FALSE)
+} else {
+  cat("No perfect correlations found.")
+}
+
+```
+
+## Between all scoring methods
+
+Note that pairs reaching r = ±1 represent perfect linear transformations of one another; see the table above for any such cases specific to this dataset.
+
+```{r summary-all}
+
+cors %>%
+  filter(x < y) %>%  # upper triangle only
+  summarize(
+    n_correlations = n(),
+    min_r          = min(r, na.rm = TRUE),
+    max_r          = max(r, na.rm = TRUE),
+    median_r       = median(r, na.rm = TRUE),
+    mad_r          = mad(r, na.rm = TRUE),
+    min_abs_r      = min(abs(r), na.rm = TRUE),
+    max_abs_r      = max(abs(r), na.rm = TRUE),
+    median_abs_r   = median(abs(r), na.rm = TRUE),
+    mad_abs_r      = mad(abs(r), na.rm = TRUE)
+  ) %>%
+  mutate_if(is.numeric, round_half_up, digits = 3) %>%
+  kable() %>%
+  kable_classic(full_width = FALSE)
+
+```
+
+```{r plot-all}
+
+# native correlations
+p_native_all <- ggplot(cors %>% filter(x < y), aes(r)) +
+  geom_histogram(binwidth = .1, boundary = 0, fill = "#0072B2") +
+  scale_x_continuous(breaks = breaks_pretty(n = 10)) +
+  scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
+  ggtitle("Correlations among all scoring strategies") +
+  xlab("Correlation") +
+  coord_cartesian(xlim = c(-1, 1)) +
+  theme_bw()
+
+# absolute correlations
+p_absolute_all <- ggplot(cors %>% filter(x < y), aes(abs(r))) +
+  geom_histogram(binwidth = .1, boundary = 0, fill = "#0072B2") +
+  scale_x_continuous(breaks = breaks_pretty(n = 10)) +
+  scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
+  xlab("Absolute correlation") +
+  coord_cartesian(xlim = c(0, 1)) +
+  theme_bw()
+
+p_native_all
+p_absolute_all
+
+```
+
+## Between modal scoring strategy and all others
+
+The modal scoring strategy in the IGT literature is (C+D)−(A+B) across all trials.
+
+```{r summary-modal}
+
+cors %>%
+  filter(x == "C_plus_D_minus_A_plus_B") %>%
+  summarize(
+    n_correlations = n(),
+    min_r          = min(r, na.rm = TRUE),
+    max_r          = max(r, na.rm = TRUE),
+    median_r       = median(r, na.rm = TRUE),
+    mad_r          = mad(r, na.rm = TRUE),
+    min_abs_r      = min(abs(r), na.rm = TRUE),
+    max_abs_r      = max(abs(r), na.rm = TRUE),
+    median_abs_r   = median(abs(r), na.rm = TRUE),
+    mad_abs_r      = mad(abs(r), na.rm = TRUE)
+  ) %>%
+  mutate_if(is.numeric, round_half_up, digits = 3) %>%
+  kable() %>%
+  kable_classic(full_width = FALSE)
+
+```
+
+```{r plot-modal}
+
+p_native_modal <- ggplot(cors %>% filter(x == "C_plus_D_minus_A_plus_B"), aes(r)) +
+  geom_histogram(binwidth = .1, boundary = 0, fill = "#E69F00") +
+  scale_x_continuous(breaks = breaks_pretty(n = 10)) +
+  scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
+  ggtitle("Correlations with modal scoring strategy") +
+  xlab("Correlation") +
+  coord_cartesian(xlim = c(-1, 1)) +
+  theme_bw()
+
+p_absolute_modal <- ggplot(cors %>% filter(x == "C_plus_D_minus_A_plus_B"), aes(abs(r))) +
+  geom_histogram(binwidth = .1, boundary = 0, fill = "#E69F00") +
+  scale_x_continuous(breaks = breaks_pretty(n = 10)) +
+  scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
+  xlab("Absolute correlation") +
+  coord_cartesian(xlim = c(0, 1)) +
+  theme_bw()
+
+p_native_modal
+p_absolute_modal
+
+```
+
+## Combined plot
+
+```{r plot-combined, fig.height=6, fig.width=9}
+
+p_native_all +
+  p_native_modal +
+  p_absolute_all +
+  p_absolute_modal +
+  plot_layout(ncol = 2, nrow = 2)
+
+ggsave("plot.pdf", width = 9, height = 6)
+ggsave("plot.png", width = 9, height = 6, dpi = 600)
+
+```
+
+# Session info
+
+```{r session-info}
+
+sessionInfo()
+
+```
