@@ -35,7 +35,7 @@ library(scales)
 conflicts_prefer(dplyr::filter)
 conflicts_prefer(readxl::read_excel)
 
-# load shared aps figure helpers (font, theme, minus labels, png export)
+# load shared aps figure helpers (font, theme, minus labels, png and svg export)
 source(here::here("code", "aps_figure_helpers.R"))
 
 ```
@@ -211,21 +211,6 @@ plot1 <- ggplot(indeterminables_dot_data,
 
 print(plot1)
 
-ggsave(
-  "figure1_indeterminables_by_variable_colors.pdf", 
-  plot = plot1,                         
-  width = 8,                                 
-  height = 6                                 
-)
-
-ggsave(
-  "figure1_indeterminables_by_variable_colors.png",
-  plot = plot1,                         
-  width = 8,                                 
-  height = 6,                                
-  dpi = 600                                  
-)
-
 ```
 
 ### Figure 1 (APS Format)
@@ -286,7 +271,7 @@ fig1 <- ggplot(fig1_data, aes(x = pct, y = parameter, colour = study_type, shape
 
 print(fig1)
 
-# 600 dpi png in the folder of this rmd
+# 600 dpi png and svg in the folder of this rmd
 save_figure(fig1, "KuelpmannFig1", width = 6.5, height = 4.0)
 
 ```

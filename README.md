@@ -49,12 +49,12 @@ The figures of the paper and the supplement are formatted according to the APS F
 
 | Figure | R Markdown file | Output files |
 |---|---|---|
-| Figure 1 | /code/meta-methods review/indeterminables_per_sample_type.Rmd | KuelpmannFig1.png, KuelpmannFig1_data.csv |
-| Figure 2 | /code/multiverse/analyses.Rmd | KuelpmannFig2.png, KuelpmannFig2_summary.csv |
-| Figure 3 | /code/example hayes2020/scr_correlations.Rmd | KuelpmannFig3.png, KuelpmannFig3_data.csv |
+| Figure 1 | /code/meta-methods review/indeterminables_per_sample_type.Rmd | KuelpmannFig1.svg, KuelpmannFig1.png, KuelpmannFig1_data.csv |
+| Figure 2 | /code/multiverse/analyses.Rmd | KuelpmannFig2.svg, KuelpmannFig2.png, KuelpmannFig2_summary.csv |
+| Figure 3 | /code/example hayes2020/scr_correlations.Rmd | KuelpmannFig3.svg, KuelpmannFig3.png, KuelpmannFig3_data.csv |
 | Figures S1, S2 | /code/hierarchical-clustering/hierarchical_clustering.Rmd | KuelpmannFigS1.svg, KuelpmannFigS1.png, KuelpmannFigS2.svg, KuelpmannFigS2.png |
 
-The PNGs have 600 dpi.
+The SVGs are vector files that keep all text as text (font: Arial); the PNGs have 600 dpi.
 
 ## License
 

@@ -9,7 +9,7 @@
 #   18 pt lowercase panel letters at the upper left; no figure titles
 # - two axes only (no panel border), no box around the key, key at the top
 # - title case in all labels, true minus signs (u+2212), spaced operators
-# - 600 ppi png (manuscript file)
+# - 600 ppi png (manuscript file) + svg vector file with text kept as text
 #
 # source after ggplot2 is attached:
 #   source(here::here("code", "aps_figure_helpers.R"))
@@ -62,10 +62,13 @@ theme_aps <- function() {
     )
 }
 
-# 600 dpi png (ragg)
+# 600 dpi png (ragg) and svg vector file (svglite) with the same name
 # out_dir defaults to the knit working directory, i.e. the folder of the rmd
 save_figure <- function(plot, name, width, height, out_dir = ".") {
   ggsave(file.path(out_dir, paste0(name, ".png")), plot,
          width = width, height = height, units = "in", dpi = 600,
          device = ragg::agg_png, bg = "white")
+  ggsave(file.path(out_dir, paste0(name, ".svg")), plot,
+         width = width, height = height, units = "in",
+         device = svglite::svglite)
 }
