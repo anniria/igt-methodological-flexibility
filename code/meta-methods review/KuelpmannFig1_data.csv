@@ -1,0 +1,23 @@
+parameter,study_type,pct
+Instructions,Clinical,84.90566037735849
+Instructions,Non-Clinical,60.37735849056604
+Feedback,Clinical,81.13207547169812
+Feedback,Non-Clinical,58.490566037735846
+Loss Frequency,Clinical,76.41509433962264
+Loss Frequency,Non-Clinical,51.41509433962264
+Starting Capital,Clinical,73.58490566037736
+Starting Capital,Non-Clinical,43.39622641509434
+Gain/Loss Interval,Clinical,71.69811320754717
+Gain/Loss Interval,Non-Clinical,50.943396226415096
+Reward per Card,Clinical,70.75471698113208
+Reward per Card,Non-Clinical,50.943396226415096
+Gain/Loss per 10 Cards,Clinical,67.9245283018868
+Gain/Loss per 10 Cards,Non-Clinical,53.77358490566037
+Incentives,Clinical,67.9245283018868
+Incentives,Non-Clinical,26.41509433962264
+Currency,Clinical,50.943396226415096
+Currency,Non-Clinical,22.641509433962266
+Goal,Clinical,45.28301886792453
+Goal,Non-Clinical,24.528301886792452
+Number of Trials,Clinical,11.320754716981133
+Number of Trials,Non-Clinical,3.7735849056603774

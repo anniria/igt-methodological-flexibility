@@ -29,6 +29,7 @@ library(kableExtra)
 library(janitor)
 library(patchwork)
 library(corrr)
+source(here::here("code", "aps_figure_helpers.R"))
 
 # get data
 data_processed_participant_level <- read_csv("../../data/processed/multiverse/data_processed_participant_level.csv") |>
@@ -78,27 +79,39 @@ cors |>
   kable() |>
   kable_classic(full_width = FALSE)
 
-## native 
-p_native_all <- ggplot(cors |> filter(x < y), aes(r)) +
-  geom_histogram(binwidth = .1, boundary = 0, fill = "#0072B2") +
-  scale_x_continuous(breaks = breaks_pretty(n = 10)) +
-  scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
-  ggtitle("Correlations among all scoring strategies") +
-  #xlab(expression(paste("Pearson's ",italic("r")))) +
-  xlab("Correlation") +
-  coord_cartesian(xlim = c(-1,1)) +
-  theme_bw()
+# upper triangle correlations as a plain vector
+cors_all <- cors |>
+  filter(x < y) |>
+  pull(r)
+
+# aps formatted histogram panel of native or absolute correlations
+hist_panel <- function(values, fill, absolute, title = NULL, tag = NULL) {
+  if (absolute) values <- abs(values)
+  p <- ggplot(tibble(r = values), aes(r)) +
+    geom_histogram(binwidth = 0.1, boundary = 0, fill = fill, colour = NA) +
+    scale_y_continuous(name = "Frequency", labels = label_count,
+                       breaks = scales::breaks_pretty(n = 5),
+                       expand = expansion(mult = c(0, 0.05))) +
+    theme_aps()
+  if (absolute) {
+    p <- p +
+      scale_x_continuous(breaks = seq(0, 1, 0.2), labels = label_minus(1)) +
+      coord_cartesian(xlim = c(0, 1)) +
+      labs(x = expression("Absolute Correlation (|" * italic(r) * "|)"))
+  } else {
+    p <- p +
+      scale_x_continuous(breaks = seq(-1, 1, 0.5), labels = label_minus(1)) +
+      coord_cartesian(xlim = c(-1, 1)) +
+      labs(x = expression("Correlation (" * italic(r) * ")"))
+  }
+  p + labs(title = title, tag = tag)
+}
+
+## native
+p_native_all <- hist_panel(cors_all, "#0072B2", FALSE, "All Scoring Strategies", "a")
 
 ## absolute
-p_absolute_all <- ggplot(cors |> filter(x < y), aes(abs(r))) +
-  geom_histogram(binwidth = .1, boundary = 0, fill = "#0072B2") +
-  scale_x_continuous(breaks = breaks_pretty(n = 10)) +
-  scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
-  #ggtitle("Absolute correlation between modal scoring strategy and all others") +
-  #xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
-  xlab("Absolute correlation") +
-  coord_cartesian(xlim = c(0,1)) +
-  theme_bw()
+p_absolute_all <- hist_panel(cors_all, "#0072B2", TRUE)
 
 p_native_all
 p_absolute_all
@@ -124,27 +137,16 @@ cors |>
   kable() |>
   kable_classic(full_width = FALSE)
 
-## native 
-p_native_modal <- ggplot(cors |> filter(x == "C_plus_D_minus_A_plus_B"), aes(r)) +
-  geom_histogram(binwidth = .1, boundary = 0, fill = "#E69F00") +
-  scale_x_continuous(breaks = breaks_pretty(n = 10)) +
-  scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
-  ggtitle("Correlations with modal scoring strategy") +
-  #xlab(expression(paste("Pearson's ",italic("r")))) +
-  xlab("Correlation") +
-  coord_cartesian(xlim = c(-1,1)) +
-  theme_bw()
+# correlations of the modal scoring strategy with all others as a plain vector
+cors_modal <- cors |>
+  filter(x == "C_plus_D_minus_A_plus_B") |>
+  pull(r)
+
+## native
+p_native_modal <- hist_panel(cors_modal, "#E69F00", FALSE, "Modal Scoring Strategy vs. All Others", "b")
 
 ## absolute
-p_absolute_modal <- ggplot(cors |> filter(x == "C_plus_D_minus_A_plus_B"), aes(abs(r))) +
-  geom_histogram(binwidth = .1, boundary = 0, fill = "#E69F00") +
-  scale_x_continuous(breaks = breaks_pretty(n = 10)) +
-  scale_y_continuous(breaks = breaks_pretty(n = 7), name = "Frequency") +
-  #ggtitle("Absolute correlation between all scoring strategies") +
-  #xlab(expression(paste("|Pearson's ",italic("r"), "|"))) +
-  xlab("Absolute correlation") +
-  coord_cartesian(xlim = c(0,1)) +
-  theme_bw()
+p_absolute_modal <- hist_panel(cors_modal, "#E69F00", TRUE)
 
 p_native_modal
 p_absolute_modal
@@ -153,16 +155,33 @@ p_absolute_modal
 
 ## Combined
 
-```{r fig.height=6, fig.width=8}
+```{r fig.height=5, fig.width=6.5}
 
-p_native_all +
-  p_native_modal +
-  p_absolute_all +
-  p_absolute_modal +
-  plot_layout(ncol = 2, nrow = 2)
+# summary of both correlation sets for the figure note
+fig2_summary <- bind_rows(tibble(set = "all", r = cors_all),
+                          tibble(set = "modal", r = cors_modal)) |>
+  group_by(set) |>
+  summarise(n_scores = NA_integer_,
+            n_correlations = n(),
+            min_r = min(r),
+            max_r = max(r),
+            median_r = median(r),
+            mad_r = mad(r),
+            min_abs_r = min(abs(r)),
+            max_abs_r = max(abs(r)),
+            median_abs_r = median(abs(r)),
+            mad_abs_r = mad(abs(r))) |>
+  # number of scores entering the correlations
+  mutate(n_scores = n_distinct(cors$x))
 
-ggsave("plot.pdf", width = 9, height = 6)
-ggsave("plot.png", width = 9, height = 6, dpi = 600)
+write_csv(fig2_summary, "KuelpmannFig2_summary.csv")
+
+# native correlations on top, absolute correlations below
+fig2 <- (p_native_all | p_native_modal) / (p_absolute_all | p_absolute_modal)
+
+fig2
+
+save_figure(fig2, "KuelpmannFig2", width = 6.5, height = 5.0)
 
 ```
 

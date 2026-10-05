@@ -18,6 +18,7 @@ library(here)
 library(dynamicTreeCut)
 library(dendextend)
 library(paletteer)
+source(here::here("code", "aps_figure_helpers.R"))
 ```
 
 ## Data
@@ -255,25 +256,60 @@ text(x = par("usr")[2], y = 1 - r_cuts,
      adj = c(0, 0.5), cex = 0.65, col = "gray40", xpd = TRUE)
 ```
 
-```{r export-hclust-avg, include=FALSE}
-jpeg("supplement_fig_hclust_avg.jpg",
-     width = 18, height = 8, units = "in", res = 300, quality = 95)
-par(mar = c(2, 4.5, 3, 4))
-plot(hc_avg,
-     main = "",
-     xlab = "",
-     sub  = paste0("Distance: 1 − r  |  Linkage: average  |  n = ", ncol(data_whole)),
-     ylab = "",
-     yaxt = "n",
-     cex  = 0.25,
-     hang = -1)
-axis(2, at = at_h, labels = at_lbl, las = 1)
-mtext("Average inter-cluster r", side = 2, line = 3.5, cex = 0.85)
-abline(h = 1 - r_cuts, col = "gray40", lty = 2, lwd = 0.8)
-text(x = par("usr")[2], y = 1 - r_cuts,
-     labels = paste0(" r = ", r_cuts),
-     adj = c(0, 0.5), cex = 0.65, col = "gray40", xpd = TRUE)
-dev.off()
+```{r export-hclust-avg}
+# y axis ticks on the tree height scale where height is 1 minus average r
+export_ticks <- seq(0, 1.25, by = 0.25)
+
+# dendrogram with tiny leaf labels and no leaf points, optionally coloured by cluster
+make_export_dend <- function(clusters = NULL, palette = NULL, lwd) {
+  dend <- as.dendrogram(hc_avg)
+  if (!is.null(clusters)) {
+    dend <- dend %>%
+      color_branches(clusters = clusters, col = palette)
+  }
+  dend %>%
+    set("labels_cex", 0.18) %>%
+    set("leaves_pch", NA) %>%
+    set("branches_lwd", lwd)
+}
+
+# draws the export dendrogram, k scales line widths while text scales with the pointsize
+# k = 4 is used for the manual 4x cairo pdf (see readme)
+draw_export_dend <- function(clusters = NULL, palette = NULL, cut_lines, k = 1) {
+  par(mar = c(4.6, 4.2, 0.6, if (cut_lines) 3.2 else 0.8), family = font_family,
+      mgp = c(3, 0.6, 0), tcl = -0.25, xpd = FALSE)
+  plot(make_export_dend(clusters, palette, 0.6 * k),
+       yaxt = "n",
+       ylim = c(0, max(export_ticks)))
+  axis(2, at = export_ticks, labels = label_minus(2)(1 - export_ticks),
+       las = 1, cex.axis = 0.8, lwd = 0.6 * k)
+  mtext(expression("Average Inter-Cluster " * italic(r)), side = 2, line = 3, cex = 0.85)
+
+  # dashed cut lines at the r thresholds, labelled in the right margin
+  if (cut_lines) {
+    abline(h = 1 - r_cuts, col = "gray40", lty = 2, lwd = 0.5 * k)
+    text(x = par("usr")[2], y = 1 - r_cuts,
+         labels = paste0(" r = ", formatC(r_cuts, format = "f", digits = 1)),
+         adj = c(0, 0.5), cex = 0.6, col = "gray30", xpd = TRUE)
+  }
+}
+
+# writes the figure as svg and 600 dpi png at the final size
+# the svg keeps text as whole strings; the vector pdf is a manual step (see readme)
+save_export_dend <- function(name, clusters = NULL, palette = NULL, cut_lines,
+                             width = 9, height = 4.6) {
+  svglite::svglite(paste0(name, ".svg"), width = width, height = height,
+                   system_fonts = list(sans = font_family))
+  draw_export_dend(clusters, palette, cut_lines)
+  invisible(dev.off())
+
+  ragg::agg_png(paste0(name, ".png"), width = width, height = height,
+                units = "in", res = 600, background = "white")
+  draw_export_dend(clusters, palette, cut_lines)
+  invisible(dev.off())
+}
+
+save_export_dend("KuelpmannFigS1", cut_lines = TRUE)
 ```
 
 ### Cophenetic correlation
@@ -354,19 +390,15 @@ axis(2, at = at_h, labels = at_lbl, las = 1)
 mtext("Average inter-cluster r", side = 2, line = 3.5, cex = 0.85)
 ```
 
-```{r export-dyncut-avg, include=FALSE}
-jpeg("supplement_fig_dyncut_avg.jpg",
-     width = 18, height = 8, units = "in", res = 300, quality = 95)
-par(mar = c(5, 4.5, 3, 4))
-plot(dend_avg_col,
-     main = "",
-     xlab = "",
-     sub  = "",
-     ylab = "",
-     yaxt = "n")
-axis(2, at = at_h, labels = at_lbl, las = 1)
-mtext("Average inter-cluster r", side = 2, line = 3.5, cex = 0.85)
-dev.off()
+```{r export-dyncut-avg}
+# checks the sample and reports the cluster solution shown in figure s2
+stopifnot(nrow(data_whole) == 504, ncol(data_whole) == 196)
+cat("Participants:", nrow(data_whole), "| methods:", ncol(data_whole),
+    "| clusters:", res_dyn_avg$summary$n_clusters,
+    "| unassigned:", res_dyn_avg$summary$n_unassigned, "\n")
+
+# figure s2 with branches coloured by the dynamic hybrid cut clusters
+save_export_dend("KuelpmannFigS2", clusters = clust_avg, palette = pal_avg, cut_lines = FALSE)
 ```
 
 ---

@@ -35,6 +35,9 @@ library(scales)
 conflicts_prefer(dplyr::filter)
 conflicts_prefer(readxl::read_excel)
 
+# load shared aps figure helpers (font, theme, minus labels, png export)
+source(here::here("code", "aps_figure_helpers.R"))
+
 ```
 
 ```{r housekeeping}
@@ -112,34 +115,39 @@ indeterminables_by_cat |>
 total_clinical <- row_counts$n[row_counts$clinical == TRUE]
 total_non_clinical <- row_counts$n[row_counts$clinical == FALSE]
 
-# generate the grouped table with the correct count of unique studies
-indeterminables_grouped <- procedures_by_category %>%
-  select(article_id, 7:29, clinical) %>%
-  # rename some variables
-  rename(`starting capital` = starting_capital, 
-       `number of trials` = n_trials) %>%
-  pivot_longer(cols = -c(article_id, clinical), names_to = "variable", values_to = "value") %>%
-  filter(value == "indeterminable", variable != "protocol", variable != "n_blocks") %>%
-  # group variables 
-  mutate(variable = case_when(
-    variable %in% c("reward_disadv", "reward_adv") ~ "reward per card",
-    variable %in% c("loss1", "loss2", "gain1", "gain2") ~ "gain/loss per 10 cards",
-    variable %in% c("loss_int1", "loss_int2", "gain_int1", "gain_int2") ~ "gain/loss interval",
-    str_detect(variable, "freq") ~ "loss frequency",
-    TRUE ~ variable
-  )) %>%
-  # count studies per group
-  group_by(clinical, variable) %>%
-  summarise(n = n_distinct(article_id), .groups = 'drop') %>%
-  # wide format
-  pivot_wider(names_from = clinical, values_from = n, values_fill = 0) %>%
-  rename(count_clinical = `TRUE`, count_non_clinical = `FALSE`) %>%
-  # calculate percentages
+# percentages are per igt (53 clinical, 53 non-clinical tasks)
+stopifnot(total_clinical == 53, total_non_clinical == 53)
+
+# one row per igt and variable with an indeterminable flag and a grouped parameter label
+indeterminables_long <- procedures_by_category %>%
+  mutate(task_row = row_number()) %>%
+  select(task_row, clinical, goal:n_trials) %>%
+  pivot_longer(-c(task_row, clinical), names_to = "variable", values_to = "value") %>%
+  filter(!variable %in% c("protocol", "n_blocks")) %>%
   mutate(
-    pct_clinical = round((count_clinical / total_clinical * 100), 2),
-    pct_non_clinical = round((count_non_clinical / total_non_clinical * 100), 2)
-  ) %>%
-  select(variable, count_clinical, pct_clinical, count_non_clinical, pct_non_clinical) %>%
+    indeterminable = value %in% "indeterminable",
+    parameter = case_when(
+      variable %in% c("reward_disadv", "reward_adv") ~ "Reward per Card",
+      variable %in% c("loss1", "loss2", "gain1", "gain2") ~ "Gain/Loss per 10 Cards",
+      variable %in% c("loss_int1", "loss_int2", "gain_int1", "gain_int2") ~ "Gain/Loss Interval",
+      str_detect(variable, "freq") ~ "Loss Frequency",
+      variable == "starting_capital" ~ "Starting Capital",
+      variable == "n_trials" ~ "Number of Trials",
+      TRUE ~ str_to_title(variable)
+    )
+  )
+
+# grouped parameters are the mean of their constituent variables percentages
+# counts are dropped because they are not meaningful for averaged groups
+indeterminables_grouped <- indeterminables_long %>%
+  group_by(clinical, parameter, variable) %>%
+  summarise(pct = 100 * mean(indeterminable), .groups = "drop") %>%
+  group_by(clinical, parameter) %>%
+  summarise(pct = mean(pct), .groups = "drop") %>%
+  # wide format
+  pivot_wider(names_from = clinical, values_from = pct) %>%
+  rename(variable = parameter, pct_clinical = `TRUE`, pct_non_clinical = `FALSE`) %>%
+  select(variable, pct_clinical, pct_non_clinical) %>%
   arrange(pmax(pct_clinical, pct_non_clinical))
 
 # bind rows
@@ -147,8 +155,9 @@ indeterminables_grouped <- procedures_by_category %>%
 indeterminables_grouped_final <- indeterminables_grouped %>%
   select(variable, pct_clinical, pct_non_clinical)
 
-# print table
+# print table with percentages rounded to two decimals
 indeterminables_grouped_final |>
+  mutate(across(starts_with("pct_"), ~ round(.x, 2))) |>
   kable() |>
   kable_classic(full_width = FALSE)
 
@@ -219,45 +228,66 @@ ggsave(
 
 ```
 
-### Plot 1 with Modified Design for Paper
+### Figure 1 (APS Format)
 
 ```{r plots for paper}
+#| fig.width: 6.5
+#| fig.height: 4
 
-# okabe-ito orange and blue: distinguishable in colour, greyscale, and for common colourblindness types
-# shape is added so clinical vs. non-clinical remain separable in black-and-white print
-plot1_grey <- ggplot(indeterminables_dot_data,
-                aes(x = percentage, y = variable, color = sample_type, shape = sample_type)) +
-  geom_point(size = 3, alpha = 0.8) +
-  scale_color_manual(name = "Study Type",
-                     values = c("Clinical" = "#E69F00", "Non-Clinical" = "#0072B2")) +
+# long format with one row per parameter and study type
+fig1_data <- indeterminables_grouped %>%
+  rename(parameter = variable) %>%
+  pivot_longer(
+    cols = c(pct_clinical, pct_non_clinical),
+    names_to = "study_type",
+    values_to = "pct"
+  ) %>%
+  mutate(
+    study_type = factor(
+      if_else(study_type == "pct_clinical", "Clinical", "Non-Clinical"),
+      levels = c("Clinical", "Non-Clinical")
+    )
+  )
+
+# order rows by the larger of the two percentages with ties broken by the mean
+parameter_order <- fig1_data %>%
+  group_by(parameter) %>%
+  summarise(max_pct = max(pct), mean_pct = mean(pct)) %>%
+  arrange(max_pct, mean_pct) %>%
+  pull(parameter)
+
+fig1_data <- fig1_data %>%
+  mutate(parameter = factor(parameter, levels = parameter_order))
+
+# save the plotted values
+write_csv(
+  fig1_data %>%
+    select(parameter, study_type, pct) %>%
+    arrange(desc(parameter), study_type),
+  "KuelpmannFig1_data.csv"
+)
+
+# okabe-ito orange and blue plus distinct shapes so study types stay separable in greyscale
+fig1 <- ggplot(fig1_data, aes(x = pct, y = parameter, colour = study_type, shape = study_type)) +
+  geom_point(size = 2.4) +
+  scale_colour_manual(name = "Study Type",
+                      values = c("Clinical" = "#E69F00", "Non-Clinical" = "#0072B2")) +
   scale_shape_manual(name = "Study Type",
                      values = c("Clinical" = 16, "Non-Clinical" = 17)) +
-  labs(
-    x = "Percentage of indeterminable values",
-    y = "Variable"
-  )  +
-  theme_bw() + 
-  scale_x_continuous(labels = percent_format(scale = 1)) +
-  theme(legend.position = "bottom")
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, 20),
+                     expand = expansion(mult = c(0, 0.02))) +
+  labs(x = "Indeterminable Values (%)", y = "Procedural Parameter") +
+  theme_aps() +
+  theme(
+    panel.grid.major.y = element_line(colour = "grey88", linewidth = 0.3),
+    legend.justification = "left",
+    legend.margin = margin(0, 0, 0, 0)
+  )
 
+print(fig1)
 
-print(plot1_grey)
-
-ggsave(
-  "figure1_indeterminables_by_variable.pdf", 
-  plot = plot1_grey,                         
-  width = 8,                                 
-  height = 6                                 
-)
-
-ggsave(
-  "figure1_indeterminables_by_variable.png",
-  plot = plot1_grey,                         
-  width = 8,                                 
-  height = 6,                                
-  dpi = 600                                  
-)
-
+# 600 dpi png in the folder of this rmd
+save_figure(fig1, "KuelpmannFig1", width = 6.5, height = 4.0)
 
 ```
 

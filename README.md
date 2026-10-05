@@ -43,6 +43,23 @@ Annika Külpmann, Jan-Paul Ries, Ian Hussey, Malte Elson.
 + Next up is the multiverse analysis, which builds partly on the code in meta-methods review. Run processing.Rmd first, then analyses.Rmd.
 + Optionally, you can run /code/example hayes2020 to apply the scoring multiverse to an openly available external dataset, and /code/hierarchical-clustering to cluster the scoring methods from the multiverse by their pairwise correlations. Neither is required to reproduce the core study results.
 
+## Figures
+
+The figures of the paper and the supplement are formatted according to the APS Figure Format and Style Guidelines. Each figure is written by knitting the R Markdown file listed below; the files are saved next to that R Markdown file. The shared plotting helpers (theme, labels with true minus signs, export settings) are in **/code/aps_figure_helpers.R**.
+
+| Figure | R Markdown file | Output files |
+|---|---|---|
+| Figure 1 | /code/meta-methods review/indeterminables_per_sample_type.Rmd | KuelpmannFig1.png, KuelpmannFig1_data.csv |
+| Figure 2 | /code/multiverse/analyses.Rmd | KuelpmannFig2.png, KuelpmannFig2_summary.csv |
+| Figure 3 | /code/example hayes2020/scr_correlations.Rmd | KuelpmannFig3.png, KuelpmannFig3_data.csv |
+| Figures S1, S2 | /code/hierarchical-clustering/hierarchical_clustering.Rmd | KuelpmannFigS1.svg, KuelpmannFigS1.png, KuelpmannFigS2.svg, KuelpmannFigS2.png |
+
+The PNGs have 600 dpi. The vector PDFs for submission are not written when knitting and are created in a manual step, because R's `cairo_pdf` device needs a working cairo installation (on macOS, XQuartz). After knitting the R Markdown file in an interactive session, run in the same session:
+
++ Figures 1 to 3: `ggsave("KuelpmannFig1.pdf", fig1, width = 6.5, height = 4.0, units = "in", device = cairo_pdf)`, and likewise for `fig2` (6.5 x 5.0 in) and `fig3` (5.0 x 5.0 in).
++ Figures S1 and S2 are drawn at four times their final size of 9 x 4.6 in, because cairo garbles the 2 pt leaf labels at the final size; the PDF scales down without loss: `cairo_pdf("KuelpmannFigS1.pdf", width = 36, height = 18.4, pointsize = 48, family = "Arial"); draw_export_dend(cut_lines = TRUE, k = 4); dev.off()`. For Figure S2, use `draw_export_dend(clusters = clust_avg, palette = pal_avg, cut_lines = FALSE, k = 4)`.
++ Outlined SVGs of Figures S1 and S2 (used for embedding in Word) can then be made with poppler: `pdftocairo -svg KuelpmannFigS1.pdf KuelpmannFigS1_outlined.svg`.
+
 ## License
 
 (c) Annika Külpmann 2022-2026
