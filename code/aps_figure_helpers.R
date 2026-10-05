@@ -9,8 +9,7 @@
 #   18 pt lowercase panel letters at the upper left; no figure titles
 # - two axes only (no panel border), no box around the key, key at the top
 # - title case in all labels, true minus signs (u+2212), spaced operators
-# - 600 ppi png (manuscript file); the vector pdf for submission is a manual
-#   step with cairo_pdf (see readme)
+# - 600 ppi png (manuscript file)
 #
 # source after ggplot2 is attached:
 #   source(here::here("code", "aps_figure_helpers.R"))
@@ -63,7 +62,7 @@ theme_aps <- function() {
     )
 }
 
-# 600 dpi png (ragg); the vector pdf is not written here (manual step, see readme)
+# 600 dpi png (ragg)
 # out_dir defaults to the knit working directory, i.e. the folder of the rmd
 save_figure <- function(plot, name, width, height, out_dir = ".") {
   ggsave(file.path(out_dir, paste0(name, ".png")), plot,

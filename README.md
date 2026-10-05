@@ -54,11 +54,7 @@ The figures of the paper and the supplement are formatted according to the APS F
 | Figure 3 | /code/example hayes2020/scr_correlations.Rmd | KuelpmannFig3.png, KuelpmannFig3_data.csv |
 | Figures S1, S2 | /code/hierarchical-clustering/hierarchical_clustering.Rmd | KuelpmannFigS1.svg, KuelpmannFigS1.png, KuelpmannFigS2.svg, KuelpmannFigS2.png |
 
-The PNGs have 600 dpi. The vector PDFs for submission are not written when knitting and are created in a manual step, because R's `cairo_pdf` device needs a working cairo installation (on macOS, XQuartz). After knitting the R Markdown file in an interactive session, run in the same session:
-
-+ Figures 1 to 3: `ggsave("KuelpmannFig1.pdf", fig1, width = 6.5, height = 4.0, units = "in", device = cairo_pdf)`, and likewise for `fig2` (6.5 x 5.0 in) and `fig3` (5.0 x 5.0 in).
-+ Figures S1 and S2 are drawn at four times their final size of 9 x 4.6 in, because cairo garbles the 2 pt leaf labels at the final size; the PDF scales down without loss: `cairo_pdf("KuelpmannFigS1.pdf", width = 36, height = 18.4, pointsize = 48, family = "Arial"); draw_export_dend(cut_lines = TRUE, k = 4); dev.off()`. For Figure S2, use `draw_export_dend(clusters = clust_avg, palette = pal_avg, cut_lines = FALSE, k = 4)`.
-+ Outlined SVGs of Figures S1 and S2 (used for embedding in Word) can then be made with poppler: `pdftocairo -svg KuelpmannFigS1.pdf KuelpmannFigS1_outlined.svg`.
+The PNGs have 600 dpi.
 
 ## License
 

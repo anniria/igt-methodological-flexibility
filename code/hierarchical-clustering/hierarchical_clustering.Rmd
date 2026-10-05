@@ -273,21 +273,20 @@ make_export_dend <- function(clusters = NULL, palette = NULL, lwd) {
     set("branches_lwd", lwd)
 }
 
-# draws the export dendrogram, k scales line widths while text scales with the pointsize
-# k = 4 is used for the manual 4x cairo pdf (see readme)
-draw_export_dend <- function(clusters = NULL, palette = NULL, cut_lines, k = 1) {
+# draws the export dendrogram with axis, axis label and optional cut lines
+draw_export_dend <- function(clusters = NULL, palette = NULL, cut_lines) {
   par(mar = c(4.6, 4.2, 0.6, if (cut_lines) 3.2 else 0.8), family = font_family,
       mgp = c(3, 0.6, 0), tcl = -0.25, xpd = FALSE)
-  plot(make_export_dend(clusters, palette, 0.6 * k),
+  plot(make_export_dend(clusters, palette, 0.6),
        yaxt = "n",
        ylim = c(0, max(export_ticks)))
   axis(2, at = export_ticks, labels = label_minus(2)(1 - export_ticks),
-       las = 1, cex.axis = 0.8, lwd = 0.6 * k)
+       las = 1, cex.axis = 0.8, lwd = 0.6)
   mtext(expression("Average Inter-Cluster " * italic(r)), side = 2, line = 3, cex = 0.85)
 
   # dashed cut lines at the r thresholds, labelled in the right margin
   if (cut_lines) {
-    abline(h = 1 - r_cuts, col = "gray40", lty = 2, lwd = 0.5 * k)
+    abline(h = 1 - r_cuts, col = "gray40", lty = 2, lwd = 0.5)
     text(x = par("usr")[2], y = 1 - r_cuts,
          labels = paste0(" r = ", formatC(r_cuts, format = "f", digits = 1)),
          adj = c(0, 0.5), cex = 0.6, col = "gray30", xpd = TRUE)
@@ -295,7 +294,7 @@ draw_export_dend <- function(clusters = NULL, palette = NULL, cut_lines, k = 1) 
 }
 
 # writes the figure as svg and 600 dpi png at the final size
-# the svg keeps text as whole strings; the vector pdf is a manual step (see readme)
+# the svg keeps text as whole strings
 save_export_dend <- function(name, clusters = NULL, palette = NULL, cut_lines,
                              width = 9, height = 4.6) {
   svglite::svglite(paste0(name, ".svg"), width = width, height = height,
