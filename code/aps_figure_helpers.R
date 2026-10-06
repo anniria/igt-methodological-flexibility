@@ -62,13 +62,48 @@ theme_aps <- function() {
     )
 }
 
+# svglite sets black strokes, unfilled shapes and preserved spaces only in an
+# embedded css stylesheet; viewers that ignore it (e.g. microsoft office) drop
+# black lines and spaces, so these defaults are written into every element
+svg_inline_styles <- function(path) {
+  shape_defaults <- c(
+    "fill"              = "none",
+    "stroke"            = "#000000",
+    "stroke-linecap"    = "round",
+    "stroke-linejoin"   = "round",
+    "stroke-miterlimit" = "10.00"
+  )
+
+  # adds each default property that the style attribute of a shape lacks
+  add_missing_styles <- function(tag) {
+    style <- stringr::str_match(tag, "style='([^']*)'")[, 2]
+    for (property in names(shape_defaults)) {
+      if (!stringr::str_detect(style, paste0("(^|[;\\s])", property, ":"))) {
+        style <- paste0(style, " ", property, ": ", shape_defaults[[property]], ";")
+      }
+    }
+    stringr::str_replace(tag, "style='[^']*'", paste0("style='", stringr::str_trim(style), "'"))
+  }
+
+  svg <- readr::read_file(path)
+  svg <- stringr::str_replace_all(
+    svg,
+    "<(line|polyline|polygon|path|rect|circle) [^>]*?style='[^']*'",
+    function(tags) purrr::map_chr(tags, add_missing_styles)
+  )
+  svg <- stringr::str_replace_all(svg, "<text ", "<text xml:space='preserve' ")
+  readr::write_file(svg, path)
+}
+
 # 600 dpi png (ragg) and svg vector file (svglite) with the same name
 # out_dir defaults to the knit working directory, i.e. the folder of the rmd
 save_figure <- function(plot, name, width, height, out_dir = ".") {
   ggsave(file.path(out_dir, paste0(name, ".png")), plot,
          width = width, height = height, units = "in", dpi = 600,
          device = ragg::agg_png, bg = "white")
-  ggsave(file.path(out_dir, paste0(name, ".svg")), plot,
+  svg_path <- file.path(out_dir, paste0(name, ".svg"))
+  ggsave(svg_path, plot,
          width = width, height = height, units = "in",
          device = svglite::svglite)
+  svg_inline_styles(svg_path)
 }

@@ -301,6 +301,7 @@ save_export_dend <- function(name, clusters = NULL, palette = NULL, cut_lines,
                    system_fonts = list(sans = font_family))
   draw_export_dend(clusters, palette, cut_lines)
   invisible(dev.off())
+  svg_inline_styles(paste0(name, ".svg"))
 
   ragg::agg_png(paste0(name, ".png"), width = width, height = height,
                 units = "in", res = 600, background = "white")
