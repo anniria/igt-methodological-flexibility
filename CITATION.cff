@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use these data or code, please cite them using the metadata below."
+type: software
+title: "A meta-methods review of methodological flexibility in the Iowa Gambling Task"
+abstract: "Data and code accompanying our study on methodological flexibility in the use of the Iowa Gambling Task, including the meta-methods review, a scoring multiverse analysis, the sampling process, and inter-rater reliability."
+authors:
+  - given-names: "Annika I."
+    family-names: "Külpmann"
+    orcid: "https://orcid.org/0000-0002-0256-2037"
+  - given-names: "Jan-Paul"
+    family-names: "Ries"
+    orcid: "https://orcid.org/0000-0002-1150-1746"
+  - given-names: "Ian"
+    family-names: "Hussey"
+    orcid: "https://orcid.org/0000-0001-8906-7559"
+  - given-names: "Malte"
+    family-names: "Elson"
+    orcid: "https://orcid.org/0000-0001-7806-9583"
+repository-code: "https://github.com/anniria/igt-methodological-flexibility"
+license: CC-BY-4.0
+keywords:
+  - Iowa Gambling Task
+  - methodological flexibility
+  - meta-methods review
+  - multiverse analysis
