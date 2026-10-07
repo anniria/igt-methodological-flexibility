@@ -1,5 +1,7 @@
 # Methodological Flexibility in the Iowa Gambling Task Undermines Interpretability: A Meta-method Review
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23210150.svg)](https://doi.org/10.5281/zenodo.23210150)
+
 ## Overview
 
 This project provides data and code to our study on methodological flexibility in the use of the Iowa Gambling Task. 
@@ -55,6 +57,14 @@ The figures of the paper and the supplement are formatted according to the APS F
 | Figures S1, S2 | /code/hierarchical-clustering/hierarchical_clustering.Rmd | KuelpmannFigS1.svg, KuelpmannFigS1.png, KuelpmannFigS2.svg, KuelpmannFigS2.png |
 
 The SVGs are vector files that keep all text as text (font: Arial); the PNGs have 600 dpi.
+
+## How To Cite
+
+If you use these data or code, please cite the archived version on Zenodo:
+
+Külpmann, A. I., Ries, J.-P., Hussey, I., & Elson, M. (2026). *Methodological Flexibility in the Iowa Gambling Task Undermines Interpretability: A Meta-method Review* (Version v1.0.0) [Data and code]. Zenodo. https://doi.org/10.5281/zenodo.23210150
+
+The accompanying article is accepted for publication in *Advances in Methods and Practices in Psychological Science*.
 
 ## License
 
