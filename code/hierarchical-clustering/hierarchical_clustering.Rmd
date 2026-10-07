@@ -24,7 +24,7 @@ source(here::here("code", "aps_figure_helpers.R"))
 ## Data
 
 ```{r data, message=FALSE}
-# all implemented scoring methods (197 columns, minus id and zero-variance A_60_cutoff)
+# file has id plus 197 scoring method columns, drop id and the zero variance A_60_cutoff to leave 196
 data_whole <- read_csv(here("data", "processed", "multiverse",
                             "data_processed_participant_level.csv")) %>%
   select(-id, -A_60_cutoff)
@@ -42,7 +42,7 @@ cat("Correlation matrix dimensions:", nrow(cor_whole), "×", ncol(cor_whole), "\
 ```
 
 ```{r cor-long}
-# long-form upper triangle (no self-pairs) — reused in both clustering sections
+# long form upper triangle without self pairs, reused in both clustering sections
 cor_long <- cor_whole %>%
   as_tibble(rownames = "method_x") %>%
   pivot_longer(-method_x, names_to = "method_y", values_to = "r") %>%
@@ -50,14 +50,12 @@ cor_long <- cor_whole %>%
 ```
 
 ```{r thresholds}
-# correlation thresholds for dendrogram cut lines — shared by both sections
+# correlation thresholds for dendrogram cut lines, shared by both sections
 r_cuts <- c(0.9, 0.7, 0.5, 0.3, 0.1, 0.0)
 ```
 
 ```{r cuts-helper}
-# returns a list (one element per r threshold), each element containing:
-#   $summary  — one-row tibble: r_threshold, n_clusters, min_within_mean_r, max_between_mean_r
-#   $clusters — per-cluster tibble: cluster, n_methods, within_mean_r, centroid
+# returns one list element per r threshold holding a one row summary tibble
 cuts_summary <- function(hc, cor_long, r_cuts) {
   map(r_cuts, function(r_thresh) {
     clusters   <- cutree(hc, h = 1 - r_thresh)
@@ -70,44 +68,11 @@ cuts_summary <- function(hc, cor_long, r_cuts) {
       left_join(labels %>% rename(method_y = method, cluster_y = cluster),
                 by = "method_y")
 
-    # within-cluster mean r (signed; NA for singletons)
+    # signed within cluster mean r, singletons have no pairs and are skipped
     within <- cor_cl %>%
       filter(cluster_x == cluster_y) %>%
       group_by(cluster = cluster_x) %>%
       summarise(within_mean_r = mean(r, na.rm = TRUE), .groups = "drop")
-
-    # centroid: method with highest mean r to all others in its cluster
-    centroid_tbl <- bind_rows(
-      cor_cl %>%
-        filter(cluster_x == cluster_y) %>%
-        select(cluster = cluster_x, method = method_x, r),
-      cor_cl %>%
-        filter(cluster_x == cluster_y) %>%
-        select(cluster = cluster_y, method = method_y, r)
-    ) %>%
-      group_by(cluster, method) %>%
-      summarise(mean_r = mean(r, na.rm = TRUE), .groups = "drop") %>%
-      group_by(cluster) %>%
-      slice_max(mean_r, n = 1, with_ties = FALSE) %>%
-      ungroup() %>%
-      select(cluster, centroid = method)
-
-    # singletons have no within-cluster pairs, so centroid is just the method name
-    singleton_clusters <- setdiff(unique(clusters), centroid_tbl$cluster)
-    if (length(singleton_clusters) > 0) {
-      centroid_tbl <- bind_rows(
-        centroid_tbl,
-        labels %>% filter(cluster %in% singleton_clusters) %>% rename(centroid = method)
-      )
-    }
-
-    # per-cluster table
-    cluster_tbl <- labels %>%
-      count(cluster, name = "n_methods") %>%
-      left_join(within,       by = "cluster") %>%
-      left_join(centroid_tbl, by = "cluster") %>%
-      mutate(within_mean_r = round(within_mean_r, 3)) %>%
-      arrange(cluster)
 
     # max between-cluster mean r (NA if only one cluster)
     if (n_clusters > 1) {
@@ -131,18 +96,15 @@ cuts_summary <- function(hc, cor_long, r_cuts) {
         n_clusters         = n_clusters,
         min_within_mean_r  = round(min(within$within_mean_r, na.rm = TRUE), 3),
         max_between_mean_r = round(max_between, 3)
-      ),
-      clusters = cluster_tbl
+      )
     )
   })
 }
 ```
 
 ```{r dyncut-helper}
-# returns a list containing:
-#   $summary  — tibble: n_clusters, n_unassigned, min_within_mean_r, max_between_mean_r
-#   $clusters — per-cluster tibble: cluster, n_methods, within_mean_r, centroid
-# cluster == 0 from cutreeDynamic() means unassigned; excluded from stats
+# returns a list with a summary tibble and a per cluster tibble
+# cluster 0 from cutreeDynamic means unassigned and is excluded from the stats
 dyncut_summary <- function(clusters_vec, labels_vec, cor_long) {
   labels <- tibble(method = labels_vec, cluster = clusters_vec)
 
@@ -337,7 +299,7 @@ for (res in results_avg) {
 
 ## Dynamic Hybrid Cut — 1 − r
 
-The Dynamic Hybrid Cut Algorithm (`cutreeDynamic`, `DynamicTreeCut`) combines dendrogram
+The Dynamic Hybrid Cut Algorithm (`cutreeDynamic`, `dynamicTreeCut`) combines dendrogram
 topology with PAM-based refinement to select cluster boundaries automatically, without
 requiring a fixed height threshold. `deepSplit` (0–4) controls sensitivity: higher values
 produce more, smaller clusters. Methods assigned to cluster 0 were not placed in any cluster
@@ -516,7 +478,7 @@ mtext("Average inter-cluster |r|", side = 2, line = 3.5, cex = 0.85)
 
 ---
 
-## Session info
+## Session Info
 
 ```{r session-info}
 sessionInfo()

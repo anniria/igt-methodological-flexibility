@@ -1,6 +1,6 @@
 ---
-title: "IGT multiverse"
-subtitle: "Data processing — Hayes et al. (2020) example dataset"
+title: "IGT multiverse data processing"
+subtitle: "Hayes & Wedell (2020) example dataset"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   html_document:
@@ -15,7 +15,9 @@ output:
 
 Applies the full IGT scoring multiverse to the openly available dataset from:
 
-Hayes, T. R., et al. (2020). *Data for: Somatic Markers and Risk: How Do People Make Risky Decisions?* OSF. https://doi.org/10.17605/OSF.IO/5CGEH
+Hayes, W. M., & Wedell, D. H. (2020). Autonomic responses to choice outcomes: Links to task performance and reinforcement-learning parameters. *Biological Psychology, 156*, 107968. https://doi.org/10.1016/j.biopsycho.2020.107968
+
+Data and model code: https://osf.io/tr2h8/ (the raw files in `data/raw/example hayes2020` are identical to the files in its Data folder)
 
 Raw data file: `data/raw/example hayes2020/choices_and_ratings.csv`
 
@@ -23,7 +25,7 @@ The raw data are trial-level (one row per participant per trial). Key recoding s
 
 - `Loss` is stored as a positive integer in the raw file; it is negated on import so that the sign convention (`loss < 0` = a loss occurred) matches what the multiverse scoring functions expect.
 - `Choice` (character A–D) is converted to a factor with levels A, B, C, D.
-- The participant-level group variable (1 = control, 2 = ?, 3 = ?) is retained in the trial-level data so it can be joined to participant-level scores for downstream analysis.
+- The `group` variable from the raw file is kept in the trial-level data; it is not used in the scoring or in the downstream analyses.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
@@ -57,7 +59,7 @@ raw <- read_csv(
 )
 
 data_processed_trial_level <- raw %>%
-  # Subject and id are identical columns; drop Subject and rename the rest
+  # drop Subject, the original participant number, and keep id, the running index that matches the scr files
   select(-Subject) %>%
   rename(
     trial = Trial,
@@ -164,7 +166,6 @@ data_scored_deck_choices_temp <- data_processed_trial_level %>%
       C_plus_D * 100 < qbinom(0.025, size = 100, prob = 0.5) ~ -1,
       TRUE ~ 0
     )),
-    C_plus_D_minus_A_plus_B_median_split    = as.numeric(C_plus_D_minus_A_plus_B > median(C_plus_D_minus_A_plus_B)),
     C_plus_D_minus_A_plus_B_zero_cutoff     = as.numeric(C_plus_D_minus_A_plus_B > 0),
     C_plus_D_minus_A_plus_B_absolute_10_cutoff = as.numeric(case_when(
       C_plus_D_minus_A_plus_B >=  .10 ~  1,
@@ -173,8 +174,7 @@ data_scored_deck_choices_temp <- data_processed_trial_level %>%
     )),
     C_plus_D_minus_A_plus_B_t_score             = 50 + 10 * (C_plus_D_minus_A_plus_B - mean(C_plus_D_minus_A_plus_B)) / sd(C_plus_D_minus_A_plus_B),
     C_plus_D_minus_A_plus_B_t_score_39_cutoff   = as.numeric(C_plus_D_minus_A_plus_B_t_score > 39),
-    C_plus_D_minus_A_plus_B_t_score_50_cutoff   = as.numeric(C_plus_D_minus_A_plus_B_t_score > 50),
-    C_plus_D_divided_by_A_plus_B                = C_plus_D / A_plus_B
+    C_plus_D_minus_A_plus_B_t_score_50_cutoff   = as.numeric(C_plus_D_minus_A_plus_B_t_score > 50)
   ) %>%
   select(
     id,
@@ -216,12 +216,6 @@ data_scored_deck_choices <- data_scored_deck_choices_temp %>%
 ```{r deck-choices-blocks-5}
 
 data_scored_deck_choices_blocks_5_long <- data_processed_trial_level %>%
-  group_by(id) %>%
-  mutate(
-    total_trials     = max(trial),
-    trial_proportion = trial / total_trials
-  ) %>%
-  ungroup() %>%
   mutate(subset = ((trial - 1) %/% 5) + 1) %>%
   drop_na(subset) %>%
   group_by(id, subset) %>%
@@ -259,12 +253,6 @@ data_scored_deck_choices_blocks_5 <- data_scored_deck_choices_blocks_5_long %>%
 ```{r deck-choices-blocks-10}
 
 data_scored_deck_choices_blocks_10_long <- data_processed_trial_level %>%
-  group_by(id) %>%
-  mutate(
-    total_trials     = max(trial),
-    trial_proportion = trial / total_trials
-  ) %>%
-  ungroup() %>%
   mutate(subset = ((trial - 1) %/% 10) + 1) %>%
   drop_na(subset) %>%
   group_by(id, subset) %>%
@@ -285,7 +273,6 @@ data_scored_deck_choices_blocks_10_long <- data_processed_trial_level %>%
     D     = D / total
   ) %>%
   select(-total) %>%
-  mutate(C_plus_D_minus_A_plus_B = (C + D) - (A + B)) %>%
   select(id, subset, A, B, C, D)
 
 data_scored_deck_choices_blocks_10 <- data_scored_deck_choices_blocks_10_long %>%
@@ -352,12 +339,6 @@ data_scored_deck_choices_blocks_16 <- data_scored_deck_choices_blocks_16_long %>
 ```{r deck-choices-blocks-20}
 
 data_scored_deck_choices_blocks_20_long <- data_processed_trial_level %>%
-  group_by(id) %>%
-  mutate(
-    total_trials     = max(trial),
-    trial_proportion = trial / total_trials
-  ) %>%
-  ungroup() %>%
   mutate(subset = ((trial - 1) %/% 20) + 1) %>%
   drop_na(subset) %>%
   group_by(id, subset) %>%
@@ -397,7 +378,7 @@ data_scored_deck_choices_blocks_20 <- data_scored_deck_choices_blocks_20_long %>
     values_from = c(-id, -subset),
     names_prefix = "block20_"
   ) %>%
-  # t-score columns are linear transforms of their C_plus_D_minus_A_plus_B counterparts — redundant
+  # t-score columns are linear transforms of their C_plus_D_minus_A_plus_B counterparts and thus redundant
   select(
     -C_plus_D_minus_A_plus_B_t_score_block20_1,
     -C_plus_D_minus_A_plus_B_t_score_block20_2,
@@ -413,12 +394,6 @@ data_scored_deck_choices_blocks_20 <- data_scored_deck_choices_blocks_20_long %>
 ```{r deck-choices-blocks-25}
 
 data_scored_deck_choices_blocks_25_long <- data_processed_trial_level %>%
-  group_by(id) %>%
-  mutate(
-    total_trials     = max(trial),
-    trial_proportion = trial / total_trials
-  ) %>%
-  ungroup() %>%
   mutate(subset = ((trial - 1) %/% 25) + 1) %>%
   drop_na(subset) %>%
   group_by(id, subset) %>%
@@ -529,12 +504,6 @@ C_plus_D_minus_A_plus_B_subset <- function(dat, start, end) {
   new_name <- paste0("C_plus_D_minus_A_plus_B_", start, "_to_", end)
 
   dat %>%
-    group_by(id) %>%
-    mutate(
-      total_trials     = max(trial),
-      trial_proportion = trial / total_trials
-    ) %>%
-    ungroup() %>%
     filter(trial %in% start:end) %>%
     group_by(id) %>%
     count(choice) %>%
@@ -572,7 +541,6 @@ data_scored_deck_choices_subsets_1 <-
   full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 51, 100), by = "id") %>%
   full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 61, 100), by = "id") %>%
   full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 68, 100), by = "id") %>%
-  full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 76, 100), by = "id") %>%
   full_join(C_plus_D_minus_A_plus_B_subset(data_processed_trial_level, 84, 100), by = "id") %>%
   mutate(
     C_plus_D_minus_A_plus_B_last_60_minus_first_40  =
@@ -586,7 +554,6 @@ data_scored_deck_choices_subsets_1 <-
   select(
     -C_plus_D_minus_A_plus_B_1_to_33,
     -C_plus_D_minus_A_plus_B_1_to_17,
-    -C_plus_D_minus_A_plus_B_76_to_100,
     -C_plus_D_minus_A_plus_B_84_to_100
   )
 
@@ -682,7 +649,7 @@ data_scored_deck_switching_any <- data_processed_trial_level %>%
   mutate(switch = choice != dplyr::lag(choice)) %>%
   summarize(proportion_switch_any = mean(switch, na.rm = TRUE))
 
-# proportion of trials switching from a disadvantageous to an advantageous deck after a loss
+# proportion of trials after a loss with a switch between decks a or b and decks c or d, in either direction
 data_scored_deck_switching_to_cd_after_loss_on_disadvantageous <- data_processed_trial_level %>%
   mutate(choice_binary = case_when(
     choice %in% c("C", "D") ~ "advantageous",
@@ -693,14 +660,14 @@ data_scored_deck_switching_to_cd_after_loss_on_disadvantageous <- data_processed
   filter(dplyr::lag(loss_binary == 1) == TRUE) %>%
   summarize(proportion_switch_advantageous_after_loss = mean(switch, na.rm = TRUE))
 
-# proportion of trials staying on deck A after a loss on A
+# proportion of all trials on which deck a is chosen right after a loss on deck a
 data_scored_deck_choices_A_after_loss_on_A <- data_processed_trial_level %>%
   group_by(id) %>%
   mutate(A_after_loss_on_A = choice == "A" & dplyr::lag(choice) == "A" & dplyr::lag(loss) < 0) %>%
   summarize(A_after_loss_on_A = mean(A_after_loss_on_A, na.rm = TRUE)) %>%
   ungroup()
 
-# proportion of trials staying on C or D after a loss on C or D
+# proportion of all trials on which deck c or d is chosen right after a loss on deck c or d
 data_scored_deck_choices_CD_after_loss_on_CD <- data_processed_trial_level %>%
   group_by(id) %>%
   mutate(C_or_D_after_loss_on_C_or_D = choice %in% c("C", "D") &
@@ -856,7 +823,7 @@ write_csv(
 
 ```
 
-# Session info
+# Session Info
 
 ```{r session-info}
 

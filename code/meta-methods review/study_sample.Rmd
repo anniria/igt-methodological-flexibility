@@ -39,7 +39,7 @@ conflicts_prefer(dplyr::filter)
 ```{r housekeeping}
 #| include: false
 
-# read scoring master file
+# read procedure master file and sample categorizations
 data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_procedure_master.xlsx")
 samples <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_categorizations.xlsx")
 
@@ -64,7 +64,7 @@ overview_variable <- function(data, variable) {
 ```{r data preparation}
 #| include: false
 
-# reduce data frame to one line per article
+# keep the first coded task per article
 data <- data %>%
   distinct(article_id, .keep_all = TRUE)
 
@@ -133,9 +133,6 @@ table_sample_sizes |>
 ### Years of Publication
 ```{r clin1}
 
-# number of clinical publications
-count_clin <- nrow(data_clin)
-
 # get an overview over publications years
 publ_years_clin <- overview_variable(data_clin, "year")
 
@@ -166,7 +163,7 @@ sample_sizes_clin <- data_clin %>%
   unlist() %>%
   as.integer()
 
-# summary of sample sizes across all studies
+# summary of sample sizes across clinical studies
 table_clinss <- describe(sample_sizes_clin)
 
 table_clinss |>
@@ -179,7 +176,7 @@ table_clinss |>
 ### Clinical Samples
 ```{r clin3}
 
-# get an overview over sample sizes
+# get an overview over clinical sample types
 patient_groups <- overview_variable(data_clin, "info") %>%
   arrange(info)
 
@@ -193,9 +190,6 @@ patient_groups |>
 ## Non-clinical Studies 
 ### Years of Publication
 ```{r nonclin1}
-
-# number of clinical publications
-count_non_clin <- nrow(data_non_clin)
 
 # get an overview over publications years
 publ_years_non_clin <- overview_variable(data_non_clin, "year")
@@ -220,7 +214,7 @@ range_publ_years_non_clin |>
 ### Non-Clinical Samples
 ```{r nonclin2}
 
-# get an overview over sample sizes
+# get an overview over non-clinical sample types
 other_groups <- overview_variable(data_non_clin, "info") %>%
   arrange(info)
 
@@ -240,8 +234,8 @@ sample_sizes_non_clin <- data_non_clin %>%
   unlist() %>%
   as.integer()
 
-# summary of sample sizes across all studies
-table_nonclinss <- describe(sample_sizes_non_clin) 
+# summary of sample sizes across non-clinical studies
+table_nonclinss <- describe(sample_sizes_non_clin)
 
 table_nonclinss|>
   kable() |>
@@ -249,3 +243,8 @@ table_nonclinss|>
 
 ```
 
+## Session Info
+
+```{r session-info}
+sessionInfo()
+```

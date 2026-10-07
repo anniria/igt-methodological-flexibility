@@ -27,13 +27,11 @@ library(knitr)
 library(tidyverse)
 library(readxl)
 library(conflicted)
-library(psych)
 library(kableExtra)
 library(scales)
 
 # declare preferences regarding conflicts 
 conflicts_prefer(dplyr::filter)
-conflicts_prefer(readxl::read_excel)
 
 # load shared aps figure helpers (font, theme, minus labels, png and svg export)
 source(here::here("code", "aps_figure_helpers.R"))
@@ -44,15 +42,7 @@ source(here::here("code", "aps_figure_helpers.R"))
 #| include: false
 
 # read procedure file
-procedures_data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_procedure_master.xlsx") 
-# read scoring master file
-scoring_data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_scoring_master.xlsx") 
-# read scores overview file
-# this is a file with one row per distinct score 
-scores_overview <- read_xlsx("../../data/processed/meta-methods review/scores_overview.xlsx")
-# read monotonic scores file
-# this is a file where we identified scores that can be linear transformed into each other
-monotonic_scores <- read_xlsx("../../data/raw/metamethod review/master coding/monotonic_scores.xlsx")
+procedures_data <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_procedure_master.xlsx")
 # read sample categorization file
 # this is a file that categorizes the study samples into clinical and non-clinical samples
 sample_categories <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_categorizations.xlsx")
@@ -65,7 +55,7 @@ sample_categories <- read_xlsx("../../data/raw/metamethod review/master coding/c
 
 # select relevant variables from data frame sample_categories
 samples <- sample_categories %>% 
-  select(article_id, category, info)
+  select(article_id, category)
 
 # join procedures_data with samples 
 procedures_by_category <- procedures_data %>% 
@@ -77,7 +67,6 @@ row_counts <- procedures_by_category %>%
   count(clinical)
 
 # select variables of interest
-# create a boolean variable for clinical vs. non-clinical studies
 # count the number of indeterminables for each variable
 indeterminables_by_cat <- procedures_by_category %>%
   select(7:29, clinical) %>%
@@ -110,8 +99,7 @@ indeterminables_by_cat |>
   kable() |>
   kable_classic(full_width = FALSE)
 
-# in a next step, we want to collapse some of the variables
-# determine the total number of studies
+# number of igts per study type, only used for the check below
 total_clinical <- row_counts$n[row_counts$clinical == TRUE]
 total_non_clinical <- row_counts$n[row_counts$clinical == FALSE]
 
@@ -123,7 +111,7 @@ indeterminables_long <- procedures_by_category %>%
   mutate(task_row = row_number()) %>%
   select(task_row, clinical, goal:n_trials) %>%
   pivot_longer(-c(task_row, clinical), names_to = "variable", values_to = "value") %>%
-  filter(!variable %in% c("protocol", "n_blocks")) %>%
+  filter(variable != "n_blocks") %>%
   mutate(
     indeterminable = value %in% "indeterminable",
     parameter = case_when(
@@ -150,18 +138,13 @@ indeterminables_grouped <- indeterminables_long %>%
   select(variable, pct_clinical, pct_non_clinical) %>%
   arrange(pmax(pct_clinical, pct_non_clinical))
 
-# bind rows
-# select relevant variables
-indeterminables_grouped_final <- indeterminables_grouped %>%
-  select(variable, pct_clinical, pct_non_clinical)
-
 # print table with percentages rounded to two decimals
-indeterminables_grouped_final |>
+indeterminables_grouped |>
   mutate(across(starts_with("pct_"), ~ round(.x, 2))) |>
   kable() |>
   kable_classic(full_width = FALSE)
 
-# cross-tabulate clinical IGT protocol (Bechara, 2007) with clinical vs. non-clinical sample
+# count igts using the clinical igt protocol of bechara 2007 per study type
 procedures_by_category %>%
   filter(protocol == "Bechara, 2007") %>%
   count(clinical)
@@ -172,9 +155,8 @@ procedures_by_category %>%
 
 ```{r proc2}
 
-# Filter out the "total" row for better visualization
-indeterminables_dot_data <- indeterminables_grouped_final %>%
-  filter(variable != "total") %>%
+# long format with one row per parameter and study type
+indeterminables_dot_data <- indeterminables_grouped %>%
   pivot_longer(
     cols = starts_with("pct_"), 
     names_to = "sample_type", 
@@ -186,14 +168,14 @@ indeterminables_dot_data <- indeterminables_grouped_final %>%
                          "pct_non_clinical" = "Non-Clinical")
   )
 
-# sort percentages of interderminables in descending order
+# order variables by their larger percentage so the highest appears at the top
 indeterminables_dot_data <- indeterminables_dot_data %>%
   group_by(variable) %>%
   mutate(max_percentage = max(percentage, na.rm = TRUE)) %>%
   ungroup() %>%
   mutate(variable = fct_reorder(variable, max_percentage, .desc = FALSE))
 
-# Create the dot plot
+# create the dot plot
 plot1 <- ggplot(indeterminables_dot_data, 
                 aes(x = percentage, y = variable, color = sample_type)) +
   geom_point(size = 3, alpha = 0.8) +
@@ -280,9 +262,8 @@ save_figure(fig1, "KuelpmannFig1", width = 6.5, height = 4.0)
 
 ```{r proc3}
 
-# Prepare the data for plotting
+# long format with one row per parameter and study type
 indeterminables_dot_data <- indeterminables_grouped %>%
-  filter(variable != "total") %>%
   pivot_longer(
     cols = starts_with("pct_"), 
     names_to = "sample_type", 
@@ -294,7 +275,7 @@ indeterminables_dot_data <- indeterminables_grouped %>%
                          "pct_non_clinical" = "Non-Clinical")
   )
 
-# Create the dot plot
+# create the dot plot
 plot2 <- ggplot(indeterminables_dot_data, 
                 aes(x = sample_type, y = percentage, color = variable)) +
   geom_point(size = 3, alpha = 0.8, position = position_jitter(width = 0.2)) +
@@ -305,11 +286,14 @@ plot2 <- ggplot(indeterminables_dot_data,
     y = "Percentage of Indeterminable Values"
   ) +
   theme_minimal()+
-  scale_y_continuous(labels = percent_format(scale = 1))  # Show y-axis as percentages
+  scale_y_continuous(labels = percent_format(scale = 1))  # show y axis as percentages
 
 print(plot2)
 
 ```
 
+## Session Info
 
-
+```{r session-info}
+sessionInfo()
+```

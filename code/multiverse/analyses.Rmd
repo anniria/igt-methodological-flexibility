@@ -23,7 +23,6 @@ knitr::opts_chunk$set(message = FALSE,
 
 # dependencies
 library(tidyverse)
-library(scales)
 library(knitr)
 library(kableExtra)
 library(janitor)
@@ -123,7 +122,7 @@ p_absolute_all
 ```{r}
 
 cors |>
-  filter(x == "C_plus_D_minus_A_plus_B") |> # keeps only upper triangle by comparing characters alphabetically for comparison
+  filter(x == "C_plus_D_minus_A_plus_B") |> # keeps only correlations of the modal scoring strategy with all others
   summarize(n_correlations = n(),
             min_r = min(r),
             max_r = max(r),
@@ -185,12 +184,10 @@ save_figure(fig2, "KuelpmannFig2", width = 6.5, height = 5.0)
 
 ```
 
-# Session info
+# Session Info
 
-```{r}
+```{r session-info}
 
 sessionInfo()
 
 ```
-
-

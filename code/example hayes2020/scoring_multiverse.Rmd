@@ -1,6 +1,6 @@
 ---
 title: "IGT scoring multiverse"
-subtitle: "Analysis — Hayes et al. (2020) example dataset"
+subtitle: "Hayes & Wedell (2020) example dataset"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   html_document:
@@ -39,7 +39,7 @@ data_processed_participant_level <- read_csv(
 ) %>%
   select(-id)
 
-# identify and drop columns with no variance — correlate() fails on constants
+# identify and drop columns with no variance since their correlations are undefined
 zero_variance_cols <- data_processed_participant_level %>%
   summarise(across(everything(), ~ sd(.x, na.rm = TRUE))) %>%
   pivot_longer(everything(), names_to = "col", values_to = "sd") %>%
@@ -75,7 +75,7 @@ cors <- data_for_cors %>%
 
 ## Perfect correlations (r = ±1)
 
-In the original multiverse (Steingroever data), no pairs reached r = ±1 after removing redundant linear transforms during processing. This dataset may differ because of structural features of the Hayes 2020 task (e.g., fixed win amounts per deck: A/B always win 100, C/D always win 50 — which makes `total_won` a perfect linear function of choice proportion).
+In the original multiverse (Steingroever data), no pairs reached r = ±1 after removing redundant linear transforms during processing. In this dataset, one pair reaches r = -1 (`total_won` and `C_plus_D_minus_A_plus_B`) because of a structural feature of the task used by Hayes and Wedell (2020): win amounts are fixed per deck (A/B always win 100, C/D always win 50), which makes `total_won` a perfect linear function of choice proportion.
 
 ```{r perfect-cors}
 
@@ -204,12 +204,9 @@ p_native_all +
   p_absolute_modal +
   plot_layout(ncol = 2, nrow = 2)
 
-ggsave("plot.pdf", width = 9, height = 6)
-ggsave("plot.png", width = 9, height = 6, dpi = 600)
-
 ```
 
-# Session info
+# Session Info
 
 ```{r session-info}
 

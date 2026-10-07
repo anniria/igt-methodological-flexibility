@@ -28,10 +28,6 @@ library(tidyverse)
 library(readxl)
 library(conflicted)
 library(psych)
-library(viridis)
-library(viridisLite)
-library(scales)
-library(forcats)
 library(kableExtra)
 
 # declare preferences regarding conflicts 
@@ -85,7 +81,7 @@ data <- data %>%
   group_by(article_id, variant) %>%
   mutate(task_id = cur_group_id()) %>%
   ungroup() %>%
-  select(article_id, task_id, score_count, score_id, n_trials, subset_trials)
+  select(article_id, task_id, score_id)
 
 # join info on monotonic scores 
 # and add variable with respective ID for each score 
@@ -110,7 +106,6 @@ In our sample of 106 tasks, this is the total number of scores we identified:
 ```{r number1}
 
 # count the total number of scores across the whole sample
-# Count the number of rows in the data
 total_of_scores <- nrow(data)
 
 total_of_scores |>
@@ -200,8 +195,6 @@ percent_scores_per_task_minor |>
 
 ```{r}
 
-library(vegan)
-
 # incidence matrix on COLLAPSED scoring methods (monotonic_score_id), i.e.
 # after merging score_ids that are linear transformations of one another
 # (see `data preparation` chunk above, and the "Number of Distinct Scores"
@@ -233,11 +226,8 @@ stopifnot(
     ncol(data_reshaped) == nrow(monotonic_scores)
 )
 
-# vegan::specpool() default (smallsample = TRUE) computes the bias-corrected
-# Chao2 estimator: S_hat = S_obs + ((n-1)/n) * Q1^2 / (2*Q2)
-# the classical formula without the (n-1)/n small-sample correction gives a
-# slightly different value (see sensitivity analysis below for a worked
-# comparison on the raw, non-collapsed score_ids)
+# vegan specpool by default computes the classic chao2 estimator with the small sample correction
+# it only switches to the bias corrected form when there are no doubletons
 chao2_estimate <- vegan::specpool(data_reshaped)
 
 # incidence frequency per scoring method (number of articles it occurs in)
@@ -277,7 +267,7 @@ res |>
 
 If additional articles were examined, the number of scoring strategies observed can only increase. This raises the question of what the total population of scoring strategies is. Our results in Table 3 imply at least 414 possible scoring strategies (23 columns by 18 rows) among the already observed features. It is possible that other features exist. Another approach to estimating the total population of scores from our observed sample comes from the use of Richness Estimation, a statistical approach used in ecology. There, it is used to answer questions such as "I have observed X number of species in my sample, so how many are likely to exist in this habitat?", thereby making inferences about population (species) richness from observed (species) richness. Using this approach, we estimate that the IGT literature may include approximately `r res$chao2_estimate` scoring methods (Chao$_2$ = `r res$chao2_estimate`, SE = `r res$chao2_se`).
 
-NB Chao$_2$ estimate of richness is non-linear and so it's more appropriate to report SE than CIs.
+NB Chao$_2$ is a non-linear estimator, so the 95% CI in the table follows Chao (1987) and is log-normal, i.e. asymmetric around the point estimate.
 
 #### Sensitivity analysis: raw (non-collapsed) score IDs
 
@@ -342,7 +332,7 @@ This reflects the total number of distinct scores identified in our sample follo
 
 ```{r distinct1}
 
-# count the number of scores we identified in our sample 
+# count the number of distinct scores in our sample
 count_scores <- nrow(monotonic_scores)
 
 count_scores |>
@@ -353,7 +343,7 @@ count_scores |>
 
 ### Reusage of Distinct Scores
 
-This illustrates the frequency with which scores were reused within the sample. The variable "times_reused" reflects the number of instances in which a score was reused within the sample, while "number_of_scores" provides the total number of scores that were reused at that frequency.
+This illustrates the frequency with which scores were reused within the sample. The variable "times_reused" reflects how often a score occurs in the sample (a value of 1 means the score was never reused), while "number_of_scores" provides the total number of scores that occur with that frequency.
 
 ```{r dinstinct3}
 
@@ -373,22 +363,21 @@ scores_reusage |>
 
 ```{r distinct3plot}
 
-plot2 <- ggplot(scores_reusage, 
-                aes(x = number_of_scores, y = times_reused, fill = number_of_scores)) +
-  geom_col(stat = "identity", fill = "#31688E") +
+plot2 <- ggplot(scores_reusage,
+                aes(x = number_of_scores, y = times_reused)) +
+  geom_col(fill = "#31688E") +
   theme_minimal() +
-  labs(    
+  labs(
     title = "Number of Scores by Frequency in the Sample",
     x = "Number of Scores",
     y = "Frequency of a Score in the Sample"
-    ) +
-  theme(legend.position = "none") 
+    )
 
 print(plot2)
 
 ```
 
-In order to simplify the overview, we have categorized the reuse of scores according to the following criteria: A unique score is defined as a score that has never been reused within the sample. A common score is one that has been reused more than ten times. Finally, a rare score corresponds to a score that has been reused up to nine times. 
+In order to simplify the overview, we have categorized the reuse of scores according to the following criteria: A unique score occurs only once in the sample and has thus never been reused. A rare score occurs two to nine times in the sample. Finally, a common score occurs ten or more times in the sample.
 
 ```{r dinstinct4}
 
@@ -415,12 +404,6 @@ The following section presents a quantification of the scores, categorized accor
 
 ```{r types1}
 
-# proportion of scores per type in sample 
-score_types_total <- data %>%
-  select(task_id, monotonic_score_id) %>%
-  left_join(monotonic_scores, by = "monotonic_score_id") %>%
-  overview_variable("category") 
-
 # proportion of distinct scores per type 
 score_types <- overview_variable(monotonic_scores, "category") 
 
@@ -435,7 +418,7 @@ A closer look at the tasks that used model parameters:
 
 ```{r types2}
 
-# Count the occurrences of model parameters across tasks 
+# select model parameter scores used across tasks
 model_parameters <- data %>%
   select(task_id, monotonic_score_id) %>%
   left_join(monotonic_scores, by = "monotonic_score_id") %>%
@@ -460,7 +443,7 @@ This is an analysis of the most frequently used scores in our sample. The 10 mos
 ```{r common1}
 
 # find the most frequently used scores
-# Count the occurrences of each score_id
+# count the occurrences of each monotonic_score_id
 score_counts <- overview_variable(data, "monotonic_score_id") 
 
 # identify the 10 most common scores
@@ -499,7 +482,7 @@ proportion_top_10 |>
 
 ```
 
-This is the number of tasks that would use at least one of the 10 common scores, as well as the number of tasks that would use only common scores:
+This is the number of tasks that would use at least one of the 10 most common scores, as well as the number of tasks that would use only these 10 scores:
 
 ```{r common3}
 
@@ -541,12 +524,13 @@ scores_cumulative <- data %>%
     cumulative_proportion = cumulative_count / sum(n)  
   )
 
-# Calculate the number of scores at each quantile
-quantile_counts <- round(quantile(seq_len(nrow(scores_cumulative)), c(0.25, 0.50, 0.75, 1.00)))
-
-# Calculate positions for quantiles
+# calculate positions for quantiles
 quantile_positions <- quantile(seq_len(nrow(scores_cumulative)), c(0.25, 0.50, 0.75, 1.00))
-# define labels 
+
+# round positions to get the number of scores at each quantile
+quantile_counts <- round(quantile_positions)
+
+# define labels
 quantile_labels <- paste0(
   c("25%", "50%", "75%", "100%"), 
   " (n = ", quantile_counts, ")"
@@ -579,10 +563,9 @@ Here we present the number of tasks that employ the net score across all trials,
 
 ```{r net score}
 
-### Identify how often the standard measures net score and learning index are used
 # Filter tasks containing net score across all trials (score_id 1001)
 tasks_with_net_score <- data %>%
-  select(task_id, monotonic_score_id, score_id) %>%
+  select(task_id, monotonic_score_id) %>%
   filter(monotonic_score_id == 1001)
 
 # Count the number of tasks containing net score across all trials
@@ -593,19 +576,6 @@ num_tasks_with_net_score <- tasks_with_net_score %>%
 num_tasks_with_net_score |>
   kable() |>
   kable_classic(full_width = FALSE)
-
-
-# view the tasks which report more than one monotonic variant of the net score across all trials
-# Filter for task_id values that appear more than once
-tasks_with_net_score_duplicates <- tasks_with_net_score %>%
-  group_by(task_id) %>%               
-  filter(n() > 1) %>%             
-  ungroup() 
-
-# count the number those tasks 
-number_tasks_with_net_score_duplicates <- tasks_with_net_score_duplicates %>%
-  distinct(task_id) %>%  
-  nrow()
 
 # Identify tasks with net score reported only
 tasks_with_net_score_only <- data %>%
@@ -626,7 +596,7 @@ num_tasks_with_net_score_only |>
 
 ### Tasks Using the Learning Index 
 
-Here we present the number of tasks that employed net scores across five blocks of 20 trials in conjunction with one another, thereby providing the conventional learning index.Secondly, the number of tasks providing only this learning index without utilising other scores is presented.
+Here we present the number of tasks that employed net scores across five blocks of 20 trials in conjunction with one another, thereby providing the conventional learning index. Secondly, the number of tasks providing only this learning index without utilising other scores is presented.
 
 ```{r learning index}
 
@@ -641,7 +611,7 @@ tasks_with_learning_index <- data %>%
   filter(count_learning_index == length(required_scores)) %>%
   select(task_id) 
 
-# Count the number of articles containing scores learning index 
+# count the number of tasks reporting the full learning index
 num_tasks_with_learning_index <- nrow(tasks_with_learning_index)
 
 num_tasks_with_learning_index |>
@@ -736,24 +706,24 @@ required_scores_ABCD <- c(1011, 1020, 1029, 1038)
 tasks_with_ABCD <- data %>%
   filter(monotonic_score_id %in% required_scores_ABCD) %>%
   group_by(task_id) %>%
-  summarise(count_learning_index = n_distinct(monotonic_score_id)) %>%
-  filter(count_learning_index == length(required_scores_ABCD)) %>%
-  select(task_id) 
+  summarise(count_abcd = n_distinct(monotonic_score_id)) %>%
+  filter(count_abcd == length(required_scores_ABCD)) %>%
+  select(task_id)
 
-# Count the number of articles containing scores learning index 
+# count the number of tasks reporting all four single deck selections
 num_tasks_with_ABCD <- nrow(tasks_with_ABCD)
 
 num_tasks_with_ABCD  |>
   kable() |>
   kable_classic(full_width = FALSE)
 
-# Identify tasks with learning index reported only
+# identify tasks reporting only the four single deck selections
 tasks_with_ABCD_only <- data %>%
   group_by(task_id) %>%
   filter(all(monotonic_score_id %in% required_scores_ABCD)) %>%
   ungroup()
 
-# Count the number of tasks with learning index reported only
+# count the number of tasks reporting only the four single deck selections
 num_tasks_with_ABCD_only <- tasks_with_ABCD_only %>%
   distinct(task_id) %>%
   nrow()
@@ -810,20 +780,18 @@ The following table presents the number of unique scores per task: "unique_score
 
 ```{r unique3}
 
-# count the tasks and articles that have unique scores 
-# create data frame
+# flag unique scores per task
 unique_counts <- data %>%
   left_join(score_counts, by = "monotonic_score_id") %>%
   select(task_id, monotonic_score_id, frequency) %>%
   group_by(task_id, monotonic_score_id) %>%
   summarise(unique_scores = any(frequency == "1"), .groups = 'drop')
 
-# count tasks with and without unique scores
+# count unique scores per task
 unique_counts <- unique_counts %>%
   group_by(task_id) %>%
   summarise(
-    uniques = sum(unique_scores == TRUE),
-    recurrings = sum(unique_scores == FALSE)
+    uniques = sum(unique_scores == TRUE)
   )
 
 # summarize the frequencies of unique scores within tasks 
@@ -838,7 +806,6 @@ uniques_per_task |>
 
 ```{r unique3plot}
 unique_counts <- unique_counts %>%
-  mutate(task_id = as.factor(task_id)) %>%
   arrange(desc(uniques)) %>%
   mutate(rank = row_number())
 
@@ -886,7 +853,7 @@ condition_counts |>
 
 ## Indeterminable Scores
 
-An indeterminable score is a score with elements that are not clearly defined or that has not been adequately described. We have classified indeterminable scores as a unique, given that it was not possible to determine whether an indeterminable score was distinct or not. The total number of indeterminable scores identified in our sample is as follows: 
+An indeterminable score is a score with elements that are not clearly defined or that has not been adequately described. We have classified indeterminable scores as unique, given that it was not possible to determine whether an indeterminable score was distinct or not. The total number of indeterminable scores identified in our sample is as follows: 
 
 ```{r indeterminable1}
 
@@ -907,12 +874,11 @@ number_of_indeterminable_scores |>
 
 ```
 
-Here we present the number of indeterminate scores per task. "indeterminable_scores" represents the number of scores identified as indeterminable within a given task, "frequency" reflects the number of tasks with that specific number of indeterminable scores.
+Here we present the number of indeterminable scores per task. "indeterminable_scores" represents the number of scores identified as indeterminable within a given task, "frequency" reflects the number of tasks with that specific number of indeterminable scores.
 
 ```{r indeterminable2}
 
-# count how many articles have with indeterminable scores
-# create data frame
+# flag indeterminable scores per task
 indeterminable_counts <- data %>%
   left_join(monotonic_scores, by = "monotonic_score_id") %>%
   select(article_id, task_id, monotonic_score_id, category) %>%
@@ -920,12 +886,11 @@ indeterminable_counts <- data %>%
   summarise(indeterminable = any(category == "indeterminable"),
             .groups = 'drop')
 
-# overview over articles with and without indeterminable scores
+# count indeterminable scores per task
 indeterminable_counts <- indeterminable_counts %>%
   group_by(article_id, task_id) %>%
   summarise(
     indeterminable_scores = sum(indeterminable == TRUE),
-    determinable_scores = sum(indeterminable == FALSE),
     .groups = 'drop'
   )
 
@@ -935,5 +900,13 @@ indeterminable_counts_summary <- overview_variable(indeterminable_counts, "indet
 indeterminable_counts_summary |>
   kable() |>
   kable_classic(full_width = FALSE)
+
+```
+
+## Session Info
+
+```{r session-info}
+
+sessionInfo()
 
 ```

@@ -45,17 +45,17 @@ conflicts_prefer(dplyr::filter)
 data_scoring <- read_xlsx("../../data/raw/metamethod review/master coding/codebook_scoring_master.xlsx") 
 
 # read monotonic scores file
-# this is a file where we identified scores that can be linear transformed into each other
+# this is a file where we identified scores that can be transformed into each other while preserving ranks
 monotonic <- read_xlsx("../../data/raw/metamethod review/master coding/monotonic_scores.xlsx")
 
 ```
 
 # Distinct Scores
-This code creates a an object with distinct scores as described in the IGT articles.
+This code creates an object with the distinct scores as described in the IGT articles.
 
 ```{r overview raw}
 
-# create object with dinstinct scores
+# create object with distinct scores
 scores_overview <- data_scoring %>%
   distinct(score_id, .keep_all=TRUE)
 
@@ -68,7 +68,7 @@ count_scores |>
 ```
 
 ## Monotonic Scores
-Some scores in the sample are described and reported as if they were distinct from each other, but they can be transformed into each other which perfectly preserving ranks. Here, we collapse these scores to prevent an overestimation of the total number of distinct scores. 
+Some scores in the sample are described and reported as if they were distinct from each other, but they can be transformed into each other while perfectly preserving ranks. Here, we collapse these scores to prevent an overestimation of the total number of distinct scores. 
 
 ```{r overview monotonic}
 # join info on monotonic scores to overview of all scores
@@ -123,16 +123,6 @@ scores_monotonic <- scores_monotonic %>%
     TRUE ~ "other"
   ))
 
-# add variable: score implemented in graphic table 
-scores_monotonic <- scores_monotonic %>% 
-    mutate(implemented = case_when(
-    monotonic_score_id %in% c(3005, 3025) ~ "yes",
-    monotonic_score_id %in% c(4013, 4016, 4023) ~ "too vague to implement",
-    monotonic_score_id >= 3001 & monotonic_score_id <= 3042 ~ "too vague to implement",
-    monotonic_score_id >= 4039 & monotonic_score_id <= 4054 ~ "referred to in table notes",
-    TRUE ~ "yes"
-  ))
-
 count_scores_monotonic <- nrow(scores_monotonic)
 
 count_scores_monotonic |>
@@ -141,9 +131,9 @@ count_scores_monotonic |>
 
 ```
 
-## Print 
-Here, we print the table of score into an excel file.
-```{r print file}
+## Export
+Here, we write the table of distinct scores into an Excel file, which is used in scoring_methods.Rmd.
+```{r export file}
 
 # select relevant variables
 scores_monotonic <- scores_monotonic %>%
@@ -152,4 +142,10 @@ scores_monotonic <- scores_monotonic %>%
 # write into excel file
 write_xlsx(scores_monotonic, path = "../../data/processed/meta-methods review/scores_overview.xlsx")
 
+```
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
 ```

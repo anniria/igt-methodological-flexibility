@@ -20,7 +20,6 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```{r packages}
 
 library(tidyverse)
-library(ggrepel)
 library(knitr)
 library(kableExtra)
 source(here::here("code", "aps_figure_helpers.R"))
@@ -66,7 +65,7 @@ analysis_data <- metrics_wide %>%
 cat("Participants:", nrow(analysis_data), "\n")
 cat("Metric columns (before filtering):", ncol(metrics_wide) - 1, "\n")
 
-# drop id column and zero-variance columns
+# list the metric columns without id and zero-variance columns
 zero_var_cols <- metrics_wide %>%
   select(-id) %>%
   summarise(across(everything(), ~ sd(.x, na.rm = TRUE))) %>%
@@ -155,11 +154,11 @@ n_stronger_outcome  <- rank_outcome - 1
 cat(sprintf(
   paste(
     "The originally reported scoring strategy reproduced Hayes and Wedell's",
-    "correlations exactly. It ranked %dth of %d metrics for the deck contrast",
-    "and %dth for the outcome contrast, so only %d and %d alternative scoring",
+    "correlations exactly. It ranked %d of %d metrics for the deck contrast",
+    "and %d of %d for the outcome contrast, so only %d and %d alternative scoring",
     "strategies would have yielded a stronger association (see Fig. 3).\n"
   ),
-  rank_deck, n_metrics, rank_outcome, n_stronger_deck, n_stronger_outcome
+  rank_deck, n_metrics, rank_outcome, n_metrics, n_stronger_deck, n_stronger_outcome
 ))
 
 ```
@@ -307,7 +306,7 @@ cat("Saved", nrow(cor_results), "rows to",
 
 ```
 
-# Session info
+# Session Info
 
 ```{r session-info}
 

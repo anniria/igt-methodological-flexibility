@@ -37,9 +37,9 @@ library(openxlsx)
 ```{r}
 
 # read population file into data frame
-population <- read.xlsx("data/raw/sampling/population.xlsx")
+population <- read.xlsx("../../data/raw/sampling/population.xlsx")
 
-# set seed to get the same random split each time running the script
+# set seed so the random row order is the same each time the script runs
 set.seed(42)
 
 # randomly reorder rows of dataframe
@@ -47,11 +47,29 @@ pop_scrambled <- population[sample(1:nrow(population)),]
 
 ```
 
-## Export dataframe
+## Export or Check Dataframe
+
+The scrambled population is only written if the file does not exist yet. If it exists, the scramble reproduced here is checked against it, so knitting never overwrites the raw data.
 
 ```{r}
 
-# write scrambled population in a new file
-write.xlsx(pop_scrambled, file = "data/raw/sampling/population_scrambled.xlsx")
+# path of the scrambled population in the raw sampling folder
+scrambled_path <- "../../data/raw/sampling/population_scrambled.xlsx"
 
+if (file.exists(scrambled_path)) {
+  # check that the existing file matches the reproduced scramble, ignoring row names
+  pop_scrambled_existing <- read.xlsx(scrambled_path)
+  stopifnot(isTRUE(all.equal(pop_scrambled_existing, pop_scrambled, check.attributes = FALSE)))
+  cat("The existing population_scrambled.xlsx matches the reproduced scramble.\n")
+} else {
+  # write scrambled population in a new file
+  write.xlsx(pop_scrambled, file = scrambled_path)
+}
+
+```
+
+## Session Info
+
+```{r session-info}
+sessionInfo()
 ```

@@ -34,8 +34,6 @@ library(readxl)
 library(conflicted)
 library(tidyverse)
 library(irr)
-library(lpSolve)
-library(kableExtra)
 library(boot)
 
 # set preferred options 
@@ -93,7 +91,7 @@ kripp_numbers <- numbers_wide %>%
   as.matrix
 kripp.alpha(kripp_numbers, "ratio")
 
-# function to compute mean alpha 
+# returns krippendorffs alpha for one bootstrap resample
 alpha_fun <- function(data, indices) {
   d <- data[indices, ]
   d_transposed <- t(d)
@@ -114,16 +112,11 @@ boot_alpha_numbers <- boot(
 alpha_se_numbers <- sd(boot_alpha_numbers$t)  
 alpha_ci_numbers <- boot.ci(boot_alpha_numbers, type = "perc")$percent[4:5]  
 
-# print SE und CI 
+# print se and ci
 print(alpha_se_numbers)
 print(alpha_ci_numbers)
 
 ```
-
-## Text in manuscript
-
-The above results produce the results reported in the manuscript for the "Interrater reliability" heading. i.e., 
-
 
 # Inter Rater Reliability: Distinct Scores per Article
 
@@ -173,7 +166,7 @@ paired_scores <- bind_rows(paired_scores_list) %>%
     r2 = ifelse(is.na(r2), "NA-score", r2)
   )
 
-# create matrix for Krippendorff's Alpha 
+# create rating matrix for cohens kappa
 ratings_matrix <- paired_scores %>% 
   select(r1, r2) %>% 
   as.matrix() 
@@ -184,7 +177,7 @@ kappa_results <- kappa2(ratings_matrix)
 # print kappa
 print(kappa_results)
 
-# crate kappa with function 
+# returns cohens kappa for one bootstrap resample
 kappa_fun <- function(data, indices) {
   d <- data[indices, ]
   kappa2(as.matrix(d))$value
@@ -198,20 +191,14 @@ boot_kappa <- boot(
 )
 
 # calculate SE and CI
-kappa_est <- kappa2(ratings_matrix)$value
 kappa_se <- sd(boot_kappa$t)
 kappa_ci <- boot.ci(boot_kappa, type = "perc")$percent[4:5]
 
-# print SE und CI 
+# print se and ci
 print(kappa_se)
 print(kappa_ci)
 
 ```
-
-## Text in manuscript
-
-The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
-
 
 # Inter Rater Reliability: Occurrence of Each Distinct Score in the Whole Sample
 
@@ -260,16 +247,18 @@ boot_alpha_freq <- boot(
 alpha_se_freq <- sd(boot_alpha_freq$t, na.rm = TRUE) 
 alpha_ci_freq <- boot.ci(boot_alpha_freq, type = "perc")$percent[4:5] 
 
-# print SE und CI 
+# print se and ci
 print(alpha_se_freq)
 print(alpha_ci_freq)
 
 ```
 
-## Text in manuscript
+# Text in Manuscript
 
-The above results produce the results reported in the manuscript for the "Interrater reliabilty" heading. i.e., 
+The alpha and kappa values above are those reported in the manuscript under the "Interrater reliability" heading.
 
+# Session Info
 
-
-
+```{r session-info}
+sessionInfo()
+```

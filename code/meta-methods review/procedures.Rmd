@@ -86,7 +86,6 @@ value_counts <- function(data, value_to_count, columns = NULL) {
 ```{r data preparation}
 #| include: false
 
-### Task ID 
 # add id for each task that was coded
 data <- data %>%
   mutate(task_id = sprintf("%03d", row_number())) 
@@ -104,8 +103,7 @@ In order to achieve this, we demonstrate, for each variable, the frequency of in
 # create data frame with relevant variables
 data_ind <- data %>%
   select(goal, instructions, feedback, currency, starting_capital, 
-         contains("reward"), contains("1"), contains("2"), 
-         contains("aggr"), n_trials)
+         contains("reward"), contains("1"), contains("2"), n_trials)
 
 # count how often variable is set to indeterminable
 indeterminables <- value_counts(data_ind, "indeterminable") %>%
@@ -131,21 +129,6 @@ The frequency of alterations to the number of trials was examined. The variable 
 trials_n <- overview_variable(data, "n_trials") 
 
 trials_n|>
-  kable() |>
-  kable_classic(full_width = FALSE)
-
-
-# aggregate numbers of trials
-data <- data %>%
-  group_by(task_id) %>%
-  mutate(trials_aggr = case_when(
-    n_trials %in% c("100", "indeterminable") ~ n_trials,
-    TRUE ~ "deviating"
-  )) %>%
-  ungroup()
-
-# get an overview over aggregated number of trials  
-trials_aggr <- overview_variable(data, "trials_aggr") |>
   kable() |>
   kable_classic(full_width = FALSE)
 
@@ -246,7 +229,6 @@ loan|>
 
 # create data frame with combination of loans and currencies
 capital <- data %>%
-  select(task_id, starting_capital, currency) %>%
   group_by(starting_capital, currency) %>%
   summarise(n = n(), .groups = 'drop') %>%
   mutate(percentage = round(n / sum(n) * 100, 2)) %>%
@@ -361,7 +343,7 @@ classify_igt <- function(row) {
   matches_or_indet <- mapply(function(val, ref) {
     isTRUE(val == ref) || isTRUE(val == "indeterminable")
   }, vals, original_values)
-  # return modified for all other 
+  # return indeterminable if every value matches or is indeterminable, otherwise modified
   if (all(matches_or_indet)) return("indeterminable")
   return("modified IGT")
 }
@@ -386,7 +368,7 @@ igt_classfication |>
   kable() |>
   kable_classic(full_width = FALSE)
 
-# how many of the modified IGTs are in fact the clinical IGT? 
+# count modified igts that follow the clinical igt protocol, percentage of all coded tasks
 clinical_igt <- data %>%
   filter(igt_version == "modified IGT", protocol == "Bechara, 2007") %>%
   summarise(`modified task type` = "clinical IGT", 
@@ -399,5 +381,8 @@ clinical_igt %>%
 
 ```
 
+## Session Info
 
-
+```{r session-info}
+sessionInfo()
+```
