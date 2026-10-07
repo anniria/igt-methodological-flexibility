@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use these data or code, please cite them using the metadata below."
 type: software
-title: "A meta-methods review of methodological flexibility in the Iowa Gambling Task"
-abstract: "Data and code accompanying our study on methodological flexibility in the use of the Iowa Gambling Task, including the meta-methods review, a scoring multiverse analysis, the sampling process, and inter-rater reliability."
+title: "Methodological Flexibility in the Iowa Gambling Task Undermines Interpretability: A Meta-method Review"
+abstract: "Data and code accompanying the article \"Methodological Flexibility in the Iowa Gambling Task Undermines Interpretability: A Meta-method Review\" (Külpmann, Ries, Hussey & Elson), accepted for publication in Advances in Methods and Practices in Psychological Science (AMPPS). Includes the sampling process, codebooks, meta-methods review data, inter-rater reliability, the IGT scoring multiverse analysis, and supplementary materials."
 authors:
   - given-names: "Annika I."
     family-names: "Külpmann"

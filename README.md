@@ -1,4 +1,4 @@
-# A meta-methods review of methodological flexibility in the Iowa Gambling Task
+# Methodological Flexibility in the Iowa Gambling Task Undermines Interpretability: A Meta-method Review
 
 ## Overview
 
