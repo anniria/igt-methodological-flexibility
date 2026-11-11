@@ -76,6 +76,8 @@ If you use these data or code, please cite the archived version on Zenodo:
 
 Külpmann, A. I., Ries, J.-P., Hussey, I., & Elson, M. (2026). *Methodological Flexibility in the Iowa Gambling Task Undermines Interpretability: A Meta-method Review* (Version v1.0.0) [Data and code]. Zenodo. https://doi.org/10.5281/zenodo.23210150
 
+Version v1.1.0 (https://doi.org/10.5281/zenodo.24134478) contains the same data, analysis code and results as v1.0.0 and adds an renv lockfile and the master script run_all.R, so that all analyses can be reproduced in one step (see "How To Reproduce This Study").
+
 The accompanying article is accepted for publication in *Advances in Methods and Practices in Psychological Science*.
 
 ## License
