@@ -38,6 +38,18 @@ Annika Külpmann, Jan-Paul Ries, Ian Hussey, Malte Elson.
 
 ## How To Reproduce This Study
 
+### Short Route
+
+All analyses were run with R 4.5.2. The package versions used for the published results are recorded in **renv.lock**.
+
+1. Open **igt-project.Rproj** in RStudio (with R 4.5.2).
+2. Run `renv::restore()` in the console to install the recorded package versions.
+3. Run `source("run_all.R")` to knit all R Markdown files in the order described below.
+
+**run_all.R** takes about one minute on an Apple silicon Mac; the first `renv::restore()` takes additional time because it downloads and installs the packages. The script knits each file in its own R session, stops and names the file if a step fails, and checks that no file in /data/raw is changed.
+
+### Step by Step
+
 + Start with the folder /code/sampling, here you can first scramble the population, this reproduces the scrambled file in /data/raw/sampling and checks it against the existing one.
 + The second step would be to retrieve and code the articles, for this you could use the codebooks in /method. However, if you only want to reproduce the code, skip this step. 
 + Next you can calculate the interrater reliability, for this you can use the code in /code/inter rater reliability. There is one file for the IRR on procedure and one for scoring since these were two differently structured codebooks. 
